@@ -9,6 +9,11 @@ async function load() {
   self.pyodide = await loadPyodide({
     indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/",
   });
+  
+  // Pre-load common data science libraries used in our curriculum
+  await self.pyodide.loadPackage("numpy");
+  
+  return self.pyodide;
 }
 
 pyodideReadyPromise = load();
