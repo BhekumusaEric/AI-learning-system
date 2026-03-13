@@ -21,15 +21,18 @@ export default function LoginPage() {
     // 1. Set local identity
     localStorage.setItem('ioai_user', cleanUsername);
     
-    // 2. Ping backend to ensure user profile exists in db.json
+    // 2. Ping backend to ensure user profile exists
     try {
-      await fetch(`/api/progress?username=${encodeURIComponent(cleanUsername)}`);
+      const res = await fetch(`/api/progress?username=${encodeURIComponent(cleanUsername)}`);
+      if (!res.ok) {
+         console.warn("Backend not ready or failed to sync user. Proceeding anyway.");
+      }
     } catch (e) {
       console.error("Failed to initialize user on backend", e);
     }
     
     // 3. Redirect to the first lesson
-    router.push('/lesson/page1_whats_a_neural_network');
+    router.push('/lesson/page1_your_first_python_program');
   };
 
   return (
