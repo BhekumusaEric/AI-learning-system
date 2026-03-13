@@ -1,9 +1,9 @@
 ---
+title: "Matplotlib Tutorials"
+type: "read"
 resources:
-  - title: "Matplotlib Tutorials"
-    url: "https://matplotlib.org/stable/tutorials/index.html"
-  - title: "Python Graph Gallery"
-    url: "https://python-graph-gallery.com/"
+  - title: "Matplotlib: Usage Guide"
+    url: "https://matplotlib.org/stable/tutorials/introductory/usage.html"
 ---
 
 # Why Visualize?

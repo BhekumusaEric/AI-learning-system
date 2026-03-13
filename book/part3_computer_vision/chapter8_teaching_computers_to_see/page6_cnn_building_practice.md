@@ -1,9 +1,9 @@
 ---
+title: "Stanford CS231n: Convolutional Neural Networks"
+type: "read"
 resources:
-  - title: "Stanford CS231n: Convolutional Neural Networks"
-    url: "https://cs231n.github.io/"
-  - title: "PyTorch Computer Vision Tutorial"
-    url: "https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html"
+  - title: "PyTorch: Training a Classifier"
+    url: "https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html"
 ---
 
 # CNN Building Practice

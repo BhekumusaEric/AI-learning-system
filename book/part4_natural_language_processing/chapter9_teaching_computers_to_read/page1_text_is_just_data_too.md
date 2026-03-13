@@ -1,9 +1,9 @@
 ---
+title: "Hugging Face NLP Course"
+type: "read"
 resources:
-  - title: "Hugging Face NLP Course"
-    url: "https://huggingface.co/learn/nlp-course/chapter1/1"
-  - title: "The Illustrated Transformer (Jay Alammar)"
-    url: "https://jalammar.github.io/illustrated-transformer/"
+  - title: "Hugging Face: What is NLP?"
+    url: "https://huggingface.co/learn/nlp-course/chapter1/2"
 ---
 
 # Text is Just Data Too

@@ -1,9 +1,9 @@
 ---
+title: "Hugging Face NLP Course"
+type: "read"
 resources:
-  - title: "Hugging Face NLP Course"
-    url: "https://huggingface.co/learn/nlp-course/chapter1/1"
-  - title: "The Illustrated Transformer (Jay Alammar)"
-    url: "https://jalammar.github.io/illustrated-transformer/"
+  - title: "Jay Alammar: A Visual Guide to BERT"
+    url: "https://jalammar.github.io/a-visual-guide-to-using-bert-for-the-first-time/"
 ---
 
 # BERT: Understanding Context

@@ -1,9 +1,9 @@
 ---
+title: "Scikit-Learn: Supervised Learning"
+type: "read"
 resources:
-  - title: "Scikit-Learn: Supervised Learning"
-    url: "https://scikit-learn.org/stable/supervised_learning.html"
-  - title: "StatQuest: Machine Learning Index"
-    url: "https://www.youtube.com/user/joshstarmer"
+  - title: "Scikit-Learn: train_test_split"
+    url: "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html"
 ---
 
 # Train/Test Split

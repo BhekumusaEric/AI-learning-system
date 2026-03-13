@@ -1,9 +1,9 @@
 ---
+title: "Scikit-Learn: Supervised Learning"
+type: "read"
 resources:
-  - title: "Scikit-Learn: Supervised Learning"
-    url: "https://scikit-learn.org/stable/supervised_learning.html"
-  - title: "StatQuest: Machine Learning Index"
-    url: "https://www.youtube.com/user/joshstarmer"
+  - title: "StatQuest: Decision Trees"
+    url: "https://www.youtube.com/watch?v=7VeUPuVNf6I"
 ---
 
 # Decision Tree Practice

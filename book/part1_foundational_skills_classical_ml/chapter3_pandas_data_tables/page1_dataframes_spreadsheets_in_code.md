@@ -1,9 +1,9 @@
 ---
+title: "Pandas User Guide"
+type: "read"
 resources:
-  - title: "Pandas User Guide"
-    url: "https://pandas.pydata.org/docs/user_guide/index.html"
-  - title: "Kaggle: Pandas Micro-Course"
-    url: "https://www.kaggle.com/learn/pandas"
+  - title: "Pandas: Intro to Data Structures"
+    url: "https://pandas.pydata.org/docs/user_guide/dsintro.html"
 ---
 
 # DataFrames: Spreadsheets in Code

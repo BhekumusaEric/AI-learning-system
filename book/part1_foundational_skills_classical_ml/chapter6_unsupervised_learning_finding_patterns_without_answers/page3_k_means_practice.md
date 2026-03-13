@@ -1,9 +1,9 @@
 ---
+title: "Scikit-Learn: Unsupervised Learning"
+type: "read"
 resources:
-  - title: "Scikit-Learn: Unsupervised Learning"
-    url: "https://scikit-learn.org/stable/unsupervised_learning.html"
-  - title: "StatQuest: PCA clearly explained"
-    url: "https://www.youtube.com/watch?v=FgakZw6K1QQ"
+  - title: "StatQuest: K-Means Clustering"
+    url: "https://www.youtube.com/watch?v=4b5d3muPQmA"
 ---
 
 # K-Means Practice

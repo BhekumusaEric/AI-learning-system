@@ -1,9 +1,9 @@
 ---
+title: "Scikit-Learn: Unsupervised Learning"
+type: "read"
 resources:
-  - title: "Scikit-Learn: Unsupervised Learning"
-    url: "https://scikit-learn.org/stable/unsupervised_learning.html"
-  - title: "StatQuest: PCA clearly explained"
-    url: "https://www.youtube.com/watch?v=FgakZw6K1QQ"
+  - title: "Wikipedia: Elbow Method (clustering)"
+    url: "https://en.wikipedia.org/wiki/Elbow_method_(clustering)"
 ---
 
 # Choosing K: How Many Groups?

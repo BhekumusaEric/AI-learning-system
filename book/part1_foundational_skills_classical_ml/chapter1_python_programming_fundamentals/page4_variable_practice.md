@@ -1,9 +1,9 @@
 ---
+title: "Python Official Documentation"
+type: "read"
 resources:
-  - title: "Python Official Documentation"
-    url: "https://docs.python.org/3/"
-  - title: "W3Schools: Python Tutorial"
-    url: "https://www.w3schools.com/python/"
+  - title: "Python Types and Variables"
+    url: "https://docs.python.org/3/tutorial/introduction.html#using-python-as-a-calculator"
 ---
 
 # Variable Practice

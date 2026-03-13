@@ -1,9 +1,9 @@
 ---
+title: "Scikit-Learn: Unsupervised Learning"
+type: "read"
 resources:
-  - title: "Scikit-Learn: Unsupervised Learning"
-    url: "https://scikit-learn.org/stable/unsupervised_learning.html"
-  - title: "StatQuest: PCA clearly explained"
-    url: "https://www.youtube.com/watch?v=FgakZw6K1QQ"
+  - title: "IBM: What is Unsupervised Learning?"
+    url: "https://www.ibm.com/topics/unsupervised-learning"
 ---
 
 # Learning Without an Answer Key

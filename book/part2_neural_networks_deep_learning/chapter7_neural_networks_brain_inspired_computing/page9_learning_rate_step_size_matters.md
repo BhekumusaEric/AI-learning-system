@@ -1,9 +1,9 @@
 ---
+title: "3Blue1Brown: Neural Networks"
+type: "read"
 resources:
-  - title: "3Blue1Brown: Neural Networks"
-    url: "https://www.3blue1brown.com/topics/neural-networks"
-  - title: "PyTorch Deep Learning Basics"
-    url: "https://pytorch.org/tutorials/beginner/basics/intro.html"
+  - title: "Machine Learning Mastery: Learning Rate"
+    url: "https://machinelearningmastery.com/understand-the-dynamics-of-learning-rate-on-deep-learning-neural-networks/"
 ---
 
 # Learning Rate: Step Size Matters

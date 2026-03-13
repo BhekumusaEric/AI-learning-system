@@ -1,9 +1,9 @@
 ---
+title: "3Blue1Brown: Neural Networks"
+type: "read"
 resources:
-  - title: "3Blue1Brown: Neural Networks"
-    url: "https://www.3blue1brown.com/topics/neural-networks"
-  - title: "PyTorch Deep Learning Basics"
-    url: "https://pytorch.org/tutorials/beginner/basics/intro.html"
+  - title: "ML Glossary: Activation Functions"
+    url: "https://ml-cheatsheet.readthedocs.io/en/latest/activation_functions.html"
 ---
 
 # Activation Functions: The Decision Maker

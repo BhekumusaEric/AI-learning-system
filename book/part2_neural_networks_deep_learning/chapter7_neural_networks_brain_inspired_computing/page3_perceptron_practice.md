@@ -1,9 +1,9 @@
 ---
+title: "3Blue1Brown: Neural Networks"
+type: "read"
 resources:
-  - title: "3Blue1Brown: Neural Networks"
-    url: "https://www.3blue1brown.com/topics/neural-networks"
-  - title: "PyTorch Deep Learning Basics"
-    url: "https://pytorch.org/tutorials/beginner/basics/intro.html"
+  - title: "Towards Data Science: Perceptron Explained"
+    url: "https://towardsdatascience.com/what-is-a-perceptron-basics-of-neural-networks-c4eaaeca16ce"
 ---
 
 # Perceptron Practice

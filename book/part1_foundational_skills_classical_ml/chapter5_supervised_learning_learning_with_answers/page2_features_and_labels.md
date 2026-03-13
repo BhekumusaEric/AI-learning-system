@@ -1,9 +1,9 @@
 ---
+title: "Scikit-Learn: Supervised Learning"
+type: "read"
 resources:
-  - title: "Scikit-Learn: Supervised Learning"
-    url: "https://scikit-learn.org/stable/supervised_learning.html"
-  - title: "StatQuest: Machine Learning Index"
-    url: "https://www.youtube.com/user/joshstarmer"
+  - title: "Google ML Crash Course: Framing"
+    url: "https://developers.google.com/machine-learning/crash-course/framing/ml-terminology"
 ---
 
 # Features and Labels

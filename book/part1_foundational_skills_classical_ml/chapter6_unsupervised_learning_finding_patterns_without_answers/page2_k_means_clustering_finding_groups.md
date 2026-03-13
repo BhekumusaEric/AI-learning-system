@@ -1,9 +1,9 @@
 ---
+title: "Scikit-Learn: Unsupervised Learning"
+type: "read"
 resources:
-  - title: "Scikit-Learn: Unsupervised Learning"
-    url: "https://scikit-learn.org/stable/unsupervised_learning.html"
-  - title: "StatQuest: PCA clearly explained"
-    url: "https://www.youtube.com/watch?v=FgakZw6K1QQ"
+  - title: "Scikit-Learn: K-Means"
+    url: "https://scikit-learn.org/stable/modules/clustering.html#k-means"
 ---
 
 # K-Means Clustering: Finding Groups

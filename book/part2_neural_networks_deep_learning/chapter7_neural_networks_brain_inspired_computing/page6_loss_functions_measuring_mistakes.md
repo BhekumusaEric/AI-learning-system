@@ -1,9 +1,9 @@
 ---
+title: "3Blue1Brown: Neural Networks"
+type: "read"
 resources:
-  - title: "3Blue1Brown: Neural Networks"
-    url: "https://www.3blue1brown.com/topics/neural-networks"
-  - title: "PyTorch Deep Learning Basics"
-    url: "https://pytorch.org/tutorials/beginner/basics/intro.html"
+  - title: "Google ML Crash Course: Descending into ML"
+    url: "https://developers.google.com/machine-learning/crash-course/descending-into-ml/video-lecture"
 ---
 
 # Loss Functions: Measuring Mistakes

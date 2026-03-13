@@ -1,9 +1,9 @@
 ---
+title: "Scikit-Learn: Supervised Learning"
+type: "read"
 resources:
-  - title: "Scikit-Learn: Supervised Learning"
-    url: "https://scikit-learn.org/stable/supervised_learning.html"
-  - title: "StatQuest: Machine Learning Index"
-    url: "https://www.youtube.com/user/joshstarmer"
+  - title: "IBM: Overfitting vs Underfitting"
+    url: "https://www.ibm.com/topics/overfitting"
 ---
 
 # Underfitting: Too Simple to Capture Patterns

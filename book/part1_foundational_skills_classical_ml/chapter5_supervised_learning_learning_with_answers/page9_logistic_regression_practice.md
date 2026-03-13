@@ -1,9 +1,9 @@
 ---
+title: "Scikit-Learn: Supervised Learning"
+type: "read"
 resources:
-  - title: "Scikit-Learn: Supervised Learning"
-    url: "https://scikit-learn.org/stable/supervised_learning.html"
-  - title: "StatQuest: Machine Learning Index"
-    url: "https://www.youtube.com/user/joshstarmer"
+  - title: "StatQuest: Logistic Regression"
+    url: "https://www.youtube.com/watch?v=yIYKR4sgzI8"
 ---
 
 # Logistic Regression Practice

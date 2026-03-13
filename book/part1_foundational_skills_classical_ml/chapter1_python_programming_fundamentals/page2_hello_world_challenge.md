@@ -1,9 +1,9 @@
 ---
+title: "Python Official Documentation"
+type: "read"
 resources:
-  - title: "Python Official Documentation"
-    url: "https://docs.python.org/3/"
-  - title: "W3Schools: Python Tutorial"
-    url: "https://www.w3schools.com/python/"
+  - title: "W3Schools: Python Syntax"
+    url: "https://www.w3schools.com/python/python_syntax.asp"
 ---
 
 # Hello, World! Challenge

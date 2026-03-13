@@ -1,9 +1,9 @@
 ---
+title: "Hugging Face NLP Course"
+type: "read"
 resources:
-  - title: "Hugging Face NLP Course"
-    url: "https://huggingface.co/learn/nlp-course/chapter1/1"
-  - title: "The Illustrated Transformer (Jay Alammar)"
-    url: "https://jalammar.github.io/illustrated-transformer/"
+  - title: "PyTorch: nn.Embedding"
+    url: "https://pytorch.org/docs/stable/generated/torch.nn.Embedding.html"
 ---
 
 # Exploring Embeddings
