@@ -32,7 +32,10 @@ export default function LoginPage() {
     }
     
     // 3. Redirect to the first lesson
-    router.push('/lesson/page1_your_first_python_program');
+    // Use window.location.href instead of router.push to force a full page reload.
+    // This ensures the ProgressProvider (which wraps the layout) unmounts
+    // and completely remounts, reading the newly stored 'ioai_user' from localStorage.
+    window.location.href = '/lesson/page1_your_first_python_program';
     
     // Fallback: If routing fails or is delayed extensively, release spinning lock after 3s
     setTimeout(() => { setIsLoading(false); }, 3000);
