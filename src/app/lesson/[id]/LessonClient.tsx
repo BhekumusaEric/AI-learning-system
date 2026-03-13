@@ -9,7 +9,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import rehypeHighlight from 'rehype-highlight';
 
 export default function LessonPageClient({ 
   content, 
@@ -70,7 +69,7 @@ export default function LessonPageClient({
     <div className="prose prose-invert prose-emerald max-w-none prose-pre:bg-[#1a1a1a] prose-pre:border-border-subtle prose-pre:border">
       <ReactMarkdown 
         remarkPlugins={[remarkGfm, remarkMath]} 
-        rehypePlugins={[rehypeKatex, rehypeHighlight]}
+        rehypePlugins={[rehypeKatex]}
       >
         {content}
       </ReactMarkdown>

@@ -2,26 +2,6 @@
  * Pyodide singleton service for executing Python code in the browser.
  */
 
-import { loadPyodide, PyodideInterface } from 'pyodide';
-
-let pyodideInstance: PyodideInterface | null = null;
-let pyodidePromise: Promise<PyodideInterface> | null = null;
-
-export async function getPyodide(): Promise<PyodideInterface> {
-  if (pyodideInstance) return pyodideInstance;
-  
-  if (!pyodidePromise) {
-    pyodidePromise = loadPyodide({
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/',
-    }).then(async (pyodide) => {
-      pyodideInstance = pyodide;
-      return pyodide;
-    });
-  }
-  
-  return pyodidePromise;
-}
-
 export interface ExecutionResult {
   stdout: string;
   stderr: string;
@@ -29,36 +9,41 @@ export interface ExecutionResult {
   error?: string;
 }
 
-export async function runPythonCode(code: string, tests: string = ''): Promise<ExecutionResult> {
-  const pyodide = await getPyodide();
-  
-  let stdout = '';
-  let stderr = '';
-  
-  pyodide.setStdout({ batched: (str) => { stdout += str + '\\n'; } });
-  pyodide.setStderr({ batched: (str) => { stderr += str + '\\n'; } });
+let pyodideWorker: Worker | null = null;
+let msgId = 0;
+const resolvers: Record<number, { resolve: (val: any) => void; reject: (err: any) => void }> = {};
 
-  try {
-    // Run user code
-    await pyodide.runPythonAsync(code);
+export async function getPyodide(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  
+  if (!pyodideWorker) {
+    pyodideWorker = new Worker('/pyodide-worker.js');
     
-    // Optionally run tests
-    let testResult = null;
-    if (tests) {
-      testResult = await pyodide.runPythonAsync(tests);
-    }
-    
-    return {
-      stdout,
-      stderr,
-      result: testResult,
-    };
-  } catch (err: any) {
-    return {
-      stdout,
-      stderr,
-      result: null,
-      error: err.toString(),
+    pyodideWorker.onmessage = (event) => {
+      const { id, success, result, error, stdout, stderr } = event.data;
+      if (resolvers[id]) {
+        if (success) {
+          resolvers[id].resolve({ stdout, stderr, result });
+        } else {
+          // Returning error in the success shape rather than throwing 
+          // to match the previous graceful catch behavior
+          resolvers[id].resolve({ stdout, stderr, result: null, error });
+        }
+        delete resolvers[id];
+      }
     };
   }
+}
+
+export async function runPythonCode(code: string, tests: string = ''): Promise<ExecutionResult> {
+  await getPyodide();
+  
+  return new Promise((resolve, reject) => {
+    if (!pyodideWorker) return reject(new Error("Worker not initialized"));
+    
+    const id = msgId++;
+    resolvers[id] = { resolve, reject };
+    
+    pyodideWorker.postMessage({ id, code, tests });
+  });
 }

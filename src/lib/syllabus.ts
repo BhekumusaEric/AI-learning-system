@@ -99,26 +99,41 @@ export function getPageContent(pageId: string) {
   // A simple find-by-pageId across the whole book
   if (!fs.existsSync(bookDirectory)) return null;
   
-  const parts = fs.readdirSync(bookDirectory).filter(p => p.startsWith('part'));
-  for (const part of parts) {
-    const partPath = path.join(bookDirectory, part);
-    const chapters = fs.readdirSync(partPath).filter(c => c.startsWith('chapter'));
-    
-    for (const chapter of chapters) {
-      const chapterPath = path.join(partPath, chapter);
-      const filePath = path.join(chapterPath, pageId + ".md");
-      
-      if (fs.existsSync(filePath)) {
-        const fileContents = fs.readFileSync(filePath, 'utf8');
-        const { data, content } = matter(fileContents);
-        return {
-          id: pageId,
-          content: content,
-          theoryContent: fileContents,
-          isPractice: pageId.includes('practice'),
-          initialCode: extractInitialCode(content)
-        };
+  const syllabus = getSyllabus();
+  
+  for (const part of syllabus) {
+    for (const chapter of part.chapters) {
+      for (const page of chapter.pages) {
+        if (page.id === pageId) {
+          // Re-construct exactly where it is so we can read the file
+          // Note: getting exact path again can be tricky if we don't store it in PageData
+          // The previous mapping stripped chapter/part dir information for ids
+          // Let's do a fast recursive file search
+          return findAndReadFile(bookDirectory, pageId + ".md");
+        }
       }
+    }
+  }
+  return null;
+}
+
+function findAndReadFile(dir: string, filename: string): any {
+  const files = fs.readdirSync(dir, { withFileTypes: true });
+  for (const file of files) {
+    const fullPath = path.join(dir, file.name);
+    if (file.isDirectory()) {
+      const found = findAndReadFile(fullPath, filename);
+      if (found) return found;
+    } else if (file.name === filename) {
+      const fileContents = fs.readFileSync(fullPath, 'utf8');
+      const { data, content } = matter(fileContents);
+      return {
+        id: filename.replace('.md', ''),
+        content: content,
+        theoryContent: fileContents,
+        isPractice: filename.includes('practice'),
+        initialCode: extractInitialCode(content)
+      };
     }
   }
   return null;
