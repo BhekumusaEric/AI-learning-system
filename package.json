@@ -11,10 +11,12 @@
   "dependencies": {
     "@headlessui/react": "^2.2.9",
     "@monaco-editor/react": "^4.7.0",
+    "@supabase/supabase-js": "^2.99.1",
     "@tailwindcss/typography": "^0.5.19",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
+    "pg": "^8.20.0",
     "pyodide": "^0.29.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",

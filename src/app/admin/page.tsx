@@ -1,16 +1,24 @@
 import React from 'react';
-import fs from 'fs';
-import path from 'path';
 import { Users, BookOpen, Activity } from 'lucide-react';
 import { getSyllabus } from '@/lib/syllabus';
 import AdminTable, { AdminUser } from './AdminTable';
-
-const dbPath = path.join(process.cwd(), 'data', 'db.json');
+import { supabase } from '@/lib/supabase';
 
 // Server Action to read DB directly
 async function getDbData() {
-  if (!fs.existsSync(dbPath)) return { users: {} };
-  return JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+  const { data, error } = await supabase.from('user_progress').select('*');
+  if (error || !data) return { users: {} };
+  
+  const formattedUsers: Record<string, any> = {};
+  data.forEach((row: any) => {
+    formattedUsers[row.username] = {
+      completedPages: row.completed_pages || {},
+      createdAt: row.created_at,
+      lastActive: row.last_active
+    };
+  });
+  
+  return { users: formattedUsers };
 }
 
 export default async function AdminDashboard() {

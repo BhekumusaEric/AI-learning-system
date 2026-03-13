@@ -11,10 +11,16 @@
     "eric_student": {
       "completedPages": {
         "page1_whats_a_neural_network": true,
-        "page2_the_perceptron_one_artificial_neuron": true
+        "page2_the_perceptron_one_artificial_neuron": true,
+        "page3_perceptron_practice": true
       },
-      "lastActive": "2026-03-13T19:18:46.729Z",
+      "lastActive": "2026-03-13T19:22:07.841Z",
       "createdAt": "2026-03-13T18:51:58.129Z"
+    },
+    "bhntshwcjc025": {
+      "completedPages": {},
+      "createdAt": "2026-03-13T19:21:14.004Z",
+      "lastActive": "2026-03-13T19:21:32.719Z"
     }
   }
 }

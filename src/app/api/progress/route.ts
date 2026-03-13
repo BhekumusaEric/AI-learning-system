@@ -1,62 +1,42 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'db.json');
-
-// Helper to initialize or read DB
-function readDb() {
-  if (!fs.existsSync(dbPath)) {
-    // Make sure 'data' directory exists
-    const dir = path.dirname(dbPath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    
-    const initialData = { users: {} };
-    fs.writeFileSync(dbPath, JSON.stringify(initialData, null, 2), 'utf-8');
-    return initialData;
-  }
-  
-  const content = fs.readFileSync(dbPath, 'utf-8');
-  try {
-    return JSON.parse(content);
-  } catch (e) {
-    return { users: {} };
-  }
-}
-
-// Helper to write DB
-function writeDb(data: any) {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf-8');
-}
+import { supabase } from '@/lib/supabase';
 
 // GET: Fetch user progress
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const username = searchParams.get('username');
+  const username = searchParams.get('username') || 'guest';
   
   if (!username) {
     return NextResponse.json({ error: 'Username is required' }, { status: 400 });
   }
 
-  const db = readDb();
-  const user = db.users[username];
-  
-  if (!user) {
-    // If user doesn't exist, we can create their stub immediately
-    db.users[username] = {
-      completedPages: {},
-      lastActive: new Date().toISOString(),
-      createdAt: new Date().toISOString()
-    };
-    writeDb(db);
-    return NextResponse.json(db.users[username]);
-  }
-  
-  // Update last active on fetch
-  user.lastActive = new Date().toISOString();
-  writeDb(db);
+  try {
+    const { data, error } = await supabase
+      .from('user_progress')
+      .select('*')
+      .eq('username', username)
+      .maybeSingle();
 
-  return NextResponse.json(user);
+    if (error) throw error;
+
+    if (data) {
+      return NextResponse.json({
+        username: data.username,
+        completedPages: data.completed_pages || {},
+        createdAt: data.created_at,
+        lastActive: data.last_active
+      });
+    } else {
+        return NextResponse.json({
+            completedPages: {},
+            createdAt: new Date().toISOString(),
+            lastActive: new Date().toISOString()
+        });
+    }
+  } catch (error) {
+    console.error("Failed to fetch progress:", error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
 }
 
 // POST: Update or Create user progress
@@ -69,28 +49,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Username is required' }, { status: 400 });
     }
 
-    const db = readDb();
+    const { data: existingUser } = await supabase
+      .from('user_progress')
+      .select('*')
+      .eq('username', username)
+      .maybeSingle();
+
+    let newCompletedPages = existingUser?.completed_pages || {};
     
-    if (!db.users[username]) {
-      db.users[username] = {
-        completedPages: completedPages || {},
-        createdAt: new Date().toISOString(),
-        lastActive: new Date().toISOString()
-      };
-    } else if (completedPages) {
-      db.users[username].completedPages = {
-        ...db.users[username].completedPages,
-        ...completedPages
-      };
-      db.users[username].lastActive = new Date().toISOString();
+    if (completedPages) {
+        newCompletedPages = { ...newCompletedPages, ...completedPages };
     }
+
+    const { data, error } = await supabase
+      .from('user_progress')
+      .upsert({
+        username,
+        completed_pages: newCompletedPages,
+        last_active: new Date().toISOString()
+      }, { onConflict: 'username' })
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
     
-    writeDb(db);
-    
-    return NextResponse.json({ success: true, user: db.users[username] });
+    return NextResponse.json({ 
+        success: true, 
+        user: {
+            username: data?.username || username,
+            completedPages: data?.completed_pages || newCompletedPages
+        } 
+    });
   } catch (error) {
     console.error("Failed to update progress:", error);
-    return NextResponse.json({ error: 'Failed to parse request' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
   }
 }
 
@@ -104,16 +96,14 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Valid username is required' }, { status: 400 });
     }
 
-    const db = readDb();
-    
-    if (db.users[username]) {
-      delete db.users[username];
-      writeDb(db);
-      return NextResponse.json({ success: true, message: `User ${username} deleted.` });
-    } else {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    const { error } = await supabase
+      .from('user_progress')
+      .delete()
+      .eq('username', username);
 
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, message: `User ${username} deleted.` });
   } catch (error) {
     console.error("Failed to delete user:", error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
