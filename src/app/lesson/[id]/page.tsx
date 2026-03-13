@@ -1,9 +1,10 @@
-import { getPageContent } from '@/lib/syllabus';
+import { getPageContent, getAdjacentPages } from '@/lib/syllabus';
 import LessonClient from './LessonClient';
 
 export default async function LessonServerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const pageData = getPageContent(id);
+  const adjacent = getAdjacentPages(id);
 
   if (!pageData) {
     return (
@@ -18,9 +19,13 @@ export default async function LessonServerPage({ params }: { params: Promise<{ i
 
   return (
     <LessonClient 
+      pageId={id}
       content={pageData.content} 
-      initialCodeProp={pageData.initialCode} 
+      initialCodeProp={pageData.initialCode}
+      testCodeProp={pageData.testCode}
       isPractice={pageData.isPractice}
+      prevPage={adjacent.prev}
+      nextPage={adjacent.next}
     />
   );
 }

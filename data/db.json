@@ -1,0 +1,20 @@
+{
+  "users": {
+    "guest": {
+      "completedPages": {
+        "page1_whats_a_neural_network": true,
+        "page2_the_perceptron_one_artificial_neuron": true
+      },
+      "lastActive": "2026-03-13T18:52:44.450Z",
+      "createdAt": "2026-03-13T18:50:11.197Z"
+    },
+    "eric_student": {
+      "completedPages": {
+        "page1_whats_a_neural_network": true,
+        "page2_the_perceptron_one_artificial_neuron": true
+      },
+      "lastActive": "2026-03-13T19:01:24.226Z",
+      "createdAt": "2026-03-13T18:51:58.129Z"
+    }
+  }
+}

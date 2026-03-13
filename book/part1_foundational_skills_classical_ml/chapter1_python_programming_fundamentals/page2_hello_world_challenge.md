@@ -22,6 +22,13 @@ Test 1: Program prints "Hello, IOAI!" (exact text)
 Test 2: No syntax errors
 Test 3: Uses print() function
 
+### Evaluation Code
+```python
+import sys
+output = sys.stdout.getvalue().strip()
+assert "Hello, IOAI!" in output, 'Expected exact text "Hello, IOAI!" to be printed out'
+```
+
 ### Hints
 - Remember to put text in quotes
 - The print() function needs parentheses

@@ -30,6 +30,19 @@ Test 2: Each color on separate line
 Test 3: Uses for loop syntax
 Test 4: No syntax errors
 
+### Evaluation Code
+```python
+import sys
+output = sys.stdout.getvalue().strip()
+lines = output.split('\n')
+# We have 4 colors
+assert len(lines) >= 4, "Expected the output to have at least 4 printed lines for the colors"
+assert "red" in output, "Expected 'red' to be printed"
+assert "blue" in output, "Expected 'blue' to be printed"
+assert "green" in output, "Expected 'green' to be printed"
+assert "yellow" in output, "Expected 'yellow' to be printed"
+```
+
 ### Hints
 - Use `for item in list:`
 - Indent the print statement

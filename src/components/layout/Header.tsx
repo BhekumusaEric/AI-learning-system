@@ -1,9 +1,32 @@
+"use client";
+
 import React from 'react';
 import { BookOpen, UserCircle, LayoutTemplate } from 'lucide-react';
+import { useProgress } from '@/components/providers/ProgressProvider';
+import { PartData } from '@/lib/syllabus';
 
-export default function Header() {
+interface HeaderProps {
+  syllabus?: PartData[];
+}
+
+export default function Header({ syllabus = [] }: HeaderProps) {
+  const { completedPages } = useProgress();
+
+  let totalPages = 0;
+  syllabus.forEach(part => {
+    part.chapters.forEach(chapter => {
+      totalPages += chapter.pages.length;
+    });
+  });
+
+  // Since progress might track keys not currently in syllabus (if modified), we count intersection or just length. 
+  // For safety, we can count total keys marked true. 
+  const completedCount = Object.keys(completedPages).filter(k => completedPages[k]).length;
+  // Cap it at 100% just in case of stale cache
+  const progressPercentage = totalPages > 0 ? Math.min(100, Math.round((completedCount / totalPages) * 100)) : 0;
+
   return (
-    <header className="h-16 w-full border-b border-border-subtle bg-secondary flex items-center justify-between px-6 shrink-0">
+    <header className="h-16 w-full border-b border-border-subtle bg-secondary flex items-center justify-between px-6 shrink-0 z-20">
       <div className="flex items-center gap-3">
         <div className="bg-accent/20 p-2 rounded-lg">
           <BookOpen className="w-6 h-6 text-accent" />
@@ -18,9 +41,12 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-3">
           <span className="text-sm text-secondary-text">Syllabus Progress</span>
           <div className="w-32 h-2 bg-background rounded-full overflow-hidden">
-            <div className="h-full bg-accent w-[45%]" />
+            <div 
+              className="h-full bg-accent transition-all duration-500 ease-out" 
+              style={{ width: `${progressPercentage}%` }} 
+            />
           </div>
-          <span className="text-sm font-bold text-accent">45%</span>
+          <span className="text-sm font-bold text-accent">{progressPercentage}%</span>
         </div>
 
         {/* Mode Toggle & Profile */}
@@ -30,11 +56,40 @@ export default function Header() {
             <span className="hidden sm:inline">Learn Mode</span>
           </button>
           
-          <button className="text-secondary-text hover:text-foreground transition-colors">
-            <UserCircle className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3 ml-2 pl-4 border-l border-border-subtle">
+            <ClientUsername />
+            <UserCircle className="w-8 h-8 text-secondary-text" />
+          </div>
         </div>
       </div>
     </header>
+  );
+}
+
+// Separate client component to prevent hydration errors when reading localStorage
+function ClientUsername() {
+  const [username, setUsername] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setUsername(localStorage.getItem('ioai_user') || 'Guest');
+  }, []);
+
+  return (
+    <div className="flex flex-col items-end">
+      <span className="text-sm font-bold text-foreground capitalize">
+        {username || '...'}
+      </span>
+      {username && (
+        <button 
+          onClick={() => {
+            localStorage.removeItem('ioai_user');
+            window.location.href = '/login';
+          }}
+          className="text-[10px] text-error hover:text-error/80 uppercase tracking-wider font-semibold"
+        >
+          Sign Out
+        </button>
+      )}
+    </div>
   );
 }

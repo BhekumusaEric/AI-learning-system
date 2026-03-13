@@ -11,6 +11,8 @@ export interface TestResult {
   actual?: string;
   hint?: string;
   error?: string;
+  errorType?: string;
+  lineNumber?: number;
 }
 
 interface FeedbackPanelProps {
@@ -63,8 +65,30 @@ export default function FeedbackPanel({ results, isRunning, onNext }: FeedbackPa
             </div>
 
             {!res.passed && res.error && (
-              <div className="mt-3 text-sm font-mono text-warning bg-black/40 p-3 rounded overflow-x-auto whitespace-pre">
-                {res.error}
+              <div className="mt-3 flex flex-col gap-2">
+                <div className="flex items-center gap-3 text-sm">
+                  {res.errorType && (
+                    <span className="px-2 py-0.5 bg-warning/20 text-warning rounded text-xs font-bold font-mono">
+                      {res.errorType}
+                    </span>
+                  )}
+                  {res.lineNumber && (
+                    <span className="text-secondary-text text-xs font-mono">
+                      Line {res.lineNumber}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="text-sm font-mono text-warning bg-black/40 p-3 rounded overflow-x-auto whitespace-pre">
+                  {res.error}
+                </div>
+
+                {res.hint && (
+                  <div className="mt-1 p-3 bg-secondary rounded border border-border-subtle text-foreground text-sm">
+                    <span className="font-bold text-accent mr-2">HINT:</span>
+                    {res.hint}
+                  </div>
+                )}
               </div>
             )}
             

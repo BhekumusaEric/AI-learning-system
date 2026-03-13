@@ -1,11 +1,12 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
   --background: #000000;
   --foreground: #ffffff;
   --secondary: #1a1a1a;
   --secondary-text: #b0b0b0;
-  --accent: #00ff9d;
+  --accent: #00B0F0;
   --error: #ff5f5f;
   --warning: #ffb86b;
   --border: #333333;

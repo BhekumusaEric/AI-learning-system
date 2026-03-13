@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
+import { ProgressProvider } from "@/components/providers/ProgressProvider";
 import "./globals.css";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -23,7 +24,9 @@ export default function RootLayout({
       <body
         className={`${jetbrainsMono.variable} font-mono antialiased`}
       >
-        {children}
+        <ProgressProvider>
+          {children}
+        </ProgressProvider>
       </body>
     </html>
   );

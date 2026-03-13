@@ -27,6 +27,14 @@ Test 2: classify_number(-3) returns "negative"
 Test 3: classify_number(0) returns "zero"
 Test 4: classify_number(100) returns "positive"
 
+### Evaluation Code
+```python
+assert classify_number(5) == "positive", "Expected classify_number(5) to return 'positive'"
+assert classify_number(-3) == "negative", "Expected classify_number(-3) to return 'negative'"
+assert classify_number(0) == "zero", "Expected classify_number(0) to return 'zero'"
+assert classify_number(100) == "positive", "Expected classify_number(100) to return 'positive'"
+```
+
 ### Hints
 - Use if num > 0 for positive
 - Use elif num < 0 for negative

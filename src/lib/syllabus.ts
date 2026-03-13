@@ -131,8 +131,9 @@ function findAndReadFile(dir: string, filename: string): any {
         id: filename.replace('.md', ''),
         content: content,
         theoryContent: fileContents,
-        isPractice: filename.includes('practice'),
-        initialCode: extractInitialCode(content)
+        isPractice: filename.includes('practice') || filename.includes('challenge'),
+        initialCode: extractInitialCode(content),
+        testCode: extractTestCode(content)
       };
     }
   }
@@ -146,4 +147,34 @@ function extractInitialCode(content: string) {
     return match[1].trim();
   }
   return null;
+}
+
+function extractTestCode(content: string) {
+  // Try to find code under "### Evaluation Code"
+  const match = content.match(/### Evaluation Code\n+```python\n([\s\S]*?)```/);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  return null;
+}
+
+export function getAdjacentPages(pageId: string) {
+  const syllabus = getSyllabus();
+  const allPages = [];
+  
+  for (const part of syllabus) {
+    for (const chapter of part.chapters) {
+      for (const page of chapter.pages) {
+        allPages.push(page);
+      }
+    }
+  }
+  
+  const currentIndex = allPages.findIndex(p => p.id === pageId);
+  if (currentIndex === -1) return { prev: null, next: null };
+  
+  return {
+    prev: currentIndex > 0 ? allPages[currentIndex - 1] : null,
+    next: currentIndex < allPages.length - 1 ? allPages[currentIndex + 1] : null
+  };
 }

@@ -32,6 +32,16 @@ Test 2: second_food is the original second item
 Test 3: First item changed to "pizza"
 Test 4: "ice cream" added to the end
 
+### Evaluation Code
+```python
+# Evaluate lists
+assert type(favorite_foods) == list, "Expected 'favorite_foods' to be a list"
+assert len(favorite_foods) == 4, "Expected 'favorite_foods' to have exactly 4 items at the end"
+assert favorite_foods[0] == "pizza", "Expected the first item in 'favorite_foods' to be changed to 'pizza'"
+assert favorite_foods[-1] == "ice cream", "Expected 'ice cream' to be the last item in 'favorite_foods'"
+assert type(second_food) == str and len(second_food) > 0, "Expected 'second_food' to be a valid string from your original list"
+```
+
 ### Hints
 - Use square brackets to create lists
 - Indices start at 0

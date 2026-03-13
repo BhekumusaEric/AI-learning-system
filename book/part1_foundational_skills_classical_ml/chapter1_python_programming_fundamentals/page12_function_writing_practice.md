@@ -43,6 +43,14 @@ Test 2: celsius_to_fahrenheit(20) returns 68.0
 Test 3: celsius_to_fahrenheit(100) returns 212.0
 Test 4: Returns a float
 
+### Evaluation Code
+```python
+assert abs(celsius_to_fahrenheit(0) - 32.0) < 1e-6, "Expected 0 Celsius to be 32.0 Fahrenheit"
+assert abs(celsius_to_fahrenheit(20) - 68.0) < 1e-6, "Expected 20 Celsius to be 68.0 Fahrenheit"
+assert abs(celsius_to_fahrenheit(100) - 212.0) < 1e-6, "Expected 100 Celsius to be 212.0 Fahrenheit"
+assert isinstance(celsius_to_fahrenheit(0), float), "Expected the return value to be a float"
+```
+
 ### Hints
 - Use the formula: celsius * 9/5 + 32
 - Make sure to use floating point division (9/5, not 9//5)
