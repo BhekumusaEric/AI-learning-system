@@ -12,7 +12,7 @@ import rehypeKatex from 'rehype-katex';
 import { useProgress } from '@/components/providers/ProgressProvider';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
-import { PageData } from '@/lib/syllabus';
+import { PageData, ResourceData } from '@/lib/syllabus';
 
 export default function LessonPageClient({ 
   pageId,
@@ -20,6 +20,7 @@ export default function LessonPageClient({
   initialCodeProp, 
   testCodeProp,
   isPractice,
+  resources,
   prevPage,
   nextPage
 }: { 
@@ -28,6 +29,7 @@ export default function LessonPageClient({
   initialCodeProp: string | null; 
   testCodeProp: string | null;
   isPractice: boolean;
+  resources: ResourceData[];
   prevPage: PageData | null;
   nextPage: PageData | null;
 }) {
@@ -143,6 +145,34 @@ export default function LessonPageClient({
       >
         {content}
       </ReactMarkdown>
+
+      {/* External Resources List */}
+      {resources && resources.length > 0 && (
+        <div className="mt-12 not-prose">
+          <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+             <span className="text-accent">◆</span> Further Reading
+          </h3>
+          <div className="flex flex-col gap-3">
+            {resources.map((res, i) => (
+              <a 
+                key={i} 
+                href={res.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="group flex items-center justify-between p-4 rounded-xl border border-border-subtle bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all duration-200"
+              >
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-200 group-hover:text-accent transition-colors">{res.title}</span>
+                  <span className="text-[11px] text-gray-500 mt-1 truncate max-w-md">{res.url}</span>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-black transition-all">
+                  ↗
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Navigation Footer */}
       <div className="mt-16 pt-8 border-t border-border-subtle flex items-center justify-between not-prose">

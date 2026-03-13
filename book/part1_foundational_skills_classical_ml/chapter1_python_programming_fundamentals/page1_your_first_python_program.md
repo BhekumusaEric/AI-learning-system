@@ -1,3 +1,13 @@
+---
+title: "Your First Python Program"
+type: "read"
+resources:
+  - title: "Official Python print() Docs"
+    url: "https://docs.python.org/3/library/functions.html#print"
+  - title: "W3Schools: Python Syntax"
+    url: "https://www.w3schools.com/python/python_syntax.asp"
+---
+
 # Your First Python Program
 
 ## Python Basics

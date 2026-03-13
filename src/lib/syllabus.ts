@@ -35,6 +35,11 @@ function formatTitle(name: string) {
     .replace(/\b\w/g, c => c.toUpperCase());
 }
 
+export interface ResourceData {
+  title: string;
+  url: string;
+}
+
 export function getSyllabus(): PartData[] {
   if (!fs.existsSync(bookDirectory)) return [];
 
@@ -133,7 +138,8 @@ function findAndReadFile(dir: string, filename: string): any {
         theoryContent: fileContents,
         isPractice: filename.includes('practice') || filename.includes('challenge'),
         initialCode: extractInitialCode(content),
-        testCode: extractTestCode(content)
+        testCode: extractTestCode(content),
+        resources: data.resources || []
       };
     }
   }

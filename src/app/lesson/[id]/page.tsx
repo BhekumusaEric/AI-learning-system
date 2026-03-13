@@ -24,6 +24,7 @@ export default async function LessonServerPage({ params }: { params: Promise<{ i
       initialCodeProp={pageData.initialCode}
       testCodeProp={pageData.testCode}
       isPractice={pageData.isPractice}
+      resources={pageData.resources || []}
       prevPage={adjacent.prev}
       nextPage={adjacent.next}
     />
