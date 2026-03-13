@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "3Blue1Brown: Neural Networks"
+    url: "https://www.3blue1brown.com/topics/neural-networks"
+  - title: "PyTorch Deep Learning Basics"
+    url: "https://pytorch.org/tutorials/beginner/basics/intro.html"
+---
+
 # Building Your First Neural Network
 
 ## Create a Model That Learns

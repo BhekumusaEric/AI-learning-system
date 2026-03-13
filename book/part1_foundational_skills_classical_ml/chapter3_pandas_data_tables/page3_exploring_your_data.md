@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "Pandas User Guide"
+    url: "https://pandas.pydata.org/docs/user_guide/index.html"
+  - title: "Kaggle: Pandas Micro-Course"
+    url: "https://www.kaggle.com/learn/pandas"
+---
+
 # Exploring Your Data
 
 ## Practice: DataFrame Exploration

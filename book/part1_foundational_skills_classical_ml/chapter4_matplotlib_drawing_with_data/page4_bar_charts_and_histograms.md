@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "Matplotlib Tutorials"
+    url: "https://matplotlib.org/stable/tutorials/index.html"
+  - title: "Python Graph Gallery"
+    url: "https://python-graph-gallery.com/"
+---
+
 # Bar Charts and Histograms
 
 ## Practice: Bar Chart

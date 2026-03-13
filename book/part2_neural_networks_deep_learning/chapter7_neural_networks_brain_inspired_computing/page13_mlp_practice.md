@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "3Blue1Brown: Neural Networks"
+    url: "https://www.3blue1brown.com/topics/neural-networks"
+  - title: "PyTorch Deep Learning Basics"
+    url: "https://pytorch.org/tutorials/beginner/basics/intro.html"
+---
+
 # MLP Practice
 
 ## Practice: Improve Digit Classification with an MLP

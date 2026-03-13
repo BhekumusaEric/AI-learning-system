@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "Scikit-Learn: Supervised Learning"
+    url: "https://scikit-learn.org/stable/supervised_learning.html"
+  - title: "StatQuest: Machine Learning Index"
+    url: "https://www.youtube.com/user/joshstarmer"
+---
+
 # Decision Tree Practice
 
 ## Build Your Own Decision Tree Classifier

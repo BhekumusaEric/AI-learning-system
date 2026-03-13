@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "Matplotlib Tutorials"
+    url: "https://matplotlib.org/stable/tutorials/index.html"
+  - title: "Python Graph Gallery"
+    url: "https://python-graph-gallery.com/"
+---
+
 # Scatter Plots
 
 ## Practice: Scatter Plot

@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "Python Official Documentation"
+    url: "https://docs.python.org/3/"
+  - title: "W3Schools: Python Tutorial"
+    url: "https://www.w3schools.com/python/"
+---
+
 # Functions: Reusable Code Blocks
 
 ## Functions in Python

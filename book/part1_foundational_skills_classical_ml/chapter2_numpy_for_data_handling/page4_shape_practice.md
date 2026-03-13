@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "NumPy Quickstart Guide"
+    url: "https://numpy.org/doc/stable/user/quickstart.html"
+  - title: "W3Schools: NumPy Tutorial"
+    url: "https://www.w3schools.com/python/numpy/default.asp"
+---
+
 # Shape Practice
 
 ## Practice: Array Shapes

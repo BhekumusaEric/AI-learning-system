@@ -9,7 +9,13 @@ Now that you understand different loss functions, let's practice calculating the
 You have a model that predicts house prices. Here are the actual prices and your model's predictions:
 
 | House | Actual Price | Predicted Price |
-|-------|--------------|-----------------|
+|---
+resources:
+  - title: "3Blue1Brown: Neural Networks"
+    url: "https://www.3blue1brown.com/topics/neural-networks"
+  - title: "PyTorch Deep Learning Basics"
+    url: "https://pytorch.org/tutorials/beginner/basics/intro.html"
+----|--------------|-----------------|
 | 1     | $300,000     | $280,000        |
 | 2     | $450,000     | $470,000        |
 | 3     | $200,000     | $220,000        |

@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "Scikit-Learn: Unsupervised Learning"
+    url: "https://scikit-learn.org/stable/unsupervised_learning.html"
+  - title: "StatQuest: PCA clearly explained"
+    url: "https://www.youtube.com/watch?v=FgakZw6K1QQ"
+---
+
 # K-Means Practice
 
 ## Practice: Clustering Customer Data

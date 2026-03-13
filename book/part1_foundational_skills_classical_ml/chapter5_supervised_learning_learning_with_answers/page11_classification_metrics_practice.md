@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "Scikit-Learn: Supervised Learning"
+    url: "https://scikit-learn.org/stable/supervised_learning.html"
+  - title: "StatQuest: Machine Learning Index"
+    url: "https://www.youtube.com/user/joshstarmer"
+---
+
 # Classification Metrics Practice
 
 ## Hands-On Practice with Accuracy, Precision, and Recall

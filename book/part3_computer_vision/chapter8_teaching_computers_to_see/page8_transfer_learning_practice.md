@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "Stanford CS231n: Convolutional Neural Networks"
+    url: "https://cs231n.github.io/"
+  - title: "PyTorch Computer Vision Tutorial"
+    url: "https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html"
+---
+
 # Transfer Learning Practice
 
 ## Practice: Fine-Tune a Pre-trained Model

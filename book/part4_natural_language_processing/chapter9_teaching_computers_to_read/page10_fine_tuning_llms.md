@@ -1,3 +1,11 @@
+---
+resources:
+  - title: "Hugging Face NLP Course"
+    url: "https://huggingface.co/learn/nlp-course/chapter1/1"
+  - title: "The Illustrated Transformer (Jay Alammar)"
+    url: "https://jalammar.github.io/illustrated-transformer/"
+---
+
 # Fine-Tuning LLMs
 
 ## Adapting Large Language Models to Specific Tasks
