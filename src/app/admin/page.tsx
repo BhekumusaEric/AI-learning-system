@@ -4,6 +4,8 @@ import { getSyllabus } from '@/lib/syllabus';
 import AdminTable, { AdminUser } from './AdminTable';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 // Server Action to read DB directly
 async function getDbData() {
   const { data, error } = await supabase.from('user_progress').select('*');

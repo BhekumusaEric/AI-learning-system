@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 // GET: Fetch user progress
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

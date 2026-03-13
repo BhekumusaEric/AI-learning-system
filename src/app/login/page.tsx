@@ -33,6 +33,9 @@ export default function LoginPage() {
     
     // 3. Redirect to the first lesson
     router.push('/lesson/page1_your_first_python_program');
+    
+    // Fallback: If routing fails or is delayed extensively, release spinning lock after 3s
+    setTimeout(() => { setIsLoading(false); }, 3000);
   };
 
   return (
