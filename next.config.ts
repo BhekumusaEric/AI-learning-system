@@ -1,11 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    outputFileTracingIncludes: {
-      '/lesson/[id]': ['./book/**/*'],
-      '/admin': ['./book/**/*'],
-    },
+  outputFileTracingIncludes: {
+    '/lesson/[id]': ['./book/**/*'],
+    '/admin': ['./book/**/*'],
   },
 };
 
