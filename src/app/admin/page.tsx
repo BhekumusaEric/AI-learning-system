@@ -1,8 +1,9 @@
 import React from 'react';
 import fs from 'fs';
 import path from 'path';
-import { Users, BookOpen, Clock, Activity } from 'lucide-react';
+import { Users, BookOpen, Activity } from 'lucide-react';
 import { getSyllabus } from '@/lib/syllabus';
+import AdminTable, { AdminUser } from './AdminTable';
 
 const dbPath = path.join(process.cwd(), 'data', 'db.json');
 
@@ -24,7 +25,7 @@ export default async function AdminDashboard() {
     });
   });
 
-  const users = Object.entries(db.users).map(([username, data]: [string, any]) => {
+  const users: AdminUser[] = Object.entries(db.users).map(([username, data]: [string, any]) => {
     const completedCount = Object.keys(data.completedPages || {}).filter(k => data.completedPages[k]).length;
     const progressPerc = totalPages > 0 ? Math.min(100, Math.round((completedCount / totalPages) * 100)) : 0;
     
@@ -77,63 +78,8 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {/* User Table */}
-        <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-background/50 border-b border-border-subtle">
-                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-secondary-text">Student Username</th>
-                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-secondary-text">Syllabus Progress</th>
-                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-secondary-text">Last Active</th>
-                  <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-secondary-text">Registered</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {users.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-secondary-text">
-                      No students have logged in yet.
-                    </td>
-                  </tr>
-                ) : (
-                  users.sort((a,b) => b.progressPerc - a.progressPerc).map((user) => (
-                    <tr key={user.username} className="hover:bg-background/30 transition-colors">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold capitalize">
-                            {user.username.charAt(0)}
-                          </div>
-                          <span className="font-semibold text-foreground">{user.username}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3 w-48">
-                          <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-accent relative" 
-                              style={{ width: `${user.progressPerc}%` }} 
-                            />
-                          </div>
-                          <span className="text-sm font-bold text-accent min-w-[3ch]">{user.progressPerc}%</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2 text-sm text-secondary-text">
-                          <Clock className="w-4 h-4" />
-                          {new Date(user.lastActive).toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-sm text-secondary-text">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* Interactive Interactive User Table */}
+        <AdminTable initialUsers={users} />
 
       </div>
     </div>

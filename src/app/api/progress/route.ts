@@ -59,25 +59,25 @@ export async function GET(request: Request) {
   return NextResponse.json(user);
 }
 
-// POST: Update user progress
+// POST: Update or Create user progress
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { username, completedPages } = body;
     
-    if (!username || !completedPages) {
-      return NextResponse.json({ error: 'Username and completedPages are required' }, { status: 400 });
+    if (!username) {
+      return NextResponse.json({ error: 'Username is required' }, { status: 400 });
     }
 
     const db = readDb();
     
     if (!db.users[username]) {
       db.users[username] = {
-        completedPages: completedPages,
+        completedPages: completedPages || {},
         createdAt: new Date().toISOString(),
         lastActive: new Date().toISOString()
       };
-    } else {
+    } else if (completedPages) {
       db.users[username].completedPages = {
         ...db.users[username].completedPages,
         ...completedPages
@@ -91,5 +91,31 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Failed to update progress:", error);
     return NextResponse.json({ error: 'Failed to parse request' }, { status: 500 });
+  }
+}
+
+// DELETE: Remove user from DB
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const username = searchParams.get('username');
+    
+    if (!username || username === 'guest') {
+      return NextResponse.json({ error: 'Valid username is required' }, { status: 400 });
+    }
+
+    const db = readDb();
+    
+    if (db.users[username]) {
+      delete db.users[username];
+      writeDb(db);
+      return NextResponse.json({ success: true, message: `User ${username} deleted.` });
+    } else {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+  } catch (error) {
+    console.error("Failed to delete user:", error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
