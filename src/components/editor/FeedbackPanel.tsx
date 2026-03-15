@@ -106,6 +106,13 @@ export default function FeedbackPanel({ results, isRunning, onNext }: FeedbackPa
                 )}
               </div>
             )}
+            
+            {/* Show output for successful tests (like Output Console stdout) */}
+            {res.passed && res.error && (
+              <div className="mt-3 text-sm font-mono text-gray-300 bg-black/40 p-3 rounded overflow-x-auto whitespace-pre border border-[#333]">
+                {res.error}
+              </div>
+            )}
           </div>
         ))}
       </div>

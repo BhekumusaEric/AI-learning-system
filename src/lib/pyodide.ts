@@ -35,14 +35,40 @@ export async function getPyodide(): Promise<void> {
   }
 }
 
-export async function runPythonCode(code: string, tests: string = ''): Promise<ExecutionResult> {
+export async function runPythonCode(code: string, tests: string = '', timeoutMs: number = 10000): Promise<ExecutionResult> {
   await getPyodide();
   
   return new Promise((resolve, reject) => {
     if (!pyodideWorker) return reject(new Error("Worker not initialized"));
     
     const id = msgId++;
-    resolvers[id] = { resolve, reject };
+    
+    const timeoutId = setTimeout(() => {
+      if (resolvers[id]) {
+        // Terminate the locked worker
+        pyodideWorker?.terminate();
+        pyodideWorker = null; // Forces re-initialization on next run
+        
+        delete resolvers[id];
+        resolve({
+          stdout: "",
+          stderr: "",
+          result: null,
+          error: "TimeoutError: Code execution took too long (> 10s).\\nDid you write an infinite loop?"
+        });
+      }
+    }, timeoutMs);
+
+    resolvers[id] = { 
+      resolve: (val) => {
+        clearTimeout(timeoutId);
+        resolve(val);
+      }, 
+      reject: (err) => {
+        clearTimeout(timeoutId);
+        reject(err);
+      }
+    };
     
     pyodideWorker.postMessage({ id, code, tests });
   });
