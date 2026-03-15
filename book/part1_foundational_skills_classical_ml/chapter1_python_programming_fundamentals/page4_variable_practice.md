@@ -18,16 +18,36 @@ Create variables of different data types: a string, an integer, a float, and a b
 # Create variables of different types
 
 # 1. Create a string variable called 'my_name' with your name
-my_name = 
+my_name = "Student"
 
 # 2. Create an integer variable called 'my_age' with your age
-my_age = 
+my_age = 25
 
 # 3. Create a float variable called 'pi_approx' with approximately 3.14
-pi_approx = 
+pi_approx = 3.14
 
 # 4. Create a boolean variable called 'is_fun' with True
-is_fun = 
+is_fun = True
+
+# Print the variables to verify
+print(f"Name: {my_name}")
+print(f"Age: {my_age}")
+print(f"Pi approximation: {pi_approx}")
+print(f"Is fun: {is_fun}")
+
+# Don't change the code below - it's for testing
+
+def check_variables():
+    try:
+        return (
+            isinstance(my_name, str) and len(my_name) > 0 and
+            isinstance(my_age, int) and my_age > 0 and
+            isinstance(pi_approx, float) and abs(pi_approx - 3.14) < 0.01 and
+            isinstance(is_fun, bool) and is_fun == True
+        )
+    except Exception:
+        return False
+``` 
 
 # Don't change the code below - it's for testing
 def check_variables():

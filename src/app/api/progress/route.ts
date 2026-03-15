@@ -5,14 +5,14 @@ export const dynamic = 'force-dynamic';
 
 // GET: Fetch user progress
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const username = searchParams.get('username') || 'guest';
-  
-  if (!username) {
-    return NextResponse.json({ error: 'Username is required' }, { status: 400 });
-  }
-
   try {
+    const { searchParams } = new URL(request.url);
+    const username = searchParams.get('username') || 'guest';
+
+    if (!username) {
+      return NextResponse.json({ error: 'Username is required' }, { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from('user_progress')
       .select('*')
@@ -21,33 +21,78 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
-    if (data) {
-      return NextResponse.json({
-        username: data.username,
-        completedPages: data.completed_pages || {},
-        createdAt: data.created_at,
-        lastActive: data.last_active
-      });
-    } else {
-        return NextResponse.json({
-            completedPages: {},
-            createdAt: new Date().toISOString(),
-            lastActive: new Date().toISOString()
-        });
-    }
+    // Transform to mobile app format
+    const progress = data ? Object.entries(data.completed_pages || {}).map(([contentId, progressData]: [string, any]) => ({
+      contentId,
+      status: progressData.status || 'completed',
+      progressPercentage: progressData.progressPercentage || 100,
+      timeSpent: progressData.timeSpent || 0,
+      completedAt: progressData.completedAt,
+      lastAccessedAt: progressData.lastAccessedAt,
+    })) : [];
+
+    return NextResponse.json(progress);
   } catch (error) {
     console.error("Failed to fetch progress:", error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// POST: Update or Create user progress
+// POST: Update user progress
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { username, completedPages } = body;
-    
-    if (!username) {
+    const { contentId, progressPercentage, timeSpent, status } = body;
+
+    // For demo purposes, use a default username
+    const username = 'mobile_user';
+
+    if (!contentId) {
+      return NextResponse.json({ error: 'Content ID is required' }, { status: 400 });
+    }
+
+    // Get existing progress
+    const { data: existingData } = await supabase
+      .from('user_progress')
+      .select('*')
+      .eq('username', username)
+      .maybeSingle();
+
+    const completedPages = existingData?.completed_pages || {};
+
+    // Update progress for this content
+    completedPages[contentId] = {
+      status: status || 'in_progress',
+      progressPercentage: progressPercentage || 0,
+      timeSpent: timeSpent || 0,
+      completedAt: status === 'completed' ? new Date().toISOString() : null,
+      lastAccessedAt: new Date().toISOString(),
+    };
+
+    // Upsert progress
+    const { error } = await supabase
+      .from('user_progress')
+      .upsert({
+        username,
+        completed_pages: completedPages,
+        last_active: new Date().toISOString(),
+      });
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      contentId,
+      status: completedPages[contentId].status,
+      progressPercentage: completedPages[contentId].progressPercentage,
+      timeSpent: completedPages[contentId].timeSpent,
+      completedAt: completedPages[contentId].completedAt,
+      lastAccessedAt: completedPages[contentId].lastAccessedAt,
+    });
+  } catch (error) {
+    console.error("Failed to update progress:", error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
       return NextResponse.json({ error: 'Username is required' }, { status: 400 });
     }
 

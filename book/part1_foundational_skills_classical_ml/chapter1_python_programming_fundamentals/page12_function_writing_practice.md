@@ -24,7 +24,7 @@ def celsius_to_fahrenheit(celsius):
     # Formula: F = C * 9/5 + 32
     # Return the Fahrenheit value
     
-    return 0  # Replace this with your calculation
+    return celsius * 9/5 + 32  # Replace this with your calculation
 
 # Test your function
 fahrenheit = celsius_to_fahrenheit(20)
