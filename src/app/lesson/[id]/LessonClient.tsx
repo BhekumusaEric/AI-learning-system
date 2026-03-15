@@ -93,17 +93,20 @@ export default function LessonPageClient({
         else generatedHint = "Look at the error message for clues about what went wrong.";
       }
 
-      setResults([{
-        id: 0,
-        name: isAssertionError ? "Hidden Test Failed" : "Code Syntax/Runtime Error",
-        passed: false,
-        errorType: errorType,
-        lineNumber: lineNumber,
-        hint: generatedHint,
-        error: isAssertionError 
-          ? error.split('AssertionError:')[1]?.split('\n')[0]?.trim() || "Assertion failed"
-          : error.split('\n').slice(-4).join('\n') // Show last few lines of traceback
-      }]);
+      setResults([
+        { id: 0, name: "Output Console", passed: true, error: stdout || "Program exited with error before generating output" },
+        {
+          id: 1,
+          name: isAssertionError ? "Hidden Test Failed" : "Code Syntax/Runtime Error",
+          passed: false,
+          errorType: errorType,
+          lineNumber: lineNumber,
+          hint: generatedHint,
+          error: isAssertionError 
+            ? error.split('AssertionError:')[1]?.split('\n')[0]?.trim() || "Assertion failed"
+            : error.split('\n').slice(-4).join('\n') // Show last few lines of traceback
+        }
+      ]);
       return;
     }
     
