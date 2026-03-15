@@ -36,6 +36,19 @@ self.onmessage = async (event) => {
     // Optionally run tests
     let testResult = null;
     if (tests) {
+      // Expose the javascript captured stdout into Python globals
+      self.pyodide.globals.set("__captured_stdout__", stdout);
+      
+      // Inject a shim for sys.stdout.getvalue() so existing testing scripts in .md files 
+      // can seamlessly read the intercepted terminal output
+      await self.pyodide.runPythonAsync(`
+import sys
+class MockStdout:
+    def getvalue(self):
+        return __captured_stdout__
+sys.stdout = MockStdout()
+      `);
+      
       testResult = await self.pyodide.runPythonAsync(tests);
     }
     

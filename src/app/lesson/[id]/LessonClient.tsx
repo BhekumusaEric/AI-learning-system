@@ -55,10 +55,7 @@ export default function LessonPageClient({
     setIsRunning(true);
     setResults(null);
     
-    // Concatenate the user's code and the hidden tests, if they exist.
-    const fullCodeToRun = testCodeProp ? `${code}\n\n${testCodeProp}` : code;
-    
-    const { error, stdout, stderr } = await runPythonCode(fullCodeToRun, "");
+    const { error, stdout, stderr } = await runPythonCode(code, testCodeProp || "");
     
     setIsRunning(false);
     
