@@ -26,8 +26,8 @@ self.onmessage = async (event) => {
   let stdout = '';
   let stderr = '';
   
-  self.pyodide.setStdout({ batched: (str) => { stdout += str + '\\n'; } });
-  self.pyodide.setStderr({ batched: (str) => { stderr += str + '\\n'; } });
+  self.pyodide.setStdout({ batched: (str) => { stdout += str + '\n'; } });
+  self.pyodide.setStderr({ batched: (str) => { stderr += str + '\n'; } });
 
   try {
     // Run user code
