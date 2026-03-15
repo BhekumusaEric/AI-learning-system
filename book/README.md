@@ -102,6 +102,51 @@ book/
         ├── page8_prompting_practice.md (Practice)
         ├── page9_transformers_technology_behind_chatgpt.md (Theory)
         └── page10_fine_tuning_llms.md (Practice)
+├── part5_projects_and_assessment/
+│   ├── chapter1_project1_data_analysis_dashboard/
+│   │   ├── page1_project_overview.md (Read)
+│   │   ├── page2_data_loading_and_cleaning.md (Walkthrough)
+│   │   ├── page3_exploratory_data_analysis.md (Walkthrough)
+│   │   ├── page4_building_visualizations.md (Walkthrough)
+│   │   └── page5_creating_an_interactive_dashboard.md (Walkthrough)
+│   ├── chapter2_project2_predictive_model_for_house_prices/
+│   │   ├── page1_project_overview.md (Read)
+│   │   ├── page2_data_preparation_and_feature_engineering.md (Walkthrough)
+│   │   ├── page3_training_regression_models.md (Walkthrough)
+│   │   ├── page4_model_evaluation_and_comparison.md (Walkthrough)
+│   │   └── page5_deploying_the_model.md (Walkthrough)
+│   ├── chapter3_project3_image_classification_cnn/
+│   │   ├── page1_project_overview.md (Read)
+│   │   ├── page2_data_loading_and_preprocessing.md (Walkthrough)
+│   │   ├── page3_building_a_cnn_model.md (Walkthrough)
+│   │   ├── page4_training_and_validation.md (Walkthrough)
+│   │   └── page5_model_evaluation_and_improvements.md (Walkthrough)
+│   ├── chapter4_project4_sentiment_analysis_nlp/
+│   │   ├── page1_project_overview.md (Read)
+│   │   ├── page2_text_preprocessing_and_tokenization.md (Walkthrough)
+│   │   ├── page3_building_a_classification_model.md (Walkthrough)
+│   │   ├── page4_training_and_evaluation.md (Walkthrough)
+│   │   └── page5_deploying_the_sentiment_analyzer.md (Walkthrough)
+│   ├── chapter5_project5_clustering_customer_segments/
+│   │   ├── page1_project_overview.md (Read)
+│   │   ├── page2_data_exploration_and_preprocessing.md (Walkthrough)
+│   │   ├── page3_applying_clustering_algorithms.md (Walkthrough)
+│   │   ├── page4_evaluating_clusters.md (Walkthrough)
+│   │   └── page5_visualizing_and_interpreting_results.md (Walkthrough)
+│   ├── chapter6_project6_building_a_neural_network_from_scratch/
+│   │   ├── page1_project_overview.md (Read)
+│   │   ├── page2_implementing_forward_pass.md (Walkthrough)
+│   │   ├── page3_implementing_backpropagation.md (Walkthrough)
+│   │   ├── page4_training_the_network.md (Walkthrough)
+│   │   └── page5_testing_and_evaluation.md (Walkthrough)
+│   └── chapter7_final_exam_assessment/
+│       ├── page1_exam_instructions.md (Read)
+│       ├── page2_python_fundamentals_questions.md (Exam)
+│       ├── page3_data_handling_and_ml_questions.md (Exam)
+│       ├── page4_neural_networks_questions.md (Exam)
+│       ├── page5_computer_vision_questions.md (Exam)
+│       ├── page6_nlp_questions.md (Exam)
+│       └── page7_project_based_questions.md (Exam)
 ```
 
 ## Content Format
