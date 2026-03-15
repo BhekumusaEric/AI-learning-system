@@ -43,13 +43,22 @@ self.onmessage = async (event) => {
       // can seamlessly read the intercepted terminal output
       await self.pyodide.runPythonAsync(`
 import sys
-class MockStdout:
-    def getvalue(self):
-        return __captured_stdout__
-sys.stdout = MockStdout()
+import io
+
+if not hasattr(sys, '__original_stdout__'):
+    sys.__original_stdout__ = sys.stdout
+
+sys.stdout = io.StringIO(__captured_stdout__)
       `);
       
-      testResult = await self.pyodide.runPythonAsync(tests);
+      try {
+        testResult = await self.pyodide.runPythonAsync(tests);
+      } finally {
+        await self.pyodide.runPythonAsync(`
+import sys
+sys.stdout = sys.__original_stdout__
+        `);
+      }
     }
     
     self.postMessage({ id, success: true, result: testResult, stdout, stderr });
