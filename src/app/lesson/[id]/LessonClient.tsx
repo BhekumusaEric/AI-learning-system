@@ -230,12 +230,7 @@ export default function LessonPageClient({
         isRunning={isRunning} 
       />
     </>
-  ) : (
-     <FeedbackPanel 
-        results={[{ id: 99, name: "Read-only page", passed: true, error: "Keep reading the theory section on the left before advancing." }]} 
-        isRunning={false} 
-      />
-  );
+  ) : null;
 
   return <TwoPanelLayout leftPanel={leftPanel} rightPanel={rightPanel} />;
 }
