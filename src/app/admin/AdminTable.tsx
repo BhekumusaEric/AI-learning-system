@@ -14,7 +14,7 @@ export interface AdminUser {
   examPassed: boolean | null;
 }
 
-function CredentialModal({ cred, onClose, isReset = false }: { cred: { login_id: string; full_name: string; plainPassword: string }; onClose: () => void; isReset?: boolean }) {
+function CredentialModal({ cred, onClose, isReset = false }: { cred: { login_id: string; full_name: string; plainPassword: string; emailSent?: boolean }; onClose: () => void; isReset?: boolean }) {
   const [copied, setCopied] = useState(false);
 
   const copyAll = () => {
@@ -50,6 +50,9 @@ function CredentialModal({ cred, onClose, isReset = false }: { cred: { login_id:
           </div>
         </div>
 
+        {cred.emailSent && (
+          <p className="text-accent text-xs text-center mb-3">✓ Credentials emailed to student</p>
+        )}
         <button
           onClick={copyAll}
           className="w-full flex items-center justify-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black py-2 rounded-lg text-sm font-semibold transition-all"
@@ -70,7 +73,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
   const [isAdding, setIsAdding] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
-  const [newCred, setNewCred] = useState<{ login_id: string; full_name: string; plainPassword: string; isReset?: boolean } | null>(null);
+  const [newCred, setNewCred] = useState<{ login_id: string; full_name: string; plainPassword: string; isReset?: boolean; emailSent?: boolean } | null>(null);
 
   const fetchStudents = useCallback(async () => {
     setIsLoading(true);
@@ -96,7 +99,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
       });
       const data = await res.json();
       if (res.ok) {
-        setNewCred({ login_id: data.login_id, full_name: data.full_name, plainPassword: data.plainPassword });
+        setNewCred({ login_id: data.login_id, full_name: data.full_name, plainPassword: data.plainPassword, emailSent: data.emailSent });
         setFullName('');
         setEmail('');
         fetchStudents();
@@ -116,7 +119,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
         body: JSON.stringify({ login_id: user.login_id, platform }),
       });
       const data = await res.json();
-      if (res.ok) setNewCred({ login_id: user.login_id, full_name: user.full_name, plainPassword: data.plainPassword, isReset: true });
+      if (res.ok) setNewCred({ login_id: user.login_id, full_name: user.full_name, plainPassword: data.plainPassword, isReset: true, emailSent: data.emailSent });
     } finally {
       setResettingId(null);
     }
