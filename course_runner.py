@@ -1,4 +1,4 @@
-"""Course runner for the IOAI syllabus.
+"""Course runner for the SAAIO syllabus.
 
 This script discovers practice lessons under `book/` and can run their hidden tests.
 
@@ -110,7 +110,7 @@ def _run_lesson(path: Path, use_solution: bool = True) -> Tuple[bool, str]:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="Run IOAI syllabus practice tests.")
+    parser = argparse.ArgumentParser(description="Run SAAIO syllabus practice tests.")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--list", action="store_true", help="List available practice lessons")
     group.add_argument("--run", type=str, help="Run a single lesson by path or index")

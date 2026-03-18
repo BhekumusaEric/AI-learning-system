@@ -32,7 +32,7 @@ export default function Header({ syllabus = [] }: HeaderProps) {
           <BookOpen className="w-6 h-6 text-accent" />
         </div>
         <h1 className="text-xl font-bold text-foreground tracking-tight">
-          IOAI Training Grounds
+          SAAIO Training Grounds
         </h1>
       </div>
 

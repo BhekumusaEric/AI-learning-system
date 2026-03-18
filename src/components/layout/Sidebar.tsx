@@ -14,42 +14,39 @@ interface SidebarProps {
 export default function Sidebar({ syllabus }: SidebarProps) {
   const pathname = usePathname();
   const { completedPages } = useProgress();
-  const [expandedParts, setExpandedParts] = useState<Record<string, boolean>>({});
-  const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Sort parts so they display in proper numeric order
   const sortedSyllabus = [...syllabus].sort((a, b) => a.order - b.order);
 
-  // Auto-expand the active part and chapter
-  useEffect(() => {
-    if (!pathname) return;
-    
-    let newExpandedParts = { ...expandedParts };
-    let newExpandedChapters = { ...expandedChapters };
-    let changed = false;
-
+  // Initialise expanded state based on active path
+  const getInitialExpanded = () => {
+    const parts: Record<string, boolean> = {};
+    const chapters: Record<string, boolean> = {};
     syllabus.forEach(part => {
-      const hasActivePage = part.chapters.some(c => c.pages.some(p => "/lesson/" + p.id === pathname));
-      if (hasActivePage && !newExpandedParts[part.id]) {
-        newExpandedParts[part.id] = true;
-        changed = true;
-      }
-      
       part.chapters.forEach(chapter => {
-        const isChapterActive = chapter.pages.some(p => "/lesson/" + p.id === pathname);
-        if (isChapterActive && !newExpandedChapters[chapter.id]) {
-          newExpandedChapters[chapter.id] = true;
-          changed = true;
+        const isActive = chapter.pages.some(p => "/lesson/" + p.id === pathname);
+        if (isActive) {
+          parts[part.id] = true;
+          chapters[chapter.id] = true;
         }
       });
     });
+    return { parts, chapters };
+  };
 
-    if (changed) {
-      setExpandedParts(newExpandedParts);
-      setExpandedChapters(newExpandedChapters);
-    }
-  }, [pathname, syllabus, expandedParts, expandedChapters]);
+  const initial = getInitialExpanded();
+  const [expandedParts, setExpandedParts] = useState<Record<string, boolean>>(initial.parts);
+  const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>(initial.chapters);
+
+  // Re-expand when navigating to a new lesson
+  useEffect(() => {
+    if (!pathname) return;
+    const { parts, chapters } = getInitialExpanded();
+    setExpandedParts(prev => ({ ...prev, ...parts }));
+    setExpandedChapters(prev => ({ ...prev, ...chapters }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const togglePart = (id: string) => setExpandedParts(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleChapter = (id: string) => setExpandedChapters(prev => ({ ...prev, [id]: !prev[id] }));

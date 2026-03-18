@@ -6,7 +6,7 @@ const http = require('http');
 const BASE_URL = 'http://localhost:3000';
 
 async function testAPI() {
-  console.log('🧪 Testing IOAI Training Grounds Backend API...\n');
+  console.log('🧪 Testing SAAIO Training Grounds Backend API...\n');
 
   // Test 1: Auth Login
   console.log('1. Testing Auth Login...');

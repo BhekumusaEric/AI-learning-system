@@ -49,7 +49,7 @@ export default function LoginPage() {
           <div className="bg-accent/20 p-4 rounded-2xl mb-4">
             <BookOpen className="w-10 h-10 text-accent" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight mb-2">IOAI Training Grounds</h1>
+          <h1 className="text-2xl font-bold tracking-tight mb-2">SAAIO Training Grounds</h1>
           <p className="text-secondary-text text-center">Enter your student ID or username to pick up where you left off.</p>
         </div>
 

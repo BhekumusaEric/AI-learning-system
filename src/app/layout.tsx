@@ -10,7 +10,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IOAI Training Grounds",
+  title: "SAAIO Training Grounds",
   description: "Learn Artificial Intelligence hands-on.",
 };
 

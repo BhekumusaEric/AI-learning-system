@@ -93,54 +93,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-      return NextResponse.json({ error: 'Username is required' }, { status: 400 });
-    }
 
-    const { data: existingUser } = await supabase
-      .from('user_progress')
-      .select('*')
-      .eq('username', username)
-      .maybeSingle();
-
-    let newCompletedPages = existingUser?.completed_pages || {};
-    
-    if (completedPages) {
-        newCompletedPages = { ...newCompletedPages, ...completedPages };
-    }
-
-    const { data, error } = await supabase
-      .from('user_progress')
-      .upsert({
-        username,
-        completed_pages: newCompletedPages,
-        last_active: new Date().toISOString()
-      }, { onConflict: 'username' })
-      .select()
-      .maybeSingle();
-
-    if (error) throw error;
-    
-    return NextResponse.json({ 
-        success: true, 
-        user: {
-            username: data?.username || username,
-            completedPages: data?.completed_pages || newCompletedPages
-        } 
-    });
-  } catch (error) {
-    console.error("Failed to update progress:", error);
-    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
-  }
-}
-
-// DELETE: Remove user from DB
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const username = searchParams.get('username');
-    
-    if (!username || username === 'guest') {
-      return NextResponse.json({ error: 'Valid username is required' }, { status: 400 });
+
+    if (!username) {
+      return NextResponse.json({ error: 'Username is required' }, { status: 400 });
     }
 
     const { error } = await supabase

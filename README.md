@@ -1,7 +1,7 @@
-IOAI Training Grounds - Complete Product Requirement Document (PRD)
+SAAIO Training Grounds - Complete Product Requirement Document (PRD)
 Executive Summary
 
-Product Name: IOAI Training Grounds
+Product Name: SAAIO Training Grounds
 Target Audience: High school students (ages 14-18) preparing for the International Olympiad in Artificial Intelligence
 Core Concept: A digital textbook-style platform where each chapter follows a consistent "Read → Practice" pattern. Students learn concepts through simplified explanations, then immediately apply them in an integrated development environment (IDE) with hidden unit tests that provide instant, helpful feedback.
 Aesthetic: Dark mode by default (black background, white text) with a clean, monospaced font for that authentic coding feel. The interface should feel like opening a well-organized technical textbook that comes alive with code.
@@ -41,7 +41,7 @@ Section 1: Visual Design & User Experience (The "Look and Feel")
 The platform is organized like a textbook:
 text
 
-IOAI TRAINING GROUNDS
+SAAIO TRAINING GROUNDS
 ├── Part 1: Foundational Skills & Classical ML
 │   ├── Chapter 1: Python Programming Fundamentals
 │   │   ├── Page 1: Variables and Data Types (Read)
@@ -236,14 +236,14 @@ Make sure you're adding each number, not just counting them.
 
 Section 3: Complete Syllabus Breakdown (Simplified for Teenagers)
 
-Below is the entire IOAI 2026 syllabus rewritten as simplified "Chapters" and "Pages" with age-appropriate explanations.
+Below is the entire SAAIO 2026 syllabus rewritten as simplified "Chapters" and "Pages" with age-appropriate explanations.
 PART 1: FOUNDATIONAL SKILLS & CLASSICAL MACHINE LEARNING
 
 Duration: ~40 pages
 Chapter 1: Python Programming Fundamentals (Practice Focus)
 Page	Title	Type	Concept Simplified
 1.1	"Your First Python Program"	Read	Python is a language computers understand. The print() function shows output.
-1.2	"Hello, World!" Challenge	Practice	Write code that prints "Hello, IOAI!"
+1.2	"Hello, World!" Challenge	Practice	Write code that prints "Hello, SAAIO!"
 1.3	"Storing Things: Variables"	Read	Variables are labeled boxes that hold data. name = "Alex" stores text.
 1.4	"Variable Practice"	Practice	Create variables of different types (numbers, text, true/false)
 1.5	"Lists: Shopping for Data"	Read	Lists store multiple items in order: fruits = ["apple", "banana", "cherry"]
@@ -710,9 +710,9 @@ The platform is successful when:
 
     Students return regularly - 50% weekly active users
 
-    Students can solve IOAI problems - Practice problems align with competition difficulty
+    Students can solve SAAIO problems - Practice problems align with competition difficulty
 
-This document provides everything needed for an AI agent or development team to build the IOAI Training Grounds platform. The key differentiators are:
+This document provides everything needed for an AI agent or development team to build the SAAIO Training Grounds platform. The key differentiators are:
 
     Book-like structure with consistent Read → Practice pattern
 
@@ -722,6 +722,6 @@ This document provides everything needed for an AI agent or development team to 
 
     Simplified explanations tailored for teenagers
 
-    Complete syllabus coverage of IOAI 2026
+    Complete syllabus coverage of SAAIO 2026
 
 The platform should feel like opening a well-designed textbook that comes alive with interactive code examples and instant feedback.
