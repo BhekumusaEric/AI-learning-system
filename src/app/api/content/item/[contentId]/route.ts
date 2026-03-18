@@ -146,10 +146,9 @@ print("Max:", np.max(array_1d))
 };
 
 // GET: Fetch a specific content item
-export async function GET(request: Request, { params }: { params: { contentId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ contentId: string }> }) {
   try {
-    const { searchParams } = new URL(request.url);
-    const contentId = searchParams.get('contentId');
+    const { contentId } = await params;
 
     if (!contentId) {
       return NextResponse.json(

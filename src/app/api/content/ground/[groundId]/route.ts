@@ -146,10 +146,9 @@ print("Max:", np.max(array_1d))
 };
 
 // GET: Fetch content for a specific ground
-export async function GET(request: Request, { params }: { params: { groundId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ groundId: string }> }) {
   try {
-    const { searchParams } = new URL(request.url);
-    const groundId = searchParams.get('groundId');
+    const { groundId } = await params;
 
     if (!groundId) {
       return NextResponse.json(
