@@ -2,31 +2,20 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(req: NextRequest) {
-  const basicAuth = req.headers.get('authorization');
   const url = req.nextUrl;
 
   if (url.pathname.startsWith('/admin')) {
-    if (basicAuth) {
-      const authValue = basicAuth.split(' ')[1];
-      const [user, pwd] = atob(authValue).split(':');
+    // Allow the login page through
+    if (url.pathname === '/admin/login') return NextResponse.next();
 
-      const validUser = process.env.ADMIN_USERNAME || 'admin';
-      const validPass = process.env.ADMIN_PASSWORD || 'supersecret';
-
-      if (user === validUser && pwd === validPass) {
-        return NextResponse.next();
-      }
+    // Check for admin session cookie
+    const session = req.cookies.get('admin_session')?.value;
+    if (session !== (process.env.ADMIN_PASSWORD || 'supersecret')) {
+      return NextResponse.redirect(new URL('/admin/login', req.url));
     }
-    
-    return new NextResponse('Authentication Required', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="Secure Area"',
-      },
-    });
   }
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin', '/admin/:path*'],
 };
