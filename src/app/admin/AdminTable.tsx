@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw } from 'lucide-react';
 
 export interface AdminUser {
   login_id: string;
@@ -14,7 +14,7 @@ export interface AdminUser {
   examPassed: boolean | null;
 }
 
-function CredentialModal({ cred, onClose }: { cred: { login_id: string; full_name: string; plainPassword: string }; onClose: () => void }) {
+function CredentialModal({ cred, onClose, isReset = false }: { cred: { login_id: string; full_name: string; plainPassword: string }; onClose: () => void; isReset?: boolean }) {
   const [copied, setCopied] = useState(false);
 
   const copyAll = () => {
@@ -29,13 +29,14 @@ function CredentialModal({ cred, onClose }: { cred: { login_id: string; full_nam
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <KeyRound className="w-5 h-5 text-accent" />
-            <h3 className="font-bold text-foreground">Student Credentials</h3>
+            <h3 className="font-bold text-foreground">{isReset ? 'New Password' : 'Student Credentials'}</h3>
           </div>
           <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-5 h-5" /></button>
         </div>
 
         <p className="text-secondary-text text-sm mb-4">
-          Share these credentials with <span className="text-foreground font-semibold">{cred.full_name}</span>. The password cannot be retrieved again.
+          {isReset ? 'Password has been reset for' : 'Share these credentials with'}{' '}
+          <span className="text-foreground font-semibold">{cred.full_name}</span>. The password cannot be retrieved again.
         </p>
 
         <div className="bg-background rounded-xl p-4 font-mono text-sm space-y-2 border border-border-subtle mb-4">
@@ -68,7 +69,8 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
   const [email, setEmail] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [newCred, setNewCred] = useState<{ login_id: string; full_name: string; plainPassword: string } | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
+  const [newCred, setNewCred] = useState<{ login_id: string; full_name: string; plainPassword: string; isReset?: boolean } | null>(null);
 
   const fetchStudents = useCallback(async () => {
     setIsLoading(true);
@@ -104,6 +106,22 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
     }
   };
 
+  const handleResetPassword = async (user: AdminUser) => {
+    if (!confirm(`Reset password for ${user.full_name} (${user.login_id})?`)) return;
+    setResettingId(user.login_id);
+    try {
+      const res = await fetch('/api/admin/students', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login_id: user.login_id, platform }),
+      });
+      const data = await res.json();
+      if (res.ok) setNewCred({ login_id: user.login_id, full_name: user.full_name, plainPassword: data.plainPassword, isReset: true });
+    } finally {
+      setResettingId(null);
+    }
+  };
+
   const handleDelete = async (login_id: string) => {
     if (!confirm(`Permanently delete student ${login_id}?`)) return;
     setDeletingId(login_id);
@@ -119,7 +137,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
 
   return (
     <>
-      {newCred && <CredentialModal cred={newCred} onClose={() => setNewCred(null)} />}
+      {newCred && <CredentialModal cred={newCred} isReset={!!newCred.isReset} onClose={() => setNewCred(null)} />}
 
       <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
         {/* Platform Tabs */}
@@ -221,13 +239,24 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
                         ) : '—'}
                       </td>
                       <td className="py-3 px-5 text-right">
-                        <button
-                          onClick={() => handleDelete(user.login_id)}
-                          disabled={deletingId === user.login_id}
-                          className="text-secondary-text hover:text-error transition-colors p-1.5 rounded-lg hover:bg-error/10 disabled:opacity-50"
-                        >
-                          {deletingId === user.login_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleResetPassword(user)}
+                            disabled={resettingId === user.login_id}
+                            title="Reset password"
+                            className="text-secondary-text hover:text-warning transition-colors p-1.5 rounded-lg hover:bg-warning/10 disabled:opacity-50"
+                          >
+                            {resettingId === user.login_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user.login_id)}
+                            disabled={deletingId === user.login_id}
+                            title="Delete student"
+                            className="text-secondary-text hover:text-error transition-colors p-1.5 rounded-lg hover:bg-error/10 disabled:opacity-50"
+                          >
+                            {deletingId === user.login_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

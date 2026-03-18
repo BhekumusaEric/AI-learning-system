@@ -84,6 +84,21 @@ export async function POST(request: Request) {
   return NextResponse.json({ ...data, plainPassword });
 }
 
+// PATCH: reset a student's password
+export async function PATCH(request: Request) {
+  const { login_id, platform } = await request.json();
+  if (!login_id || !platform) return NextResponse.json({ error: 'login_id and platform required' }, { status: 400 });
+
+  const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
+  const plainPassword = generatePassword();
+  const password_hash = hashPassword(plainPassword);
+
+  const { error } = await supabase.from(table).update({ password_hash }).eq('login_id', login_id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ plainPassword });
+}
+
 // DELETE: remove a student
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
