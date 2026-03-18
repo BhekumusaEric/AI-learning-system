@@ -68,6 +68,8 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
   const [platform, setPlatform] = useState<'saaio' | 'dip'>('saaio');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -77,9 +79,17 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
 
   const fetchStudents = useCallback(async () => {
     setIsLoading(true);
+    setFetchError(null);
     try {
       const res = await fetch(`/api/admin/students?platform=${platform}`);
-      if (res.ok) setUsers(await res.json());
+      const data = await res.json();
+      if (res.ok) {
+        setUsers(Array.isArray(data) ? data : []);
+      } else {
+        setFetchError(data.error || `Error ${res.status}`);
+      }
+    } catch (e: any) {
+      setFetchError(e.message || 'Network error');
     } finally {
       setIsLoading(false);
     }
@@ -91,6 +101,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
     e.preventDefault();
     if (!fullName.trim()) return;
     setIsAdding(true);
+    setAddError(null);
     try {
       const res = await fetch('/api/admin/students', {
         method: 'POST',
@@ -103,7 +114,11 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
         setFullName('');
         setEmail('');
         fetchStudents();
+      } else {
+        setAddError(data.error || `Error ${res.status}`);
       }
+    } catch (e: any) {
+      setAddError(e.message || 'Network error');
     } finally {
       setIsAdding(false);
     }
@@ -157,7 +172,9 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
         </div>
 
         {/* Register Form */}
-        <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col sm:flex-row gap-3 items-end">
+        <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
+          {addError && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2">{addError}</p>}
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
           <div className="flex-1">
             <label className="block text-xs text-secondary-text mb-1">Full Name *</label>
             <input
@@ -179,14 +196,15 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
               className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
             />
           </div>
-          <button
-            type="submit"
-            disabled={isAdding || !fullName.trim()}
-            className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-          >
-            {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-            Register Student
-          </button>
+            <button
+              type="submit"
+              disabled={isAdding || !fullName.trim()}
+              className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+              Register Student
+            </button>
+          </div>
         </form>
 
         {/* Table */}
@@ -194,6 +212,12 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
           {isLoading ? (
             <div className="flex items-center justify-center py-12 text-secondary-text gap-2">
               <Loader2 className="w-5 h-5 animate-spin" /> Loading students...
+            </div>
+          ) : fetchError ? (
+            <div className="p-6 text-center">
+              <p className="text-error text-sm mb-2">Failed to load students</p>
+              <p className="text-secondary-text text-xs font-mono mb-4">{fetchError}</p>
+              <p className="text-secondary-text text-xs">The database tables may not exist yet. Run the SQL in <code className="text-accent">scripts/setup-student-auth.sql</code> in your Supabase SQL editor.</p>
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
