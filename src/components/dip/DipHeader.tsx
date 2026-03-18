@@ -22,7 +22,7 @@ export default function DipHeader({ syllabus }: { syllabus: PartData[] }) {
         </div>
         <div>
           <h1 className="text-lg font-bold text-foreground tracking-tight leading-tight">Digital Inclusion Program</h1>
-          <p className="text-[11px] text-secondary-text leading-tight">Foundational AI & ML — 40 hrs</p>
+          <p className="text-[11px] text-secondary-text leading-tight">Powered by IDC SEF · 40 hrs</p>
         </div>
       </div>
 

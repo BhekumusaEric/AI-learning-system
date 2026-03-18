@@ -29,7 +29,7 @@ export default function DipLoginPage() {
             <BookOpen className="w-10 h-10 text-accent" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight mb-1">Digital Inclusion Program</h1>
-          <p className="text-accent text-sm font-semibold mb-2">Foundational AI & Machine Learning</p>
+          <p className="text-accent text-sm font-semibold mb-2">IDC SEF · Digital Inclusion Program</p>
           <p className="text-secondary-text text-center text-sm">Enter your student ID to begin or continue your learning journey.</p>
         </div>
 

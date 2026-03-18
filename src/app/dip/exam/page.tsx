@@ -136,15 +136,33 @@ function CertificateModal({ score, total, onClose }: { score: number; total: num
   const [fullName, setFullName] = useState('');
   const [institution, setInstitution] = useState('');
   const [ready, setReady] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const pct = Math.round((score / total) * 100);
 
-  const handlePrint = () => window.print();
+  const handleDownload = async () => {
+    if (!certRef.current) return;
+    setDownloading(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).jsPDF;
+      const canvas = await html2canvas(certRef.current, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width / 3, canvas.height / 3] });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
+      pdf.save(`IDC-SEF-Certificate-${fullName.replace(/\s+/g, '-')}.pdf`);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 overflow-y-auto">
       <div className="relative w-full max-w-2xl bg-[#111] border border-border-subtle rounded-2xl shadow-2xl my-auto">
-        {/* Close */}
         <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-secondary text-secondary-text hover:text-white transition-colors z-10">
           <X className="w-5 h-5" />
         </button>
@@ -159,44 +177,33 @@ function CertificateModal({ score, total, onClose }: { score: number; total: num
                 <p className="text-secondary-text text-sm">Enter your details to personalise it</p>
               </div>
             </div>
-
             <div className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium text-secondary-text mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
+                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
                   placeholder="e.g. Alex Johnson"
-                  className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
-                />
+                  className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-secondary-text mb-1">Institution / Organisation (optional)</label>
-                <input
-                  type="text"
-                  value={institution}
-                  onChange={e => setInstitution(e.target.value)}
+                <input type="text" value={institution} onChange={e => setInstitution(e.target.value)}
                   placeholder="e.g. Greenfield High School"
-                  className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
-                />
+                  className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all" />
               </div>
-              <button
-                onClick={() => setReady(true)}
-                disabled={!fullName.trim()}
-                className="w-full py-3 bg-accent text-black font-bold rounded-xl hover:bg-accent/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed mt-2"
-              >
+              <button onClick={() => setReady(true)} disabled={!fullName.trim()}
+                className="w-full py-3 bg-accent text-black font-bold rounded-xl hover:bg-accent/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed mt-2">
                 Generate Certificate
               </button>
             </div>
           </div>
         ) : (
-          // ── Step 2: Show certificate + download ───────────────────────────
+          // ── Step 2: Preview + download as PDF ─────────────────────────────
           <div className="p-6">
-            <div className="flex gap-3 mb-4 print:hidden">
-              <button onClick={handlePrint}
-                className="flex items-center gap-2 px-5 py-2.5 bg-accent text-black font-bold rounded-xl hover:bg-accent/90 transition-all text-sm">
-                <Download className="w-4 h-4" /> Download / Print
+            <div className="flex gap-3 mb-4">
+              <button onClick={handleDownload} disabled={downloading}
+                className="flex items-center gap-2 px-5 py-2.5 bg-accent text-black font-bold rounded-xl hover:bg-accent/90 transition-all text-sm disabled:opacity-50">
+                <Download className="w-4 h-4" />
+                {downloading ? 'Generating PDF...' : 'Download PDF'}
               </button>
               <button onClick={() => setReady(false)}
                 className="flex items-center gap-2 px-5 py-2.5 bg-secondary border border-border-subtle text-foreground font-bold rounded-xl hover:border-accent transition-all text-sm">
@@ -204,59 +211,58 @@ function CertificateModal({ score, total, onClose }: { score: number; total: num
               </button>
             </div>
 
-            {/* Certificate */}
+            {/* Certificate — rendered to DOM, captured by html2canvas */}
             <div ref={certRef} className="bg-white text-black rounded-xl overflow-hidden" style={{ fontFamily: 'Georgia, serif' }}>
-              <div className="h-3 bg-gradient-to-r from-[#00ff9d] to-[#00b0f0]" />
-              <div className="p-10 flex flex-col items-center text-center">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="bg-black p-2.5 rounded-xl"><BookOpen className="w-6 h-6 text-[#00ff9d]" /></div>
-                  <div className="text-left">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Digital Inclusion Program</p>
-                    <p className="text-base font-bold text-black leading-tight">SAAIO Training Grounds</p>
+              <div style={{ height: 12, background: 'linear-gradient(to right, #00ff9d, #00b0f0)' }} />
+              <div style={{ padding: '40px 48px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+                  <div style={{ background: '#000', padding: 10, borderRadius: 10 }}>
+                    <BookOpen style={{ width: 24, height: 24, color: '#00ff9d' }} />
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', margin: 0 }}>Digital Inclusion Program</p>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: '#000', margin: 0 }}>IDC SEF</p>
                   </div>
                 </div>
 
-                <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-3">Certificate of Completion</p>
-                <div className="w-20 h-px bg-gray-300 mb-5" />
-                <p className="text-sm text-gray-600 mb-2">This certifies that</p>
-                <h1 className="text-3xl font-bold text-black mb-1">{fullName}</h1>
-                {institution && <p className="text-sm text-gray-500 mb-3">{institution}</p>}
-                <div className="w-40 h-px bg-gray-300 mb-5" />
-                <p className="text-sm text-gray-600 mb-1">has successfully completed</p>
-                <h2 className="text-xl font-bold text-black mb-1">Python Programming Fundamentals</h2>
-                <p className="text-gray-500 text-xs mb-1">Digital Inclusion Program · SAAIO Training Grounds</p>
-                <p className="text-gray-400 text-xs mb-6">Final Exam Score: {score}/{total} ({pct}%)</p>
+                <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#9ca3af', marginBottom: 12 }}>Certificate of Completion</p>
+                <div style={{ width: 80, height: 1, background: '#d1d5db', marginBottom: 20 }} />
+                <p style={{ fontSize: 14, color: '#4b5563', marginBottom: 8 }}>This certifies that</p>
+                <h1 style={{ fontSize: 32, fontWeight: 700, color: '#000', margin: '0 0 4px' }}>{fullName}</h1>
+                {institution && <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 12px' }}>{institution}</p>}
+                <div style={{ width: 160, height: 1, background: '#d1d5db', marginBottom: 20 }} />
+                <p style={{ fontSize: 14, color: '#4b5563', marginBottom: 4 }}>has successfully completed</p>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#000', margin: '0 0 4px' }}>Python Programming Fundamentals</h2>
+                <p style={{ fontSize: 11, color: '#6b7280', margin: '0 0 4px' }}>Digital Inclusion Program · IDC SEF</p>
+                <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 24px' }}>Final Exam Score: {score}/{total} ({pct}%)</p>
 
-                <Award className="w-12 h-12 text-[#00ff9d] mb-6" strokeWidth={1.5} />
+                {/* Award icon as SVG inline so html2canvas captures it */}
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00ff9d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 24 }}>
+                  <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+                </svg>
 
-                <div className="flex items-center justify-between w-full border-t border-gray-200 pt-5 text-xs">
-                  <div className="text-left">
-                    <p className="text-gray-400 uppercase tracking-wider text-[10px]">Date Issued</p>
-                    <p className="font-semibold text-black">{date}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderTop: '1px solid #e5e7eb', paddingTop: 20, fontSize: 11 }}>
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ color: '#9ca3af', textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.1em', margin: '0 0 2px' }}>Date Issued</p>
+                    <p style={{ fontWeight: 600, color: '#000', margin: 0 }}>{date}</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-gray-400 uppercase tracking-wider text-[10px]">Program</p>
-                    <p className="font-semibold text-black">Digital Inclusion Program</p>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ color: '#9ca3af', textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.1em', margin: '0 0 2px' }}>Program</p>
+                    <p style={{ fontWeight: 600, color: '#000', margin: 0 }}>Digital Inclusion Program</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-gray-400 uppercase tracking-wider text-[10px]">Issued by</p>
-                    <p className="font-semibold text-black">SAAIO Training Grounds</p>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ color: '#9ca3af', textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.1em', margin: '0 0 2px' }}>Issued by</p>
+                    <p style={{ fontWeight: 600, color: '#000', margin: 0 }}>IDC SEF</p>
                   </div>
                 </div>
               </div>
-              <div className="h-3 bg-gradient-to-r from-[#00b0f0] to-[#00ff9d]" />
+              <div style={{ height: 12, background: 'linear-gradient(to right, #00b0f0, #00ff9d)' }} />
             </div>
           </div>
         )}
       </div>
-
-      <style jsx global>{`
-        @media print {
-          body > *:not(.fixed) { display: none !important; }
-          .fixed { position: static !important; background: white !important; padding: 0 !important; }
-          .print\\:hidden { display: none !important; }
-        }
-      `}</style>
     </div>
   );
 }
