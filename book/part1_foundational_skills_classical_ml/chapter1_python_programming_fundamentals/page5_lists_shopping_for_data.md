@@ -1,5 +1,5 @@
 ---
-title: "Python Official Documentation"
+title: "Lists: Shopping for Data"
 type: "read"
 resources:
   - title: "Python Data Structures: Lists"

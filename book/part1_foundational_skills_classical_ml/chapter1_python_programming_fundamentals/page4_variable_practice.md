@@ -1,5 +1,5 @@
 ---
-title: "Python Official Documentation"
+title: "Variable Practice"
 type: "read"
 resources:
   - title: "Python Types and Variables"

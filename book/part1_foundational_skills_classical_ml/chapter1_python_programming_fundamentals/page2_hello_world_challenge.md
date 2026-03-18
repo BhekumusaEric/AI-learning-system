@@ -1,5 +1,5 @@
 ---
-title: "Python Official Documentation"
+title: "Hello, World! Challenge"
 type: "read"
 resources:
   - title: "W3Schools: Python Syntax"

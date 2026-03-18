@@ -1,5 +1,5 @@
 ---
-title: "Python Official Documentation"
+title: "For Loops: Doing Things Repeatedly"
 type: "read"
 resources:
   - title: "Python Control Flow: for statements"

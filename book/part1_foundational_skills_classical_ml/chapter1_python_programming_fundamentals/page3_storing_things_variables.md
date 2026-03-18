@@ -1,5 +1,5 @@
 ---
-title: "Python Official Documentation"
+title: "Storing Things: Variables"
 type: "read"
 resources:
   - title: "W3Schools: Python Variables"

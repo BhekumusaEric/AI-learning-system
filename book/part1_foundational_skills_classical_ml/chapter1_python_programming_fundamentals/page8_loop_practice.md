@@ -1,5 +1,5 @@
 ---
-title: "Python Official Documentation"
+title: "Loop Practice"
 type: "read"
 resources:
   - title: "W3Schools: Python For Loops"

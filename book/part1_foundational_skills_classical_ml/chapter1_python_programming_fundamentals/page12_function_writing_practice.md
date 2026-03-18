@@ -1,5 +1,5 @@
 ---
-title: "Python Official Documentation"
+title: "Function Writing Practice"
 type: "read"
 resources:
   - title: "W3Schools: Python Functions"

@@ -1,5 +1,5 @@
 ---
-title: "Python Official Documentation"
+title: "Functions: Reusable Code Blocks"
 type: "read"
 resources:
   - title: "Defining Functions in Python"
