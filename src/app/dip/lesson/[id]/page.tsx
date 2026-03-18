@@ -5,17 +5,17 @@ export default async function DipLessonPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const pageData = getPageContent(id);
 
-  // Build adjacent pages scoped to Part 1 only
+  // DIP navigation scoped to chapter 1 pages only
   const fullSyllabus = getSyllabus();
-  const part1 = fullSyllabus.find(p => p.id === 'part1_foundational_skills_classical_ml');
-  const part1Pages = part1?.chapters
-    .sort((a, b) => a.order - b.order)
-    .flatMap(c => [...c.pages].sort((a, b) => a.order - b.order)) ?? [];
+  const chapter1 = fullSyllabus
+    .find(p => p.id === 'part1_foundational_skills_classical_ml')
+    ?.chapters.find(c => c.id === 'chapter1_python_programming_fundamentals');
+  const dipPages = chapter1 ? [...chapter1.pages].sort((a, b) => a.order - b.order) : [];
 
-  const currentIndex = part1Pages.findIndex(p => p.id === id);
-  const prev = currentIndex > 0 ? part1Pages[currentIndex - 1] : null;
-  const next = currentIndex < part1Pages.length - 1 ? part1Pages[currentIndex + 1] : null;
-  const isLastPage = currentIndex === part1Pages.length - 1;
+  const currentIndex = dipPages.findIndex(p => p.id === id);
+  const prev = currentIndex > 0 ? dipPages[currentIndex - 1] : null;
+  const next = currentIndex < dipPages.length - 1 ? dipPages[currentIndex + 1] : null;
+  const isLastPage = currentIndex === dipPages.length - 1;
 
   if (!pageData) {
     return (

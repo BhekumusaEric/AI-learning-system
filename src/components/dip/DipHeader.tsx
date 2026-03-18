@@ -8,7 +8,9 @@ import { PartData } from '@/lib/syllabus';
 export default function DipHeader({ syllabus }: { syllabus: PartData[] }) {
   const { completedPages } = useProgress();
 
-  const totalPages = syllabus[0]?.chapters.reduce((acc, c) => acc + c.pages.length, 0) ?? 0;
+  // DIP = chapter 1 only
+  const chapter1 = syllabus[0]?.chapters.find(c => c.id === 'chapter1_python_programming_fundamentals');
+  const totalPages = chapter1?.pages.length ?? 0;
   const completedCount = Object.keys(completedPages).filter(k => completedPages[k]).length;
   const pct = totalPages > 0 ? Math.min(100, Math.round((completedCount / totalPages) * 100)) : 0;
 
