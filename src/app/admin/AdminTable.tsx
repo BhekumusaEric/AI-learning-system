@@ -1,163 +1,242 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Clock, Trash2, UserPlus, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound } from 'lucide-react';
 
 export interface AdminUser {
-  username: string;
-  createdAt: string;
-  lastActive: string;
+  login_id: string;
+  full_name: string;
+  email: string | null;
+  created_at: string;
   completedCount: number;
-  progressPerc: number;
+  lastActive: string | null;
+  examScore: number | null;
+  examPassed: boolean | null;
 }
 
-export default function AdminTable({ initialUsers }: { initialUsers: AdminUser[] }) {
-  const [users, setUsers] = useState<AdminUser[]>(initialUsers);
-  const [newUsername, setNewUsername] = useState("");
+function CredentialModal({ cred, onClose }: { cred: { login_id: string; full_name: string; plainPassword: string }; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyAll = () => {
+    navigator.clipboard.writeText(`Login ID: ${cred.login_id}\nPassword: ${cred.plainPassword}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-secondary border border-border-subtle rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <KeyRound className="w-5 h-5 text-accent" />
+            <h3 className="font-bold text-foreground">Student Credentials</h3>
+          </div>
+          <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-5 h-5" /></button>
+        </div>
+
+        <p className="text-secondary-text text-sm mb-4">
+          Share these credentials with <span className="text-foreground font-semibold">{cred.full_name}</span>. The password cannot be retrieved again.
+        </p>
+
+        <div className="bg-background rounded-xl p-4 font-mono text-sm space-y-2 border border-border-subtle mb-4">
+          <div className="flex justify-between items-center">
+            <span className="text-secondary-text">Login ID</span>
+            <span className="text-accent font-bold">{cred.login_id}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-secondary-text">Password</span>
+            <span className="text-warning font-bold tracking-widest">{cred.plainPassword}</span>
+          </div>
+        </div>
+
+        <button
+          onClick={copyAll}
+          className="w-full flex items-center justify-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black py-2 rounded-lg text-sm font-semibold transition-all"
+        >
+          {copied ? <><Check className="w-4 h-4" />Copied!</> : <><Copy className="w-4 h-4" />Copy Credentials</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSaaioPages: number; totalDipPages: number }) {
+  const [platform, setPlatform] = useState<'saaio' | 'dip'>('saaio');
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [deletingUser, setDeletingUser] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [newCred, setNewCred] = useState<{ login_id: string; full_name: string; plainPassword: string } | null>(null);
 
-  const handleAddUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUsername.trim()) return;
-
-    setIsAdding(true);
-    const cleanUsername = newUsername.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-
+  const fetchStudents = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const res = await fetch('/api/progress', {
+      const res = await fetch(`/api/admin/students?platform=${platform}`);
+      if (res.ok) setUsers(await res.json());
+    } finally {
+      setIsLoading(false);
+    }
+  }, [platform]);
+
+  useEffect(() => { fetchStudents(); }, [fetchStudents]);
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName.trim()) return;
+    setIsAdding(true);
+    try {
+      const res = await fetch('/api/admin/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: cleanUsername })
+        body: JSON.stringify({ full_name: fullName.trim(), email: email.trim() || undefined, platform }),
       });
-
+      const data = await res.json();
       if (res.ok) {
-        // Optimistically add to top of list
-        setUsers(prev => [
-          {
-            username: cleanUsername,
-            createdAt: new Date().toISOString(),
-            lastActive: new Date().toISOString(),
-            completedCount: 0,
-            progressPerc: 0
-          },
-          ...prev.filter(u => u.username !== cleanUsername)
-        ]);
-        setNewUsername("");
+        setNewCred({ login_id: data.login_id, full_name: data.full_name, plainPassword: data.plainPassword });
+        setFullName('');
+        setEmail('');
+        fetchStudents();
       }
-    } catch (e) {
-      console.error(e);
     } finally {
       setIsAdding(false);
     }
   };
 
-  const handleDeleteUser = async (username: string) => {
-    if (!confirm(`Are you sure you want to permanently delete the student: ${username}?`)) return;
-    
-    setDeletingUser(username);
-    
+  const handleDelete = async (login_id: string) => {
+    if (!confirm(`Permanently delete student ${login_id}?`)) return;
+    setDeletingId(login_id);
     try {
-      const res = await fetch(`/api/progress?username=${encodeURIComponent(username)}`, {
-        method: 'DELETE'
-      });
-
-      if (res.ok) {
-        setUsers(prev => prev.filter(u => u.username !== username));
-      }
-    } catch (e) {
-      console.error(e);
+      await fetch(`/api/admin/students?login_id=${encodeURIComponent(login_id)}&platform=${platform}`, { method: 'DELETE' });
+      setUsers(prev => prev.filter(u => u.login_id !== login_id));
     } finally {
-      setDeletingUser(null);
+      setDeletingId(null);
     }
   };
 
+  const totalPages = platform === 'saaio' ? totalSaaioPages : totalDipPages;
+
   return (
-    <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
-      {/* Action Bar */}
-      <div className="p-4 border-b border-border-subtle bg-background/50 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h2 className="font-bold text-foreground">Registered Students</h2>
-        <form onSubmit={handleAddUser} className="flex items-center gap-2 w-full sm:w-auto">
-          <input 
-            type="text" 
-            placeholder="New student username..." 
-            value={newUsername}
-            onChange={(e) => setNewUsername(e.target.value)}
-            className="flex-1 sm:w-48 bg-background border border-border-subtle rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-accent"
-          />
-          <button 
-            type="submit" 
-            disabled={isAdding || !newUsername.trim()}
-            className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-3 py-1.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+    <>
+      {newCred && <CredentialModal cred={newCred} onClose={() => setNewCred(null)} />}
+
+      <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
+        {/* Platform Tabs */}
+        <div className="flex border-b border-border-subtle">
+          {(['saaio', 'dip'] as const).map(p => (
+            <button
+              key={p}
+              onClick={() => setPlatform(p)}
+              className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider transition-all ${platform === p ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'}`}
+            >
+              {p === 'saaio' ? 'SAAIO Training Grounds' : 'IDC SEF / DIP'}
+            </button>
+          ))}
+        </div>
+
+        {/* Register Form */}
+        <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col sm:flex-row gap-3 items-end">
+          <div className="flex-1">
+            <label className="block text-xs text-secondary-text mb-1">Full Name *</label>
+            <input
+              type="text"
+              placeholder="e.g. Alice Smith"
+              value={fullName}
+              onChange={e => setFullName(e.target.value)}
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
+              required
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs text-secondary-text mb-1">Email (optional)</label>
+            <input
+              type="email"
+              placeholder="alice@school.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isAdding || !fullName.trim()}
+            className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
             {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-            <span className="hidden sm:inline">Add Student</span>
+            Register Student
           </button>
         </form>
-      </div>
 
-      {/* User Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-background/30 border-b border-border-subtle">
-              <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-secondary-text">Student Username</th>
-              <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-secondary-text">Syllabus Progress</th>
-              <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-secondary-text">Last Active</th>
-              <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-secondary-text text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-subtle">
-            {users.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-8 text-center text-secondary-text">
-                  No students found. Add one above.
-                </td>
-              </tr>
-            ) : (
-              users.sort((a,b) => b.progressPerc - a.progressPerc).map((user) => (
-                <tr key={user.username} className={`hover:bg-background/30 transition-colors ${deletingUser === user.username ? 'opacity-50' : ''}`}>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold capitalize">
-                        {user.username.charAt(0)}
-                      </div>
-                      <span className="font-semibold text-foreground">{user.username}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3 w-48">
-                      <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-accent relative" 
-                          style={{ width: `${user.progressPerc}%` }} 
-                        />
-                      </div>
-                      <span className="text-sm font-bold text-accent min-w-[3ch]">{user.progressPerc}%</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-2 text-sm text-secondary-text">
-                      <Clock className="w-4 h-4" />
-                      {new Date(user.lastActive).toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-right">
-                    <button 
-                      onClick={() => handleDeleteUser(user.username)}
-                      disabled={deletingUser === user.username || user.username === 'guest'}
-                      className="text-secondary-text hover:text-error transition-colors p-2 rounded-lg hover:bg-error/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={user.username === 'guest' ? "Cannot delete guest" : "Delete user"}
-                    >
-                      {deletingUser === user.username ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    </button>
-                  </td>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 text-secondary-text gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" /> Loading students...
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-background/30 border-b border-border-subtle">
+                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Login ID</th>
+                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
+                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Progress</th>
+                  {platform === 'dip' && <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
+                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Last Active</th>
+                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text text-right">Actions</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody className="divide-y divide-border-subtle">
+                {users.length === 0 ? (
+                  <tr><td colSpan={6} className="py-8 text-center text-secondary-text">No students registered yet.</td></tr>
+                ) : users.map(user => {
+                  const perc = totalPages > 0 ? Math.min(100, Math.round((user.completedCount / totalPages) * 100)) : 0;
+                  return (
+                    <tr key={user.login_id} className="hover:bg-background/30 transition-colors">
+                      <td className="py-3 px-5 font-mono text-accent font-semibold text-sm">{user.login_id}</td>
+                      <td className="py-3 px-5">
+                        <div className="font-semibold text-foreground text-sm">{user.full_name}</div>
+                        {user.email && <div className="text-xs text-secondary-text">{user.email}</div>}
+                      </td>
+                      <td className="py-3 px-5">
+                        <div className="flex items-center gap-2 w-36">
+                          <div className="flex-1 h-1.5 bg-background rounded-full overflow-hidden">
+                            <div className="h-full bg-accent" style={{ width: `${perc}%` }} />
+                          </div>
+                          <span className="text-xs font-bold text-accent">{perc}%</span>
+                        </div>
+                      </td>
+                      {platform === 'dip' && (
+                        <td className="py-3 px-5 text-sm">
+                          {user.examScore !== null ? (
+                            <span className={`font-bold ${user.examPassed ? 'text-accent' : 'text-error'}`}>
+                              {user.examScore}% {user.examPassed ? '✓' : '✗'}
+                            </span>
+                          ) : <span className="text-secondary-text">—</span>}
+                        </td>
+                      )}
+                      <td className="py-3 px-5 text-xs text-secondary-text">
+                        {user.lastActive ? (
+                          <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(user.lastActive).toLocaleDateString()}</div>
+                        ) : '—'}
+                      </td>
+                      <td className="py-3 px-5 text-right">
+                        <button
+                          onClick={() => handleDelete(user.login_id)}
+                          disabled={deletingId === user.login_id}
+                          className="text-secondary-text hover:text-error transition-colors p-1.5 rounded-lg hover:bg-error/10 disabled:opacity-50"
+                        >
+                          {deletingId === user.login_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
