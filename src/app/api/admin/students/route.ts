@@ -84,8 +84,17 @@ async function sendCredentialsEmail({
   });
 }
 
+function requireAdmin(request: Request) {
+  const cookie = request.headers.get('cookie') || '';
+  const match = cookie.match(/admin_session=([^;]+)/);
+  const session = match ? decodeURIComponent(match[1]) : null;
+  const expected = createHash('sha256').update('admin_session:' + (process.env.ADMIN_PASSWORD || 'supersecret')).digest('hex');
+  return session === expected;
+}
+
 // GET: list all students for a platform
 export async function GET(request: Request) {
+  if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { searchParams } = new URL(request.url);
   const platform = searchParams.get('platform') || 'saaio';
   const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
@@ -125,12 +134,13 @@ export async function GET(request: Request) {
 
 // POST: register a new student
 export async function POST(request: Request) {
+  if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { full_name, email, platform } = await request.json();
   if (!full_name || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
   const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
   const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
-  const login_id = generateLoginId(platform, count || 0);
+  const login_id = generateLoginId(platform, (count || 0) + 1);
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 
@@ -158,6 +168,7 @@ export async function POST(request: Request) {
 
 // PATCH: reset a student's password
 export async function PATCH(request: Request) {
+  if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { login_id, platform } = await request.json();
   if (!login_id || !platform) return NextResponse.json({ error: 'login_id and platform required' }, { status: 400 });
 
@@ -194,6 +205,7 @@ export async function PATCH(request: Request) {
 
 // DELETE: remove a student
 export async function DELETE(request: Request) {
+  if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { searchParams } = new URL(request.url);
   const login_id = searchParams.get('login_id');
   const platform = searchParams.get('platform') || 'saaio';

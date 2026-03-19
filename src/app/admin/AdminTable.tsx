@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export interface AdminUser {
   login_id: string;
@@ -64,6 +65,190 @@ function CredentialModal({ cred, onClose, isReset = false }: { cred: { login_id:
   );
 }
 
+interface BulkResult {
+  full_name: string;
+  login_id: string;
+  plainPassword: string;
+  email: string | null;
+  success: boolean;
+  error?: string;
+  emailSent?: boolean;
+}
+
+function BulkImport({ platform, onDone }: { platform: 'saaio' | 'dip'; onDone: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [results, setResults] = useState<BulkResult[] | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+
+  const processFile = async (file: File) => {
+    setParseError(null);
+    setResults(null);
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    let students: { full_name: string; email?: string }[] = [];
+
+    try {
+      if (ext === 'csv' || ext === 'xlsx' || ext === 'xls') {
+        const buffer = await file.arrayBuffer();
+        const wb = XLSX.read(buffer, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+        if (rows.length === 0) { setParseError('File is empty or has no data rows.'); return; }
+
+        // Flexible column detection: look for name/email columns case-insensitively
+        const firstRow = rows[0];
+        const keys = Object.keys(firstRow);
+        const nameKey = keys.find(k => /name/i.test(k));
+        const emailKey = keys.find(k => /email/i.test(k));
+
+        if (!nameKey) { setParseError(`No "name" column found. Columns detected: ${keys.join(', ')}`); return; }
+
+        students = rows
+          .map(r => ({ full_name: String(r[nameKey] || '').trim(), email: emailKey ? String(r[emailKey] || '').trim() || undefined : undefined }))
+          .filter(s => s.full_name);
+      } else {
+        setParseError('Unsupported file type. Use .xlsx, .xls, or .csv');
+        return;
+      }
+    } catch (e: any) {
+      setParseError(`Failed to parse file: ${e.message}`);
+      return;
+    }
+
+    if (students.length === 0) { setParseError('No valid student rows found.'); return; }
+
+    setIsUploading(true);
+    try {
+      const res = await fetch('/api/admin/students/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform, students }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResults(data.results);
+        onDone();
+      } else {
+        setParseError(data.error || `Error ${res.status}`);
+      }
+    } catch (e: any) {
+      setParseError(e.message || 'Network error');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  };
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([['full_name', 'email'], ['Alice Smith', 'alice@school.com'], ['Bob Jones', '']]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+    XLSX.writeFile(wb, 'students_template.xlsx');
+  };
+
+  if (results) {
+    const passed = results.filter(r => r.success);
+    const failed = results.filter(r => !r.success);
+
+    const copyAllCsv = () => {
+      const rows = passed.map(r => `${r.login_id},${r.full_name},${r.plainPassword},${r.email || ''}`);
+      navigator.clipboard.writeText(['login_id,full_name,password,email', ...rows].join('\n'));
+    };
+
+    return (
+      <div className="p-4 border-b border-border-subtle bg-background/50">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-bold text-foreground">Bulk Import Results</h4>
+          <div className="flex items-center gap-3">
+            <button onClick={copyAllCsv} className="text-xs text-accent hover:underline flex items-center gap-1"><Copy className="w-3 h-3" />Copy CSV</button>
+            <button onClick={() => setResults(null)} className="text-xs text-secondary-text hover:text-accent">Import another</button>
+          </div>
+        </div>
+        <div className="flex gap-4 mb-3">
+          <span className="text-accent text-sm font-bold">✓ {passed.length} registered</span>
+          {failed.length > 0 && <span className="text-error text-sm font-bold">✗ {failed.length} failed</span>}
+          <span className="text-secondary-text text-sm">{passed.filter(r => r.emailSent).length} emails sent</span>
+        </div>
+        <div className="max-h-64 overflow-y-auto">
+          <table className="w-full text-xs font-mono">
+            <thead>
+              <tr className="text-secondary-text border-b border-border-subtle">
+                <th className="text-left py-1 px-2">Status</th>
+                <th className="text-left py-1 px-2">Login ID</th>
+                <th className="text-left py-1 px-2">Name</th>
+                <th className="text-left py-1 px-2">Password</th>
+                <th className="text-left py-1 px-2">Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.map((r, i) => (
+                <tr key={i} className={`border-b border-border-subtle/50 ${r.success ? '' : 'bg-error/5'}`}>
+                  <td className="py-1 px-2">
+                    {r.success ? <CheckCircle className="w-3 h-3 text-accent" /> : <AlertCircle className="w-3 h-3 text-error" />}
+                  </td>
+                  <td className="py-1 px-2 text-accent">{r.login_id || '—'}</td>
+                  <td className="py-1 px-2 text-foreground">{r.full_name}</td>
+                  <td className="py-1 px-2 text-warning">{r.plainPassword || (r.error ? <span className="text-error">{r.error}</span> : '—')}</td>
+                  <td className="py-1 px-2 text-secondary-text">
+                    {r.emailSent ? '📧 sent' : r.email ? 'not sent' : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 border-b border-border-subtle bg-background/50">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <FileSpreadsheet className="w-4 h-4 text-accent" />
+          <span className="text-sm font-bold text-foreground">Bulk Import from Excel / CSV</span>
+        </div>
+        <button onClick={downloadTemplate} className="text-xs text-secondary-text hover:text-accent transition-colors">↓ Download template</button>
+      </div>
+
+      {parseError && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2 mb-3">{parseError}</p>}
+
+      <div
+        onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={onDrop}
+        onClick={() => fileRef.current?.click()}
+        className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
+          isDragging ? 'border-accent bg-accent/10' : 'border-border-subtle hover:border-accent/50 hover:bg-accent/5'
+        }`}
+      >
+        <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f); e.target.value = ''; }} />
+        {isUploading ? (
+          <div className="flex items-center justify-center gap-2 text-accent">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">Registering students...</span>
+          </div>
+        ) : (
+          <>
+            <Upload className="w-8 h-8 text-secondary-text mx-auto mb-2" />
+            <p className="text-sm text-foreground">Drop your Excel or CSV file here</p>
+            <p className="text-xs text-secondary-text mt-1">Needs a <code className="text-accent">full_name</code> column. <code className="text-accent">email</code> column is optional.</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSaaioPages: number; totalDipPages: number }) {
   const [platform, setPlatform] = useState<'saaio' | 'dip'>('saaio');
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -76,6 +261,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [newCred, setNewCred] = useState<{ login_id: string; full_name: string; plainPassword: string; isReset?: boolean; emailSent?: boolean } | null>(null);
+  const [showBulk, setShowBulk] = useState(false);
 
   const fetchStudents = useCallback(async () => {
     setIsLoading(true);
@@ -171,6 +357,9 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
           ))}
         </div>
 
+        {/* Bulk Import */}
+        {showBulk && <BulkImport platform={platform} onDone={fetchStudents} />}
+
         {/* Register Form */}
         <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
           {addError && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2">{addError}</p>}
@@ -203,6 +392,14 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
             >
               {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               Register Student
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowBulk(v => !v)}
+              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Bulk Import
             </button>
           </div>
         </form>

@@ -1,16 +1,20 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { createHash } from 'crypto';
+
+function sessionToken(password: string) {
+  return createHash('sha256').update('admin_session:' + password).digest('hex');
+}
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
 
   if (url.pathname.startsWith('/admin')) {
-    // Allow the login page through
     if (url.pathname === '/admin/login') return NextResponse.next();
 
-    // Check for admin session cookie
     const session = req.cookies.get('admin_session')?.value;
-    if (session !== (process.env.ADMIN_PASSWORD || 'supersecret')) {
+    const expected = sessionToken(process.env.ADMIN_PASSWORD || 'supersecret');
+    if (session !== expected) {
       return NextResponse.redirect(new URL('/admin/login', req.url));
     }
   }

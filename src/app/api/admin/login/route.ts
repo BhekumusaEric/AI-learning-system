@@ -1,4 +1,9 @@
 import { NextResponse } from 'next/server';
+import { createHash } from 'crypto';
+
+function sessionToken(password: string) {
+  return createHash('sha256').update('admin_session:' + password).digest('hex');
+}
 
 export async function POST(request: Request) {
   const { username, password } = await request.json();
@@ -8,11 +13,11 @@ export async function POST(request: Request) {
 
   if (username === validUser && password === validPass) {
     const res = NextResponse.json({ success: true });
-    res.cookies.set('admin_session', validPass, {
+    res.cookies.set('admin_session', sessionToken(validPass), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 8, // 8 hours
+      maxAge: 60 * 60 * 8,
       path: '/',
     });
     return res;
