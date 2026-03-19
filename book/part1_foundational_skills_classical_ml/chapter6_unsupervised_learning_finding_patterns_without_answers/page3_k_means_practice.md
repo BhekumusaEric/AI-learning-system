@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Unsupervised Learning"
+title: "K-Means Practice"
 type: "read"
 resources:
   - title: "StatQuest: K-Means Clustering"

@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Backpropagation: Learning from Mistakes"
 type: "read"
 resources:
   - title: "3Blue1Brown: Backpropagation"

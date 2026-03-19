@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Features and Labels"
 type: "read"
 resources:
   - title: "Google ML Crash Course: Framing"

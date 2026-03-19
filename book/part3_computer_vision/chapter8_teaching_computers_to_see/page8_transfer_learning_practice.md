@@ -1,5 +1,5 @@
 ---
-title: "Stanford CS231n: Convolutional Neural Networks"
+title: "Transfer Learning Practice"
 type: "read"
 resources:
   - title: "PyTorch: Transfer Learning Tutorial"

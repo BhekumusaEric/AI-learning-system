@@ -1,5 +1,5 @@
 ---
-title: "Creating Dashboard"
+title: "Creating the Dashboard"
 type: "read"
 ---
 

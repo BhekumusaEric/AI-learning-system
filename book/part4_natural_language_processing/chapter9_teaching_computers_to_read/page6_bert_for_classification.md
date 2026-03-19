@@ -1,5 +1,5 @@
 ---
-title: "Hugging Face NLP Course"
+title: "BERT for Classification"
 type: "read"
 resources:
   - title: "Hugging Face: Sequence Classification"

@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Logistic Regression Practice"
 type: "read"
 resources:
   - title: "StatQuest: Logistic Regression"

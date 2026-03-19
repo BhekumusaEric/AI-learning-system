@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Linear Regression Practice"
 type: "read"
 resources:
   - title: "StatQuest: Linear Regression"

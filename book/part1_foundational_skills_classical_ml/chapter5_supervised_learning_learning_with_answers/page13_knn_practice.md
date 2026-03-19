@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "KNN Practice"
 type: "read"
 resources:
   - title: "StatQuest: K-Nearest Neighbors"

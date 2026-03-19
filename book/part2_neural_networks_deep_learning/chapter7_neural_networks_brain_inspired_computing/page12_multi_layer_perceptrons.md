@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Multi-Layer Perceptrons"
 type: "read"
 resources:
   - title: "PyTorch: nn.Sequential"

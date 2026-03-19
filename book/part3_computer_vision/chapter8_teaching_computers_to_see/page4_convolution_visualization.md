@@ -1,5 +1,5 @@
 ---
-title: "Stanford CS231n: Convolutional Neural Networks"
+title: "Convolution Visualization"
 type: "read"
 resources:
   - title: "Setosa: Image Kernels Visualized"

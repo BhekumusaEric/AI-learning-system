@@ -1,5 +1,5 @@
 ---
-title: "NumPy Quickstart Guide"
+title: "Shape Practice"
 type: "read"
 resources:
   - title: "NumPy: Changing the shape of an array"

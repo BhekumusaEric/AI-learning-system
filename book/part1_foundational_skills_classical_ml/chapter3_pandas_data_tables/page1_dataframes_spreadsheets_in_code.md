@@ -1,5 +1,5 @@
 ---
-title: "Pandas User Guide"
+title: "DataFrames: Spreadsheets in Code"
 type: "read"
 resources:
   - title: "Pandas: Intro to Data Structures"

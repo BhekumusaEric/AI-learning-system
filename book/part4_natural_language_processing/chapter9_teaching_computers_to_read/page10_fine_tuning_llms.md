@@ -1,5 +1,5 @@
 ---
-title: "Hugging Face NLP Course"
+title: "Fine-tuning LLMs"
 type: "read"
 resources:
   - title: "Hugging Face: Fine-tune a pretrained model"

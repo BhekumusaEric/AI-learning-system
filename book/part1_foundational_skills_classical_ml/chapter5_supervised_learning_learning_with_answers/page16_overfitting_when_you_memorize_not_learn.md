@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Overfitting: When You Memorize, Not Learn"
 type: "read"
 resources:
   - title: "AWS: What is Overfitting?"

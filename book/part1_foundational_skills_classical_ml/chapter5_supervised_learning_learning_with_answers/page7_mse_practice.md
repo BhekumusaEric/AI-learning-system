@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "MSE Practice"
 type: "read"
 resources:
   - title: "Scikit-Learn: mean_squared_error"

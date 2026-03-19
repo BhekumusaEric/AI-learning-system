@@ -1,5 +1,5 @@
 ---
-title: "NumPy Quickstart Guide"
+title: "Creating Arrays"
 type: "read"
 resources:
   - title: "NumPy: Array Creation"

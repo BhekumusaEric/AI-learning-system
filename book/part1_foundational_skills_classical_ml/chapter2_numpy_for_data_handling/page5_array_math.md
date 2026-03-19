@@ -1,5 +1,5 @@
 ---
-title: "NumPy Quickstart Guide"
+title: "Array Math"
 type: "read"
 resources:
   - title: "NumPy: Basic Operations"

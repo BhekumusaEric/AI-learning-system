@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Activation Function Practice"
 type: "read"
 resources:
   - title: "PyTorch: Non-linear Activations"

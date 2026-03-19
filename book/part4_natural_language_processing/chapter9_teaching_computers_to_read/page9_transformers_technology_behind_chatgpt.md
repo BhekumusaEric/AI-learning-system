@@ -1,5 +1,5 @@
 ---
-title: "Hugging Face NLP Course"
+title: "Transformers: The Technology Behind ChatGPT"
 type: "read"
 resources:
   - title: "Jay Alammar: The Illustrated Transformer"

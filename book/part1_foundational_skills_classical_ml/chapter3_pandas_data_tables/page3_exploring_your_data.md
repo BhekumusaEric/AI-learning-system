@@ -1,5 +1,5 @@
 ---
-title: "Pandas User Guide"
+title: "Exploring Your Data"
 type: "read"
 resources:
   - title: "Pandas: Essential Basic Functionality"

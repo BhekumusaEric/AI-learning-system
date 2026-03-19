@@ -1,5 +1,5 @@
 ---
-title: "Hugging Face NLP Course"
+title: "Prompting Practice"
 type: "read"
 resources:
   - title: "Learn Prompting Framework"

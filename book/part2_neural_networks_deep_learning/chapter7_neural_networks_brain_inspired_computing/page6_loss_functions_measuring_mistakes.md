@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Loss Functions: Measuring Mistakes"
 type: "read"
 resources:
   - title: "Google ML Crash Course: Descending into ML"

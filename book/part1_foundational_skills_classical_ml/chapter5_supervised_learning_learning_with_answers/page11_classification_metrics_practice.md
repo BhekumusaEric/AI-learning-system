@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Classification Metrics Practice"
 type: "read"
 resources:
   - title: "Scikit-Learn: Classification Report"

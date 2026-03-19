@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "What's a Neural Network?"
 type: "read"
 resources:
   - title: "3Blue1Brown: What is a Neural Network?"

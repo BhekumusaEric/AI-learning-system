@@ -1,5 +1,5 @@
 ---
-title: "Stanford CS231n: Convolutional Neural Networks"
+title: "Images as Numbers"
 type: "read"
 resources:
   - title: "Stanford CS231n: Image Classification"

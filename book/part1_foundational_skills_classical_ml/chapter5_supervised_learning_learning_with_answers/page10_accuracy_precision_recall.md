@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Accuracy, Precision, Recall"
 type: "read"
 resources:
   - title: "Google ML Crash Course: Classification"

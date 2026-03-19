@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Unsupervised Learning"
+title: "PCA: Simplifying Complex Data"
 type: "read"
 resources:
   - title: "Scikit-Learn: PCA"

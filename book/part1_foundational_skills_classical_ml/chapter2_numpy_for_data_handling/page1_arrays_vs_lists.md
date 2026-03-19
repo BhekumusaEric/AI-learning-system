@@ -1,5 +1,5 @@
 ---
-title: "NumPy Quickstart Guide"
+title: "Arrays vs. Lists"
 type: "read"
 resources:
   - title: "NumPy Quickstart: The Basics"

@@ -1,5 +1,5 @@
 ---
-title: "Matplotlib Tutorials"
+title: "Why Visualize?"
 type: "read"
 resources:
   - title: "Matplotlib: Usage Guide"

@@ -1,5 +1,5 @@
 ---
-title: "Stanford CS231n: Convolutional Neural Networks"
+title: "Pre-trained Models: Standing on Giants' Shoulders"
 type: "read"
 resources:
   - title: "PyTorch: Torchvision Models"

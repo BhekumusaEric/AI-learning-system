@@ -1,5 +1,5 @@
 ---
-title: "Matplotlib Tutorials"
+title: "Your First Plot"
 type: "read"
 resources:
   - title: "Matplotlib: Pyplot tutorial"

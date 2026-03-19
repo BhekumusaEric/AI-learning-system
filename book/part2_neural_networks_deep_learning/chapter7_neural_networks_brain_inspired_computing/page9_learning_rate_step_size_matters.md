@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Learning Rate: Step Size Matters"
 type: "read"
 resources:
   - title: "Machine Learning Mastery: Learning Rate"

@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Building Your First Neural Network"
 type: "read"
 resources:
   - title: "PyTorch: Build the Neural Network"

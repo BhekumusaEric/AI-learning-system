@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Underfitting: Too Simple to Capture Patterns"
 type: "read"
 resources:
   - title: "IBM: Overfitting vs Underfitting"

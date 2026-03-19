@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Unsupervised Learning"
+title: "K-Means Clustering: Finding Groups"
 type: "read"
 resources:
   - title: "Scikit-Learn: K-Means"

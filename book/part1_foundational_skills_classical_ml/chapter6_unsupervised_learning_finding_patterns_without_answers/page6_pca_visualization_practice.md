@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Unsupervised Learning"
+title: "PCA Visualization Practice"
 type: "read"
 resources:
   - title: "StatQuest: PCA Main Ideas"

@@ -1,5 +1,5 @@
 ---
-title: "Hugging Face NLP Course"
+title: "Text is Just Data Too"
 type: "read"
 resources:
   - title: "Hugging Face: What is NLP?"

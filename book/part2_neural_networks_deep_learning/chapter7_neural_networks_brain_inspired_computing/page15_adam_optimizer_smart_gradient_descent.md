@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Adam Optimizer: Smart Gradient Descent"
 type: "read"
 resources:
   - title: "PyTorch: optim.Adam"

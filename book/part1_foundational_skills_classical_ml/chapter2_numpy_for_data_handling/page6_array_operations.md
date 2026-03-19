@@ -1,5 +1,5 @@
 ---
-title: "NumPy Quickstart Guide"
+title: "Array Operations"
 type: "read"
 resources:
   - title: "NumPy: Universal Functions (ufunc)"

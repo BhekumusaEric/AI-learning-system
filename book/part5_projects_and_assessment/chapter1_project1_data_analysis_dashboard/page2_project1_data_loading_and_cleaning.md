@@ -1,5 +1,5 @@
 ---
-title: "Data Loading And Cleaning"
+title: "Data Loading and Cleaning"
 type: "read"
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: "Hugging Face NLP Course"
+title: "Exploring Embeddings"
 type: "read"
 resources:
   - title: "PyTorch: nn.Embedding"

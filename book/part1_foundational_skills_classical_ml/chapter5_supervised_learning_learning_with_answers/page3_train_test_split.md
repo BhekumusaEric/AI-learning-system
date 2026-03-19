@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Train/Test Split"
 type: "read"
 resources:
   - title: "Scikit-Learn: train_test_split"

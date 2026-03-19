@@ -1,5 +1,5 @@
 ---
-title: "Hugging Face NLP Course"
+title: "BERT: Understanding Context"
 type: "read"
 resources:
   - title: "Jay Alammar: A Visual Guide to BERT"

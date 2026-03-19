@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Logistic Regression: Yes/No Predictions"
 type: "read"
 resources:
   - title: "Scikit-Learn: Logistic Regression"

@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Evaluating Models: How Wrong Are We?"
 type: "read"
 resources:
   - title: "Scikit-Learn: Model Evaluation"

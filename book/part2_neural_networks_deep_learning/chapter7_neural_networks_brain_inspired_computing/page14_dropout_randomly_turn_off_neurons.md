@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Dropout: Randomly Turn Off Neurons"
 type: "read"
 resources:
   - title: "PyTorch: nn.Dropout"

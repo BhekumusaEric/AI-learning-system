@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "The Perceptron: One Artificial Neuron"
 type: "read"
 resources:
   - title: "Wikipedia: Perceptron"

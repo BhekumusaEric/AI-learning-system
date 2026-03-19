@@ -1,5 +1,5 @@
 ---
-title: "Project Overview"
+title: "Project Overview: Neural Network from Scratch"
 type: "read"
 ---
 

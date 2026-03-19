@@ -1,5 +1,5 @@
 ---
-title: "Data Loading Preprocessing"
+title: "Data Loading and Preprocessing"
 type: "read"
 ---
 

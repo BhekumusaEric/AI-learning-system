@@ -1,5 +1,5 @@
 ---
-title: "Data Loading Exploration"
+title: "Data Loading and Exploration"
 type: "read"
 ---
 

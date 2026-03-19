@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "What is Supervised Learning?"
 type: "read"
 resources:
   - title: "IBM: What is Supervised Learning?"

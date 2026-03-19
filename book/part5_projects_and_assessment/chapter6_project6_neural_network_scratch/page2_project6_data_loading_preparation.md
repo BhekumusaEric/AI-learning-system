@@ -1,5 +1,5 @@
 ---
-title: "Data Loading Preparation"
+title: "Data Loading and Preparation"
 type: "read"
 ---
 

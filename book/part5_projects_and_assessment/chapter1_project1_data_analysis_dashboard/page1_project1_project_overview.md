@@ -1,5 +1,5 @@
 ---
-title: "Project Overview"
+title: "Project Overview: Data Analysis Dashboard"
 type: "read"
 ---
 

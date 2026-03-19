@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Activation Functions: The Decision Maker"
 type: "read"
 resources:
   - title: "ML Glossary: Activation Functions"

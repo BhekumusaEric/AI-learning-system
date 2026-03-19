@@ -1,5 +1,5 @@
 ---
-title: "Stanford CS231n: Convolutional Neural Networks"
+title: "CNN Building Practice"
 type: "read"
 resources:
   - title: "PyTorch: Training a Classifier"

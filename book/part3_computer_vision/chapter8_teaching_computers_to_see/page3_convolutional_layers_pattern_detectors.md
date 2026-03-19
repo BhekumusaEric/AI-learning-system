@@ -1,5 +1,5 @@
 ---
-title: "Stanford CS231n: Convolutional Neural Networks"
+title: "Convolutional Layers: Pattern Detectors"
 type: "read"
 resources:
   - title: "Stanford CS231n: Convolutional Networks"

@@ -1,5 +1,5 @@
 ---
-title: "Pandas User Guide"
+title: "Selecting Columns and Rows"
 type: "read"
 resources:
   - title: "Pandas: Indexing and Selecting Data"

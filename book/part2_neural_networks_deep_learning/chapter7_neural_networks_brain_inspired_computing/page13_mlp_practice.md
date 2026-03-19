@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "MLP Practice"
 type: "read"
 resources:
   - title: "PyTorch: Optimizing Model Parameters"

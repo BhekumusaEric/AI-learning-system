@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Linear Regression: Drawing Lines"
 type: "read"
 resources:
   - title: "Scikit-Learn: Linear Regression"

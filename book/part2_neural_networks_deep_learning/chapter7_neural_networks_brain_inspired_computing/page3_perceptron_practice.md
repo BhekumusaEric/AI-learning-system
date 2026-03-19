@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Perceptron Practice"
 type: "read"
 resources:
   - title: "Towards Data Science: Perceptron Explained"

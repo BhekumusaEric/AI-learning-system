@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Decision Tree Practice"
 type: "read"
 resources:
   - title: "StatQuest: Decision Trees"

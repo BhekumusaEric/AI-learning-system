@@ -1,5 +1,5 @@
 ---
-title: "3Blue1Brown: Neural Networks"
+title: "Gradient Descent: Downhill to Success"
 type: "read"
 resources:
   - title: "3Blue1Brown: Gradient Descent"

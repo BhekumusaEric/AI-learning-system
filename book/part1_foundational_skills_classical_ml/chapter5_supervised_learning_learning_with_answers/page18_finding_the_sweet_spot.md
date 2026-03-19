@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Finding the Sweet Spot"
 type: "read"
 resources:
   - title: "Scikit-Learn: Cross-Validation"

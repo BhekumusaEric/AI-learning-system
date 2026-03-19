@@ -1,5 +1,5 @@
 ---
-title: "Pandas User Guide"
+title: "Creating DataFrames"
 type: "read"
 resources:
   - title: "Pandas: DataFrame Object"

@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "Decision Trees: 20 Questions"
 type: "read"
 resources:
   - title: "Scikit-Learn: Decision Trees"

@@ -1,5 +1,5 @@
 ---
-title: "Stanford CS231n: Convolutional Neural Networks"
+title: "Image Loading Practice"
 type: "read"
 resources:
   - title: "PyTorch: Torchvision Datasets"

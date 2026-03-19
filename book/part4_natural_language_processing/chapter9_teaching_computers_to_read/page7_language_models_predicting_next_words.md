@@ -1,5 +1,5 @@
 ---
-title: "Hugging Face NLP Course"
+title: "Language Models: Predicting Next Words"
 type: "read"
 resources:
   - title: "Jay Alammar: The Illustrated GPT-2"

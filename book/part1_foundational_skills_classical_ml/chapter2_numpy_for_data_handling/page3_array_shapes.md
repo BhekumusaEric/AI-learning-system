@@ -1,5 +1,5 @@
 ---
-title: "NumPy Quickstart Guide"
+title: "Array Shapes"
 type: "read"
 resources:
   - title: "NumPy: ndarray.shape"

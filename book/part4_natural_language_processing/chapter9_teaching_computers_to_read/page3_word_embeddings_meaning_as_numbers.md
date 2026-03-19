@@ -1,5 +1,5 @@
 ---
-title: "Hugging Face NLP Course"
+title: "Word Embeddings: Meaning as Numbers"
 type: "read"
 resources:
   - title: "Jay Alammar: The Illustrated Word2vec"

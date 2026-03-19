@@ -1,5 +1,5 @@
 ---
-title: "Matplotlib Tutorials"
+title: "Scatter Plots"
 type: "read"
 resources:
   - title: "Matplotlib: matplotlib.pyplot.scatter"

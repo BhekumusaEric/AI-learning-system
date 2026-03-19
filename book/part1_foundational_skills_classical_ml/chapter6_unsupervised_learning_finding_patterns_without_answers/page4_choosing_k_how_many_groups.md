@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Unsupervised Learning"
+title: "Choosing K: How Many Groups?"
 type: "read"
 resources:
   - title: "Wikipedia: Elbow Method (clustering)"

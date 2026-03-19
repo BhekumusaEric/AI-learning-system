@@ -1,5 +1,5 @@
 ---
-title: "Stanford CS231n: Convolutional Neural Networks"
+title: "Pooling: Shrinking While Keeping Important Stuff"
 type: "read"
 resources:
   - title: "PyTorch: nn.MaxPool2d"

@@ -1,5 +1,5 @@
 ---
-title: "Matplotlib Tutorials"
+title: "Bar Charts and Histograms"
 type: "read"
 resources:
   - title: "Matplotlib: matplotlib.pyplot.bar"

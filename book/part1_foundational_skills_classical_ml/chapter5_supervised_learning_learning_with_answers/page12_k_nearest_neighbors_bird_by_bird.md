@@ -1,5 +1,5 @@
 ---
-title: "Scikit-Learn: Supervised Learning"
+title: "K-Nearest Neighbors: Bird by Bird"
 type: "read"
 resources:
   - title: "Scikit-Learn: Nearest Neighbors"

@@ -1,5 +1,5 @@
 ---
-title: "Hugging Face NLP Course"
+title: "Tokenization: Splitting Text into Pieces"
 type: "read"
 resources:
   - title: "Hugging Face: Tokenizers"
