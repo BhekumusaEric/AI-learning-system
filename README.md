@@ -1,5 +1,17 @@
-SAAIO Training Grounds - Complete Product Requirement Document (PRD)
-Executive Summary
+# SAAIO Training Grounds
+
+## 🔗 Platform Links
+
+| Platform | URL |
+|---|---|
+| 🎓 Student Login (IDC SEF / DIP) | https://ai-learning-system-ten.vercel.app/dip/login |
+| 🛡️ Admin Dashboard | https://ai-learning-system-ten.vercel.app/admin |
+
+---
+
+## Product Requirement Document (PRD)
+
+### Executive Summary
 
 Product Name: SAAIO Training Grounds
 Target Audience: High school students (ages 14-18) preparing for the International Olympiad in Artificial Intelligence
