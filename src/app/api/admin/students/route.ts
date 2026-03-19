@@ -71,10 +71,6 @@ async function sendCredentialsEmail({
   `;
 
   const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-  const adminEmail = process.env.ADMIN_EMAIL;
-
-  // If no verified domain, send to admin email only (Resend restriction)
-  // Admin then forwards to student manually
   const recipient = adminEmail || to;
   const subjectLine = adminEmail && adminEmail !== to
     ? `[FORWARD TO ${to}] ${subject}`
