@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createHash } from 'crypto';
 
-function sessionToken(password: string) {
-  return createHash('sha256').update('admin_session:' + password).digest('hex');
+// Edge-compatible token: just a fixed prefix + the raw password env var.
+// The login route sets this same value into the cookie.
+function expectedToken() {
+  return 'admin:' + (process.env.ADMIN_PASSWORD || 'supersecret');
 }
 
 export function middleware(req: NextRequest) {
@@ -13,8 +14,7 @@ export function middleware(req: NextRequest) {
     if (url.pathname === '/admin/login') return NextResponse.next();
 
     const session = req.cookies.get('admin_session')?.value;
-    const expected = sessionToken(process.env.ADMIN_PASSWORD || 'supersecret');
-    if (session !== expected) {
+    if (session !== expectedToken()) {
       return NextResponse.redirect(new URL('/admin/login', req.url));
     }
   }

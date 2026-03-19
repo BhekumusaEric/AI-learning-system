@@ -71,8 +71,7 @@ function requireAdmin(request: Request) {
   const cookie = request.headers.get('cookie') || '';
   const match = cookie.match(/admin_session=([^;]+)/);
   const session = match ? decodeURIComponent(match[1]) : null;
-  const expected = createHash('sha256').update('admin_session:' + (process.env.ADMIN_PASSWORD || 'supersecret')).digest('hex');
-  return session === expected;
+  return session === 'admin:' + (process.env.ADMIN_PASSWORD || 'supersecret');
 }
 
 // POST /api/admin/students/bulk
