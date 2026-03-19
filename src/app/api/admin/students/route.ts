@@ -36,8 +36,16 @@ async function sendCredentialsEmail({
     ? `Your password has been reset — ${platformName}`
     : `Welcome to ${platformName} — Your Login Credentials`;
 
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const forwardNote = adminEmail
+    ? `<div style="background:#1a1a00;border:1px solid #ffb86b;border-radius:8px;padding:12px;margin-bottom:20px;">
+        <p style="color:#ffb86b;font-size:12px;margin:0;">📧 <strong>ADMIN:</strong> Please forward this email to <strong>${to}</strong></p>
+       </div>`
+    : '';
+
   const html = `
     <div style="font-family: monospace; background: #000; color: #fff; padding: 32px; max-width: 480px; margin: 0 auto; border-radius: 12px;">
+      ${forwardNote}
       <h2 style="color: #00ff9d; margin-bottom: 8px;">${platformName}</h2>
       <p style="color: #b0b0b0; margin-bottom: 24px;">
         ${isReset ? `Hi ${full_name}, your password has been reset.` : `Hi ${full_name}, welcome! Here are your login credentials.`}
@@ -62,10 +70,20 @@ async function sendCredentialsEmail({
     </div>
   `;
 
+  const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+  const adminEmail = process.env.ADMIN_EMAIL;
+
+  // If no verified domain, send to admin email only (Resend restriction)
+  // Admin then forwards to student manually
+  const recipient = adminEmail || to;
+  const subjectLine = adminEmail && adminEmail !== to
+    ? `[FORWARD TO ${to}] ${subject}`
+    : subject;
+
   await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-    to,
-    subject,
+    from: fromAddress,
+    to: recipient,
+    subject: subjectLine,
     html,
   });
 }
