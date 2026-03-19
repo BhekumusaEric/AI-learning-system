@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createHash } from 'crypto';
 import { Resend } from 'resend';
+import { nextUniqueLoginId } from '@/lib/loginId';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,12 +10,6 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 function hashPassword(password: string) {
   return createHash('sha256').update(password).digest('hex');
-}
-
-function generateLoginId(platform: string, count: number) {
-  const prefix = platform === 'saaio' ? 'SAAIO' : 'DIP';
-  const year = new Date().getFullYear();
-  return `${prefix}-${year}-${String(count + 1).padStart(3, '0')}`;
 }
 
 function generatePassword(length = 8) {
@@ -138,8 +133,7 @@ export async function POST(request: Request) {
   if (!full_name || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
   const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
-  const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
-  const login_id = generateLoginId(platform, (count || 0) + 1);
+  const login_id = await nextUniqueLoginId(platform);
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 

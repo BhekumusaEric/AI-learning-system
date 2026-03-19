@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createHash } from 'crypto';
 import { Resend } from 'resend';
+import { nextUniqueLoginId } from '@/lib/loginId';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,12 +15,6 @@ function hashPassword(p: string) {
 function generatePassword(length = 8) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-}
-
-function generateLoginId(platform: string, index: number) {
-  const prefix = platform === 'dip' ? 'DIP' : 'SAAIO';
-  const year = new Date().getFullYear();
-  return `${prefix}-${year}-${String(index).padStart(3, '0')}`;
 }
 
 async function sendCredentialsEmail(to: string, full_name: string, login_id: string, password: string, platform: string) {
@@ -86,10 +81,6 @@ export async function POST(request: Request) {
 
   const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
 
-  // Get current count to generate sequential IDs
-  const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
-  let nextIndex = (count || 0) + 1;
-
   const results: { full_name: string; login_id: string; plainPassword: string; email: string | null; success: boolean; error?: string; emailSent?: boolean }[] = [];
   const emailPromises: Promise<void>[] = [];
 
@@ -102,7 +93,8 @@ export async function POST(request: Request) {
       continue;
     }
 
-    const login_id = generateLoginId(platform, nextIndex);
+    // Get a unique ID fresh for each student — accounts for concurrent inserts
+    const login_id = await nextUniqueLoginId(platform);
     const plainPassword = generatePassword();
     const password_hash = hashPassword(plainPassword);
 
@@ -115,7 +107,6 @@ export async function POST(request: Request) {
       continue;
     }
 
-    nextIndex++;
     const resultEntry = { full_name, login_id, plainPassword, email, success: true, emailSent: false };
     results.push(resultEntry);
 
