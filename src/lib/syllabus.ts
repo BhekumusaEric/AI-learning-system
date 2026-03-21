@@ -136,7 +136,7 @@ function findAndReadFile(dir: string, filename: string): any {
         id: filename.replace('.md', ''),
         content: content,
         theoryContent: fileContents,
-        isPractice: filename.includes('practice') || filename.includes('challenge') || data.type === 'lab',
+        isPractice: filename.includes('practice') || filename.includes('challenge') || data.type === 'lab' || data.type === 'practice',
         pageType: data.type || null,
         initialCode: extractInitialCode(content),
         testCode: extractTestCode(content),
