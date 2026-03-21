@@ -3,7 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/lesson/[id]': ['./book/**/*'],
+    '/dip/lesson/[id]': ['./book/**/*'],
     '/admin': ['./book/**/*'],
+    '/api/content/grounds': ['./book/**/*'],
+    '/api/content/ground/[groundId]': ['./book/**/*'],
+    '/api/content/item/[contentId]': ['./book/**/*'],
   },
 };
 
