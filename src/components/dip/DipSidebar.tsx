@@ -12,12 +12,15 @@ export default function DipSidebar({ syllabus }: { syllabus: PartData[] }) {
   const { completedPages } = useProgress();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // DIP = only chapter 1 (Python Fundamentals) pages, shown flat as topics
-  const chapter1 = syllabus[0]?.chapters.find(c => c.id === 'chapter1_python_programming_fundamentals');
-  const pages = chapter1 ? [...chapter1.pages].sort((a, b) => a.order - b.order) : [];
+  const part1 = syllabus.find(p => p.id === 'part1_foundational_skills_classical_ml');
+  const chapter1 = part1?.chapters.find(c => c.id === 'chapter1_python_programming_fundamentals');
+  const chapter2 = part1?.chapters.find(c => c.id === 'chapter2_battle_grounds');
+  const fundamentalPages = chapter1 ? [...chapter1.pages].sort((a, b) => a.order - b.order) : [];
+  const battlePages = chapter2 ? [...chapter2.pages].sort((a, b) => a.order - b.order) : [];
 
-  const totalPages = pages.length;
-  const completedCount = pages.filter(p => completedPages[p.id]).length;
+  const allDipPages = [...fundamentalPages, ...battlePages];
+  const totalPages = allDipPages.length;
+  const completedCount = allDipPages.filter(p => completedPages[p.id]).length;
   const examUnlocked = completedCount >= Math.floor(totalPages * 0.8);
 
   return (
@@ -35,37 +38,55 @@ export default function DipSidebar({ syllabus }: { syllabus: PartData[] }) {
       {!isCollapsed && (
         <div className="flex-1 overflow-y-auto py-2">
 
-          {/* Part 1 header — non-collapsible, always open */}
+          {/* Chapter 1: Python Fundamentals */}
           <div className="px-4 py-2 flex items-center gap-2 mb-1">
             <BookOpen className="w-4 h-4 text-accent shrink-0" />
-            <span className="text-sm font-bold text-foreground truncate">Part 1: Python Fundamentals</span>
-            <span className="text-[10px] text-secondary-text ml-auto shrink-0">{completedCount}/{totalPages}</span>
+            <span className="text-sm font-bold text-foreground truncate">Python Fundamentals</span>
+            <span className="text-[10px] text-secondary-text ml-auto shrink-0">{fundamentalPages.filter(p => completedPages[p.id]).length}/{fundamentalPages.length}</span>
           </div>
-
-          {/* Topics listed directly — these are the "chapters" */}
           <div className="pl-4 py-1">
-            {pages.map(page => {
+            {fundamentalPages.map(page => {
               const isActive = pathname === `/dip/lesson/${page.id}`;
               return (
-                <Link
-                  href={`/dip/lesson/${page.id}`}
-                  key={page.id}
+                <Link href={`/dip/lesson/${page.id}`} key={page.id}
                   className={`flex items-start gap-2 px-4 py-2 text-sm rounded-l-md transition-colors ${
-                    isActive
-                      ? 'bg-secondary border-r-2 border-accent text-accent font-medium'
+                    isActive ? 'bg-secondary border-r-2 border-accent text-accent font-medium'
                       : 'text-secondary-text hover:text-foreground hover:bg-secondary/30'
                   }`}
                 >
-                  {completedPages[page.id] ? (
-                    <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                  ) : (
-                    <Circle className="w-4 h-4 text-secondary-text/50 shrink-0 mt-0.5" />
-                  )}
+                  {completedPages[page.id] ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" /> : <Circle className="w-4 h-4 text-secondary-text/50 shrink-0 mt-0.5" />}
                   <span className="leading-snug">{page.title}</span>
                 </Link>
               );
             })}
           </div>
+
+          {/* Chapter 2: Battle Grounds */}
+          {battlePages.length > 0 && (
+            <>
+              <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+                <span className="text-lg shrink-0">⚔️</span>
+                <span className="text-sm font-bold text-foreground truncate">Battle Grounds</span>
+                <span className="text-[10px] text-secondary-text ml-auto shrink-0">{battlePages.filter(p => completedPages[p.id]).length}/{battlePages.length}</span>
+              </div>
+              <div className="pl-4 py-1">
+                {battlePages.map(page => {
+                  const isActive = pathname === `/dip/lesson/${page.id}`;
+                  return (
+                    <Link href={`/dip/lesson/${page.id}`} key={page.id}
+                      className={`flex items-start gap-2 px-4 py-2 text-sm rounded-l-md transition-colors ${
+                        isActive ? 'bg-secondary border-r-2 border-accent text-accent font-medium'
+                          : 'text-secondary-text hover:text-foreground hover:bg-secondary/30'
+                      }`}
+                    >
+                      {completedPages[page.id] ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" /> : <Circle className="w-4 h-4 text-secondary-text/50 shrink-0 mt-0.5" />}
+                      <span className="leading-snug">{page.title}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           {/* Exam link */}
           <div className="mt-4 mx-4 border-t border-border-subtle pt-4">

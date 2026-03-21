@@ -5,12 +5,14 @@ export default async function DipLessonPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const pageData = getPageContent(id);
 
-  // DIP navigation scoped to chapter 1 pages only
+  // DIP navigation scoped to chapter 1 (Python Fundamentals) + chapter 2 (Battle Grounds)
   const fullSyllabus = getSyllabus();
-  const chapter1 = fullSyllabus
-    .find(p => p.id === 'part1_foundational_skills_classical_ml')
-    ?.chapters.find(c => c.id === 'chapter1_python_programming_fundamentals');
-  const dipPages = chapter1 ? [...chapter1.pages].sort((a, b) => a.order - b.order) : [];
+  const part1 = fullSyllabus.find(p => p.id === 'part1_foundational_skills_classical_ml');
+  const chapter1 = part1?.chapters.find(c => c.id === 'chapter1_python_programming_fundamentals');
+  const chapter2 = part1?.chapters.find(c => c.id === 'chapter2_battle_grounds');
+  const ch1Pages = chapter1 ? [...chapter1.pages].sort((a, b) => a.order - b.order) : [];
+  const ch2Pages = chapter2 ? [...chapter2.pages].sort((a, b) => a.order - b.order) : [];
+  const dipPages = [...ch1Pages, ...ch2Pages];
 
   const currentIndex = dipPages.findIndex(p => p.id === id);
   const prev = currentIndex > 0 ? dipPages[currentIndex - 1] : null;
