@@ -83,7 +83,7 @@ function buildTestRunner(tests) {
       out.push(`${indent}  __exp = ${rhs}`);
       out.push(`${indent}  assert __got == __exp`);
       out.push(`${indent}except AssertionError:`);
-      out.push(`${indent}  raise AssertionError(f"\\nYour output:  {repr(__got)}\\nExpected:     {repr(__exp)}")`);
+      out.push(indent + "  raise AssertionError(f'\\nYour output:  {repr(__got)}\\nExpected:     {repr(__exp)}')");
     } else {
       out.push(line);
     }
