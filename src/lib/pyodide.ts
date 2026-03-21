@@ -11,22 +11,34 @@ export interface ExecutionResult {
 
 let pyodideWorker: Worker | null = null;
 let msgId = 0;
+let isReady = false;
 const resolvers: Record<number, { resolve: (val: any) => void; reject: (err: any) => void }> = {};
+
+/** True once all packages have finished loading in the worker */
+export function isPyodideReady() {
+  return isReady;
+}
 
 export async function getPyodide(): Promise<void> {
   if (typeof window === 'undefined') return;
-  
+
   if (!pyodideWorker) {
+    isReady = false;
     pyodideWorker = new Worker('/pyodide-worker.js');
-    
+
     pyodideWorker.onmessage = (event) => {
-      const { id, success, result, error, stdout, stderr } = event.data;
+      const { id, success, result, error, stdout, stderr, type } = event.data;
+
+      // Worker sends a special 'ready' message once all packages are loaded
+      if (type === 'ready') {
+        isReady = true;
+        return;
+      }
+
       if (resolvers[id]) {
         if (success) {
           resolvers[id].resolve({ stdout, stderr, result });
         } else {
-          // Returning error in the success shape rather than throwing 
-          // to match the previous graceful catch behavior
           resolvers[id].resolve({ stdout, stderr, result: null, error });
         }
         delete resolvers[id];
@@ -35,41 +47,34 @@ export async function getPyodide(): Promise<void> {
   }
 }
 
-export async function runPythonCode(code: string, tests: string = '', timeoutMs: number = 10000): Promise<ExecutionResult> {
+export async function runPythonCode(code: string, tests: string = '', timeoutMs: number = 30000): Promise<ExecutionResult> {
   await getPyodide();
-  
+
   return new Promise((resolve, reject) => {
     if (!pyodideWorker) return reject(new Error("Worker not initialized"));
-    
+
     const id = msgId++;
-    
+
     const timeoutId = setTimeout(() => {
       if (resolvers[id]) {
-        // Terminate the locked worker
         pyodideWorker?.terminate();
-        pyodideWorker = null; // Forces re-initialization on next run
-        
+        pyodideWorker = null;
+        isReady = false;
         delete resolvers[id];
         resolve({
           stdout: "",
           stderr: "",
           result: null,
-          error: "TimeoutError: Code execution took too long (> 10s).\\nDid you write an infinite loop?"
+          error: "TimeoutError: Code execution took too long (> 30s).\\nDid you write an infinite loop?"
         });
       }
     }, timeoutMs);
 
-    resolvers[id] = { 
-      resolve: (val) => {
-        clearTimeout(timeoutId);
-        resolve(val);
-      }, 
-      reject: (err) => {
-        clearTimeout(timeoutId);
-        reject(err);
-      }
+    resolvers[id] = {
+      resolve: (val) => { clearTimeout(timeoutId); resolve(val); },
+      reject:  (err) => { clearTimeout(timeoutId); reject(err); }
     };
-    
+
     pyodideWorker.postMessage({ id, code, tests });
   });
 }

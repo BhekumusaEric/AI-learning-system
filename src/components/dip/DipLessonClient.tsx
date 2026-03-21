@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import TwoPanelLayout from '@/components/layout/TwoPanelLayout';
 import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
-import { runPythonCode, getPyodide } from '@/lib/pyodide';
+import { runPythonCode, getPyodide, isPyodideReady } from '@/lib/pyodide';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -34,11 +34,20 @@ export default function DipLessonClient({
 }: DipLessonClientProps) {
   const [code, setCode] = useState(initialCodeProp || '# Write your python code here\n\n');
   const [isRunning, setIsRunning] = useState(false);
+  const [isEnvLoading, setIsEnvLoading] = useState(true);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const { markCompleted, completedPages } = useProgress();
   const router = useRouter();
 
-  useEffect(() => { if (isPractice) getPyodide(); }, [isPractice]);
+  useEffect(() => {
+    if (!isPractice) return;
+    setIsEnvLoading(true);
+    getPyodide();
+    const interval = setInterval(() => {
+      if (isPyodideReady()) { setIsEnvLoading(false); clearInterval(interval); }
+    }, 300);
+    return () => clearInterval(interval);
+  }, [isPractice]);
   useEffect(() => { setCode(initialCodeProp || '# Write your python code here\n\n'); setResults(null); }, [initialCodeProp]);
 
   const handleRun = async () => {
@@ -163,7 +172,7 @@ export default function DipLessonClient({
 
   const rightPanel = isPractice ? (
     <>
-      <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { setCode(initialCodeProp || ''); setResults(null); }} isRunning={isRunning} />
+      <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { setCode(initialCodeProp || ''); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} />
       <FeedbackPanel results={results} isRunning={isRunning} />
     </>
   ) : null;

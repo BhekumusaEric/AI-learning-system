@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import TwoPanelLayout from '@/components/layout/TwoPanelLayout';
 import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
-import { runPythonCode, getPyodide } from '@/lib/pyodide';
+import { runPythonCode, getPyodide, isPyodideReady } from '@/lib/pyodide';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -35,14 +35,24 @@ export default function LessonPageClient({
 }) {
   const [code, setCode] = useState(initialCodeProp || "# Write your python code here\\n\\n");
   const [isRunning, setIsRunning] = useState(false);
+  const [isEnvLoading, setIsEnvLoading] = useState(true);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const { markCompleted, completedPages } = useProgress();
   const router = useRouter();
   const isCompleted = completedPages[pageId];
 
   useEffect(() => {
-    // Prefetch pyodide in the background
-    if (isPractice) getPyodide();
+    if (!isPractice) return;
+    setIsEnvLoading(true);
+    getPyodide();
+    // Poll until the worker signals ready
+    const interval = setInterval(() => {
+      if (isPyodideReady()) {
+        setIsEnvLoading(false);
+        clearInterval(interval);
+      }
+    }, 300);
+    return () => clearInterval(interval);
   }, [isPractice]);
 
   // Update editor code safely when navigating
@@ -224,6 +234,7 @@ export default function LessonPageClient({
         onRun={handleRun}
         onReset={handleReset}
         isRunning={isRunning}
+        isLoading={isEnvLoading}
       />
       <FeedbackPanel 
         results={results} 
