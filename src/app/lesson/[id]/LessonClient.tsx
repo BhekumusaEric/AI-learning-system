@@ -111,11 +111,9 @@ export default function LessonPageClient({
 
       if (isAssertionError) {
         const raw = error.split('AssertionError:').slice(1).join('AssertionError:').trim();
-        const yourMatch = raw.match(/Your output:\s*(.+)/s);
-        const expMatch  = raw.match(/Expected:\s*(.+)/s);
         const labelPart = raw.split('\nYour output:')[0].replace(/\s*—\s*$/, '').trim();
-        const gotVal  = yourMatch ? yourMatch[1].split('\n')[0].trim() : '';
-        const expVal  = expMatch  ? expMatch[1].split('\n')[0].trim()  : '';
+        const gotVal  = raw.includes('Your output:') ? raw.split('Your output:')[1].split('\n')[0].trim() : '';
+        const expVal  = raw.includes('Expected:')    ? raw.split('Expected:')[1].split('\n')[0].trim()    : '';
         let displayError = '';
         if (labelPart) displayError += `${labelPart}\n`;
         if (gotVal)    displayError += `Your output:  ${gotVal}\n`;

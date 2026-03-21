@@ -85,13 +85,13 @@ export default function DipLessonClient({
         // Error message is now structured: "label — \nYour output: ...\nExpected: ..."
         const raw = error.split('AssertionError:').slice(1).join('AssertionError:').trim();
         // raw may have a label line then \nYour output: ...\nExpected: ...
-        const yourMatch = raw.match(/Your output:\s*(.+)/s);
-        const expMatch  = raw.match(/Expected:\s*(.+)/s);
+        const yourMatch = raw.includes("Your output:") ? raw.split("Your output:")[1] : null;
+        const expMatch  = raw.includes("Expected:")    ? raw.split("Expected:")[1]    : null;
         // label is everything before the first \nYour output
         const labelPart = raw.split('\nYour output:')[0].replace(/\s*—\s*$/, '').trim();
 
-        const gotVal  = yourMatch ? yourMatch[1].split('\n')[0].trim() : '';
-        const expVal  = expMatch  ? expMatch[1].split('\n')[0].trim()  : '';
+        const gotVal  = yourMatch ? yourMatch.split("\n")[0].trim() : "";
+        const expVal  = expMatch  ? expMatch.split("\n")[0].trim()  : "";
 
         let displayError = '';
         if (labelPart) displayError += `${labelPart}\n`;
