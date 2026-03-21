@@ -1,6 +1,7 @@
 ---
 title: "Dropout: Randomly Turn Off Neurons"
 type: "practice"
+colab_notebook: "notebooks/part2_neural_networks/chapter7/page14_dropout_randomly_turn_off_neurons.ipynb"
 resources:
   - title: "PyTorch: nn.Dropout"
     url: "https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"

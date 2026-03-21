@@ -1,6 +1,7 @@
 ---
 title: "MLP Practice"
 type: "practice"
+colab_notebook: "notebooks/part2_neural_networks/chapter7/page13_mlp_practice.ipynb"
 resources:
   - title: "PyTorch: Optimizing Model Parameters"
     url: "https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"

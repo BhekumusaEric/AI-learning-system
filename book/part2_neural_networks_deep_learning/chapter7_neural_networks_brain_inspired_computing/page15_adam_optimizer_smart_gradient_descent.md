@@ -1,6 +1,7 @@
 ---
 title: "Adam Optimizer: Smart Gradient Descent"
 type: "practice"
+colab_notebook: "notebooks/part2_neural_networks/chapter7/page15_adam_optimizer_smart_gradient_descent.ipynb"
 resources:
   - title: "PyTorch: optim.Adam"
     url: "https://pytorch.org/docs/stable/generated/torch.optim.Adam.html"

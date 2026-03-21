@@ -139,7 +139,8 @@ function findAndReadFile(dir: string, filename: string): any {
         isPractice: filename.includes('practice') || filename.includes('challenge'),
         initialCode: extractInitialCode(content),
         testCode: extractTestCode(content),
-        resources: data.resources || []
+        resources: data.resources || [],
+        colabNotebook: data.colab_notebook || null
       };
     }
   }

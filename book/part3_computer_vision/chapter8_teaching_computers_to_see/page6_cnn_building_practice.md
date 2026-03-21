@@ -1,6 +1,7 @@
 ---
 title: "CNN Building Practice"
 type: "practice"
+colab_notebook: "notebooks/part3_computer_vision/chapter8/page6_cnn_building_practice.ipynb"
 resources:
   - title: "PyTorch: Training a Classifier"
     url: "https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html"

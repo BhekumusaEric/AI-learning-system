@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import TwoPanelLayout from '@/components/layout/TwoPanelLayout';
 import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
+import ColabPanel from '@/components/editor/ColabPanel';
 import { runPythonCode, getPyodide, isPyodideReady } from '@/lib/pyodide';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -22,7 +23,8 @@ export default function LessonPageClient({
   isPractice,
   resources,
   prevPage,
-  nextPage
+  nextPage,
+  colabNotebook
 }: { 
   pageId: string;
   content: string; 
@@ -32,6 +34,7 @@ export default function LessonPageClient({
   resources: ResourceData[];
   prevPage: PageData | null;
   nextPage: PageData | null;
+  colabNotebook: string | null;
 }) {
   const [code, setCode] = useState(initialCodeProp || "# Write your python code here\\n\\n");
   const [isRunning, setIsRunning] = useState(false);
@@ -227,20 +230,27 @@ export default function LessonPageClient({
   );
 
   const rightPanel = isPractice ? (
-    <>
-      <CodeEditor
-        code={code}
-        onChange={(val) => setCode(val || '')}
-        onRun={handleRun}
-        onReset={handleReset}
-        isRunning={isRunning}
-        isLoading={isEnvLoading}
+    colabNotebook ? (
+      <ColabPanel
+        notebookPath={colabNotebook}
+        onMarkComplete={() => { markCompleted(pageId); if (nextPage) router.push(`/lesson/${nextPage.id}`); }}
       />
-      <FeedbackPanel 
-        results={results} 
-        isRunning={isRunning} 
-      />
-    </>
+    ) : (
+      <>
+        <CodeEditor
+          code={code}
+          onChange={(val) => setCode(val || '')}
+          onRun={handleRun}
+          onReset={handleReset}
+          isRunning={isRunning}
+          isLoading={isEnvLoading}
+        />
+        <FeedbackPanel 
+          results={results} 
+          isRunning={isRunning} 
+        />
+      </>
+    )
   ) : null;
 
   return <TwoPanelLayout leftPanel={leftPanel} rightPanel={rightPanel} />;

@@ -1,6 +1,7 @@
 ---
 title: "Data Loading and Preprocessing"
-type: "read"
+type: "practice"
+colab_notebook: "notebooks/part5_projects/chapter4/page2_project4_data_loading_preprocessing.ipynb"
 ---
 
 # Data Loading and Text Preprocessing

@@ -41,6 +41,7 @@ export default async function DipLessonPage({ params }: { params: Promise<{ id: 
       nextPageId={next?.id ?? null}
       nextPageTitle={next?.title ?? null}
       isLastPage={isLastPage}
+      colabNotebook={pageData.colabNotebook || null}
     />
   );
 }

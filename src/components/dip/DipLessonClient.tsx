@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import TwoPanelLayout from '@/components/layout/TwoPanelLayout';
 import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
+import ColabPanel from '@/components/editor/ColabPanel';
 import { runPythonCode, getPyodide, isPyodideReady } from '@/lib/pyodide';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -26,11 +27,12 @@ interface DipLessonClientProps {
   nextPageId: string | null;
   nextPageTitle: string | null;
   isLastPage: boolean;
+  colabNotebook: string | null;
 }
 
 export default function DipLessonClient({
   pageId, content, initialCodeProp, testCodeProp, isPractice, resources,
-  prevPageId, prevPageTitle, nextPageId, nextPageTitle, isLastPage,
+  prevPageId, prevPageTitle, nextPageId, nextPageTitle, isLastPage, colabNotebook,
 }: DipLessonClientProps) {
   const [code, setCode] = useState(initialCodeProp || '# Write your python code here\n\n');
   const [isRunning, setIsRunning] = useState(false);
@@ -171,10 +173,17 @@ export default function DipLessonClient({
   );
 
   const rightPanel = isPractice ? (
-    <>
-      <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { setCode(initialCodeProp || ''); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} />
-      <FeedbackPanel results={results} isRunning={isRunning} />
-    </>
+    colabNotebook ? (
+      <ColabPanel
+        notebookPath={colabNotebook}
+        onMarkComplete={() => { markCompleted(pageId); if (nextPageId) navigate(nextPageId); }}
+      />
+    ) : (
+      <>
+        <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { setCode(initialCodeProp || ''); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} />
+        <FeedbackPanel results={results} isRunning={isRunning} />
+      </>
+    )
   ) : null;
 
   return <TwoPanelLayout leftPanel={leftPanel} rightPanel={rightPanel} />;

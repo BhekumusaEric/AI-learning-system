@@ -1,6 +1,7 @@
 ---
 title: "Transfer Learning Practice"
 type: "practice"
+colab_notebook: "notebooks/part3_computer_vision/chapter8/page8_transfer_learning_practice.ipynb"
 resources:
   - title: "PyTorch: Transfer Learning Tutorial"
     url: "https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html"

@@ -1,6 +1,7 @@
 ---
 title: "BERT for Classification"
 type: "practice"
+colab_notebook: "notebooks/part4_nlp/chapter9/page6_bert_for_classification.ipynb"
 resources:
   - title: "Hugging Face: Sequence Classification"
     url: "https://huggingface.co/docs/transformers/tasks/sequence_classification"
