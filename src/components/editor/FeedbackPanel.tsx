@@ -79,8 +79,16 @@ export default function FeedbackPanel({ results, isRunning, onNext }: FeedbackPa
                   )}
                 </div>
                 
-                <div className="text-sm font-mono text-warning bg-black/40 p-3 rounded overflow-x-auto whitespace-pre">
-                  {res.error}
+                <div className="text-sm font-mono bg-black/40 p-3 rounded overflow-x-auto border border-[#333]">
+                  {res.error.split('\n').map((line, i) => {
+                    const isYours = line.startsWith('Your output:');
+                    const isExpected = line.startsWith('Expected:');
+                    return (
+                      <div key={i} className={isYours ? 'text-error' : isExpected ? 'text-accent' : 'text-warning'}>
+                        {line}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {res.hint && (

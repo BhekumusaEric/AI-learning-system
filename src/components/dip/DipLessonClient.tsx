@@ -81,19 +81,48 @@ export default function DipLessonClient({
         IndentationError: 'Check your indentation — no mixing tabs and spaces.',
       };
 
-      setResults([
-        { id: 0, name: 'Output Console', passed: true, error: stdout || 'Program exited with error' },
-        { id: 1, name: isAssertion ? 'Hidden Test Failed' : 'Code Error', passed: false, errorType, lineNumber,
-          hint: hints[errorType] || 'Check the error message for clues.',
-          error: isAssertion ? error.split('AssertionError:')[1]?.split('\n')[0]?.trim() || 'Assertion failed'
-            : error.split('\n').slice(-4).join('\n') },
-      ]);
+      if (isAssertion) {
+        // Extract the assert expression from the traceback (the line starting with "assert")
+        const assertLine = errorLines.find(l => l.trim().startsWith('assert'));
+        // Extract the failure message after "AssertionError:"
+        const assertMsgRaw = error.split('AssertionError:')[1]?.split('\n')[0]?.trim() || '';
+
+        // Build a clear got/expected message
+        // assertMsgRaw is the f-string message e.g. "Got [1, 2, 3]"
+        // assertLine is the full assert expression e.g. "assert fizzbuzz(3) == [\"1\",\"2\",\"Fizz\"]"
+        let displayError = '';
+        if (assertMsgRaw) {
+          displayError += `Your output:  ${assertMsgRaw.replace(/^Got\s*/i, '')}\n`;
+        }
+        if (assertLine) {
+          // Try to extract the expected value from "== <expected>" in the assert expression
+          const expectedMatch = assertLine.match(/==\s*(.+?)(?:,\s*["'].*["']\s*)?$/);
+          if (expectedMatch) {
+            displayError += `Expected:     ${expectedMatch[1].trim()}`;
+          }
+        }
+        if (!displayError) displayError = 'A test assertion failed. Check your logic.';
+
+        setResults([
+          { id: 0, name: 'Output Console', passed: true, error: stdout || 'No output' },
+          { id: 1, name: 'Test Failed', passed: false, errorType: 'AssertionError', lineNumber,
+            hint: hints[errorType] || 'Compare your output to the expected value above.',
+            error: displayError },
+        ]);
+      } else {
+        setResults([
+          { id: 0, name: 'Output Console', passed: true, error: stdout || 'Program exited with error' },
+          { id: 1, name: 'Code Error', passed: false, errorType, lineNumber,
+            hint: hints[errorType] || 'Check the error message for clues.',
+            error: error.split('\n').slice(-4).join('\n') },
+        ]);
+      }
       return;
     }
 
     setResults([
       { id: 1, name: 'Output Console', passed: true, error: stdout || 'Program exited normally' },
-      ...(testCodeProp ? [{ id: 2, name: 'Hidden Tests', passed: true, error: 'All tests passed!' }] : []),
+      ...(testCodeProp ? [{ id: 2, name: 'All Tests Passed', passed: true, error: 'All hidden tests passed!' }] : []),
     ]);
   };
 

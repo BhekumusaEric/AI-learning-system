@@ -109,27 +109,37 @@ export default function LessonPageClient({
         else generatedHint = "Look at the error message for clues about what went wrong.";
       }
 
-      setResults([
-        { id: 0, name: "Output Console", passed: true, error: stdout || "Program exited with error before generating output" },
-        {
-          id: 1,
-          name: isAssertionError ? "Hidden Test Failed" : "Code Syntax/Runtime Error",
-          passed: false,
-          errorType: errorType,
-          lineNumber: lineNumber,
-          hint: generatedHint,
-          error: isAssertionError 
-            ? error.split('AssertionError:')[1]?.split('\n')[0]?.trim() || "Assertion failed"
-            : error.split('\n').slice(-4).join('\n') // Show last few lines of traceback
+      if (isAssertionError) {
+        const assertLine = errorLines.find(l => l.trim().startsWith('assert'));
+        const assertMsgRaw = error.split('AssertionError:')[1]?.split('\n')[0]?.trim() || '';
+        let displayError = '';
+        if (assertMsgRaw) {
+          displayError += `Your output:  ${assertMsgRaw.replace(/^Got\s*/i, '')}\n`;
         }
-      ]);
+        if (assertLine) {
+          const expectedMatch = assertLine.match(/==\s*(.+?)(?:,\s*["'].*["']\s*)?$/);
+          if (expectedMatch) {
+            displayError += `Expected:     ${expectedMatch[1].trim()}`;
+          }
+        }
+        if (!displayError) displayError = 'A test assertion failed. Check your logic.';
+        setResults([
+          { id: 0, name: "Output Console", passed: true, error: stdout || "No output" },
+          { id: 1, name: "Test Failed", passed: false, errorType, lineNumber, hint: generatedHint, error: displayError }
+        ]);
+      } else {
+        setResults([
+          { id: 0, name: "Output Console", passed: true, error: stdout || "Program exited with error before generating output" },
+          { id: 1, name: "Code Error", passed: false, errorType, lineNumber, hint: generatedHint,
+            error: error.split('\n').slice(-4).join('\n') }
+        ]);
+      }
       return;
     }
     
-    // Simplistic success if code ran without Python tracebacks stdout
     setResults([
       { id: 1, name: "Output Console", passed: true, error: stdout || "Program exited normally with no output" },
-      ...(testCodeProp ? [{ id: 2, name: "Hidden Tests Evaluation", passed: true, error: "All tests passed successfully!" }] : [])
+      ...(testCodeProp ? [{ id: 2, name: "All Tests Passed", passed: true, error: "All hidden tests passed successfully!" }] : [])
     ]);
   };
 
