@@ -5,6 +5,7 @@ import TwoPanelLayout from '@/components/layout/TwoPanelLayout';
 import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
 import ColabPanel from '@/components/editor/ColabPanel';
+import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
 import { runPythonCode, getPyodide, isPyodideReady } from '@/lib/pyodide';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -21,6 +22,7 @@ export default function LessonPageClient({
   initialCodeProp, 
   testCodeProp,
   isPractice,
+  pageType,
   resources,
   prevPage,
   nextPage,
@@ -31,6 +33,7 @@ export default function LessonPageClient({
   initialCodeProp: string | null; 
   testCodeProp: string | null;
   isPractice: boolean;
+  pageType: string | null;
   resources: ResourceData[];
   prevPage: PageData | null;
   nextPage: PageData | null;
@@ -229,8 +232,15 @@ export default function LessonPageClient({
     </div>
   );
 
-  const rightPanel = isPractice ? (
-    colabNotebook ? (
+  const isLab = pageType === 'lab';
+
+  const rightPanel = isPractice || isLab ? (
+    isLab && colabNotebook ? (
+      <EmbeddedColabPanel
+        notebookPath={colabNotebook}
+        onMarkComplete={() => { markCompleted(pageId); if (nextPage) router.push(`/lesson/${nextPage.id}`); }}
+      />
+    ) : colabNotebook ? (
       <ColabPanel
         notebookPath={colabNotebook}
         onMarkComplete={() => { markCompleted(pageId); if (nextPage) router.push(`/lesson/${nextPage.id}`); }}

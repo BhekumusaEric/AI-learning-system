@@ -7,7 +7,7 @@ const bookDirectory = path.join(process.cwd(), 'book');
 export interface PageData {
   id: string; // The URL slug e.g. "1.1" or "page1_your_first_python_program"
   title: string;
-  type: 'read' | 'practice';
+  type: 'read' | 'practice' | 'lab';
   order: number;
   completed: boolean; // Mocked for now
 }
@@ -77,7 +77,7 @@ export function getSyllabus(): PartData[] {
         return {
           id: pageId,
           title: data.title || formatTitle(file),
-          type: data.type || (isPractice ? 'practice' : 'read'),
+          type: data.type || (isPractice ? 'practice' : 'read') as 'read' | 'practice' | 'lab',
           order: pageIndex + 1,
           completed: false
         };
@@ -136,7 +136,8 @@ function findAndReadFile(dir: string, filename: string): any {
         id: filename.replace('.md', ''),
         content: content,
         theoryContent: fileContents,
-        isPractice: filename.includes('practice') || filename.includes('challenge'),
+        isPractice: filename.includes('practice') || filename.includes('challenge') || data.type === 'lab',
+        pageType: data.type || null,
         initialCode: extractInitialCode(content),
         testCode: extractTestCode(content),
         resources: data.resources || [],

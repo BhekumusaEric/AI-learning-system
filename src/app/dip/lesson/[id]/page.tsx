@@ -35,6 +35,7 @@ export default async function DipLessonPage({ params }: { params: Promise<{ id: 
       initialCodeProp={pageData.initialCode}
       testCodeProp={pageData.testCode}
       isPractice={pageData.isPractice}
+      pageType={pageData.pageType || null}
       resources={pageData.resources || []}
       prevPageId={prev?.id ?? null}
       prevPageTitle={prev?.title ?? null}

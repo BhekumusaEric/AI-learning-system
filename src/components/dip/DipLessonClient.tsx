@@ -5,6 +5,7 @@ import TwoPanelLayout from '@/components/layout/TwoPanelLayout';
 import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
 import ColabPanel from '@/components/editor/ColabPanel';
+import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
 import { runPythonCode, getPyodide, isPyodideReady } from '@/lib/pyodide';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -21,6 +22,7 @@ interface DipLessonClientProps {
   initialCodeProp: string | null;
   testCodeProp: string | null;
   isPractice: boolean;
+  pageType: string | null;
   resources: ResourceData[];
   prevPageId: string | null;
   prevPageTitle: string | null;
@@ -31,7 +33,7 @@ interface DipLessonClientProps {
 }
 
 export default function DipLessonClient({
-  pageId, content, initialCodeProp, testCodeProp, isPractice, resources,
+  pageId, content, initialCodeProp, testCodeProp, isPractice, pageType, resources,
   prevPageId, prevPageTitle, nextPageId, nextPageTitle, isLastPage, colabNotebook,
 }: DipLessonClientProps) {
   const [code, setCode] = useState(initialCodeProp || '# Write your python code here\n\n');
@@ -172,8 +174,15 @@ export default function DipLessonClient({
     </div>
   );
 
-  const rightPanel = isPractice ? (
-    colabNotebook ? (
+  const isLab = pageType === 'lab';
+
+  const rightPanel = isPractice || isLab ? (
+    isLab && colabNotebook ? (
+      <EmbeddedColabPanel
+        notebookPath={colabNotebook}
+        onMarkComplete={() => { markCompleted(pageId); if (nextPageId) navigate(nextPageId); }}
+      />
+    ) : colabNotebook ? (
       <ColabPanel
         notebookPath={colabNotebook}
         onMarkComplete={() => { markCompleted(pageId); if (nextPageId) navigate(nextPageId); }}
