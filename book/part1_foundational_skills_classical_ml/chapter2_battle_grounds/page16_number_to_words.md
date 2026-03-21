@@ -3,26 +3,24 @@ title: "Kata 16: Number to Words"
 type: "practice"
 ---
 
-# ⚔️ Kata 16: Number to Words
+# Kata 16: Number to Words
 
-Convert a number (0–99) into its English word representation.
+Convert a number (0 to 99) into its English word representation.
 
 ## Rules
 
-Write `number_to_words(n)` that:
-- Converts integers 0–99 to their English words
-- `0` → `"zero"`, `1` → `"one"`, ..., `19` → `"nineteen"`
-- `20` → `"twenty"`, `21` → `"twenty-one"`, ..., `99` → `"ninety-nine"`
-- Use a **hyphen** for compound numbers (21–99 except multiples of 10)
+Write `number_to_words(n)` that converts integers 0 to 99 to English words.
+- 0 to 19 have unique names
+- 20, 30, 40... 90 are "twenty", "thirty"... "ninety"
+- 21 to 99 (excluding multiples of 10) use a hyphen: "twenty-one", "forty-two"
 
 ## Examples
 
 ```
-number_to_words(0)   → "zero"
-number_to_words(13)  → "thirteen"
-number_to_words(20)  → "twenty"
-number_to_words(42)  → "forty-two"
-number_to_words(99)  → "ninety-nine"
+number_to_words(0)  → "zero"
+number_to_words(13) → "thirteen"
+number_to_words(42) → "forty-two"
+number_to_words(99) → "ninety-nine"
 ```
 
 ### Initial Code
@@ -39,7 +37,7 @@ def number_to_words(n):
     elif n % 10 == 0:
         return tens[n // 10]
     else:
-        return 
+        return tens[n // 10] + "-" + ones[n % 10]
 ```
 
 ### Evaluation Code
@@ -60,5 +58,5 @@ assert number_to_words(80) == "eighty"
 assert number_to_words(11) == "eleven"
 assert number_to_words(15) == "fifteen"
 assert "-" in number_to_words(21), "Compound numbers need a hyphen"
-print("✅ All tests passed!")
+print("All tests passed!")
 ```

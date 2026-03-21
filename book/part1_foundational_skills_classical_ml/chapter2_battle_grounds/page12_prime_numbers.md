@@ -3,20 +3,28 @@ title: "Kata 12: Prime Numbers"
 type: "practice"
 ---
 
-# ⚔️ Kata 12: Prime Numbers
+# Kata 12: Prime Numbers
 
-A prime number is only divisible by 1 and itself. 2, 3, 5, 7, 11, 13...
+A prime number is only divisible by 1 and itself: 2, 3, 5, 7, 11, 13...
 
 ## Rules
 
-Write `is_prime(n)` that:
-- Returns `True` if `n` is prime, `False` otherwise
-- 1 is **not** prime
+Write `is_prime(n)` that returns `True` if `n` is prime, `False` otherwise.
+- 1 is not prime
 - 2 is prime (the only even prime)
-- Negative numbers and 0 are **not** prime
+- Negative numbers and 0 are not prime
 
-Then write `primes_up_to(n)` that:
-- Returns a list of all prime numbers from 2 up to and including `n`
+Then write `primes_up_to(n)` that returns a list of all primes from 2 up to and including `n`.
+
+## Examples
+
+```
+is_prime(7)         → True
+is_prime(4)         → False
+primes_up_to(10)    → [2, 3, 5, 7]
+```
+
+Hint: To check if `n` is prime, test divisors from 2 up to `sqrt(n)`. If any divide evenly, it is not prime.
 
 ### Initial Code
 
@@ -28,11 +36,10 @@ def is_prime(n):
         return True
     if n % 2 == 0:
         return False
-    # Check odd divisors from 3 up to sqrt(n)
     i = 3
     while i * i <= n:
         if n % i == 0:
-            return 
+            return False
         i += 2
     return True
 
@@ -58,5 +65,5 @@ assert primes_up_to(20) == [2, 3, 5, 7, 11, 13, 17, 19]
 assert primes_up_to(2) == [2]
 assert primes_up_to(1) == []
 assert len(primes_up_to(100)) == 25, "There are 25 primes up to 100"
-print("✅ All tests passed!")
+print("All tests passed!")
 ```

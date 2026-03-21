@@ -3,29 +3,27 @@ title: "Kata 15: Balanced Brackets"
 type: "practice"
 ---
 
-# ⚔️ Kata 15: Balanced Brackets
+# Kata 15: Balanced Brackets
 
-A classic stack problem. Check if brackets in a string are properly balanced and nested.
+Check if every opening bracket has a matching closing bracket in the correct order.
 
 ## Rules
 
-Write `is_balanced(s)` that:
-- Returns `True` if every opening bracket has a matching closing bracket in the right order
-- Brackets: `()`, `[]`, `{}`
+Write `is_balanced(s)` that returns `True` if all brackets are properly balanced and nested.
+- Bracket pairs: `()`, `[]`, `{}`
 - Ignore all non-bracket characters
 
 ## Examples
 
 ```
-is_balanced("()")          → True
-is_balanced("()[]{}")      → True
-is_balanced("([])")        → True
-is_balanced("(]")          → False
-is_balanced("([)]")        → False
-is_balanced("{[]}")        → True
+is_balanced("()")       → True
+is_balanced("()[]{}")   → True
+is_balanced("([])")     → True
+is_balanced("(]")       → False
+is_balanced("([)]")     → False
 ```
 
-> **Hint:** Use a **stack** (a list). Push opening brackets. When you see a closing bracket, check if the top of the stack is the matching opener.
+Hint: Use a stack (a list). Push opening brackets onto it. When you see a closing bracket, check if the top of the stack is the matching opener. If not, return False. At the end, the stack must be empty.
 
 ### Initial Code
 
@@ -40,8 +38,7 @@ def is_balanced(s):
             if not stack or stack[-1] != matching[char]:
                 return False
             stack.pop()
-    # Valid only if stack is empty at the end
-    return 
+    return len(stack) == 0
 ```
 
 ### Evaluation Code
@@ -52,7 +49,7 @@ assert is_balanced("()[]{}") == True
 assert is_balanced("([])") == True
 assert is_balanced("{[]}") == True
 assert is_balanced("(]") == False, "Mismatched types"
-assert is_balanced("([)]") == False, "Wrong order"
+assert is_balanced("([)]") == False, "Wrong nesting order"
 assert is_balanced("{") == False, "Unclosed bracket"
 assert is_balanced(")") == False, "Closing without opening"
 assert is_balanced("") == True, "Empty string is balanced"
@@ -61,5 +58,5 @@ assert is_balanced("a(b[c{d}e]f)g") == True
 assert is_balanced("(((())))") == True
 assert is_balanced("(((())") == False, "More openers than closers"
 assert is_balanced("((()))[]{}") == True
-print("✅ All tests passed!")
+print("All tests passed!")
 ```

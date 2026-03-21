@@ -3,25 +3,23 @@ title: "Kata 8: Count Vowels"
 type: "practice"
 ---
 
-# ⚔️ Kata 8: Count Vowels
+# Kata 8: Count Vowels
 
-Simple but with tricky edge cases. Count how many vowels are in a string.
+Count how many vowels appear in a string.
 
 ## Rules
 
-Write `count_vowels(s)` that:
-- Returns the **count** of vowels in `s`
-- Vowels are: `a, e, i, o, u` (and their uppercase versions)
-- Count **each occurrence** — `"aaa"` has 3 vowels
+Write `count_vowels(s)` that returns the number of vowels in `s`.
+- Vowels are: a, e, i, o, u (and their uppercase versions)
+- Count each occurrence — `"aaa"` has 3 vowels
 
 ## Examples
 
 ```
-count_vowels("hello")         → 2  (e, o)
-count_vowels("HELLO")         → 2  (E, O)
-count_vowels("rhythm")        → 0
-count_vowels("aeiou")         → 5
-count_vowels("Hello World!")  → 3  (e, o, o)
+count_vowels("hello")        → 2
+count_vowels("HELLO")        → 2
+count_vowels("rhythm")       → 0
+count_vowels("Hello World!") → 3
 ```
 
 ### Initial Code
@@ -31,9 +29,9 @@ def count_vowels(s):
     vowels = "aeiouAEIOU"
     count = 0
     for char in s:
-        if :
+        if char in vowels:
             count += 1
-    return count
+    return 
 ```
 
 ### Evaluation Code
@@ -51,5 +49,5 @@ assert count_vowels("aaa") == 3, "Count each occurrence"
 assert count_vowels("The quick brown fox") == 5
 assert count_vowels("Python Programming") == 5
 assert isinstance(count_vowels("test"), int), "Must return an integer"
-print("✅ All tests passed!")
+print("All tests passed!")
 ```

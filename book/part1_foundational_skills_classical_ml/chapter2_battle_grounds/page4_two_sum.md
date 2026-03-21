@@ -3,18 +3,17 @@ title: "Kata 4: Two Sum"
 type: "practice"
 ---
 
-# ⚔️ Kata 4: Two Sum
+# Kata 4: Two Sum
 
 One of the most common coding interview questions at top tech companies.
 
 ## Rules
 
 Write `two_sum(nums, target)` that:
-- Given a list of integers `nums` and an integer `target`
-- Returns the **indices** of the two numbers that add up to `target`
-- Return them as a **list** `[i, j]` where `i < j`
-- You may assume **exactly one solution** exists
-- You **cannot** use the same element twice
+- Returns the indices of the two numbers that add up to `target`
+- Return them as a list `[i, j]` where `i < j`
+- Exactly one solution always exists
+- You cannot use the same element twice
 
 ## Examples
 
@@ -24,7 +23,7 @@ two_sum([3, 2, 4], 6)       → [1, 2]   (2 + 4 = 6)
 two_sum([3, 3], 6)           → [0, 1]
 ```
 
-> **Hint:** For each number, check if `target - number` exists in the list at a different index.
+Hint: Use two nested loops. For each pair `(i, j)` where `j > i`, check if `nums[i] + nums[j] == target`.
 
 ### Initial Code
 
@@ -32,7 +31,7 @@ two_sum([3, 3], 6)           → [0, 1]
 def two_sum(nums, target):
     for i in range(len(nums)):
         for j in range(i + 1, len(nums)):
-            if :  # check if nums[i] + nums[j] equals target
+            if nums[i] + nums[j] == target:
                 return 
     return []
 ```
@@ -49,6 +48,6 @@ assert two_sum([-1, -2, -3, -4, -5], -8) == [2, 4], f"Got {two_sum([-1,-2,-3,-4,
 assert two_sum([1, 5, 3, 7, 2], 10) == [1, 3], f"Got {two_sum([1,5,3,7,2],10)}"
 result = two_sum([2, 7, 11, 15], 9)
 assert isinstance(result, list) and len(result) == 2, "Must return a list of 2 indices"
-assert result[0] < result[1], "First index must be smaller"
-print("✅ All tests passed!")
+assert result[0] < result[1], "First index must be smaller than second"
+print("All tests passed!")
 ```

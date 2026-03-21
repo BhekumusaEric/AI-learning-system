@@ -3,13 +3,13 @@ title: "Kata 14: Roman Numerals"
 type: "practice"
 ---
 
-# ⚔️ Kata 14: Roman Numerals
+# Kata 14: Roman Numerals
 
 Convert an integer to its Roman numeral representation.
 
 ## Rules
 
-Write `to_roman(n)` that converts an integer (1–3999) to a Roman numeral string.
+Write `to_roman(n)` that converts an integer (1 to 3999) to a Roman numeral string.
 
 | Symbol | Value |
 |--------|-------|
@@ -30,14 +30,12 @@ Write `to_roman(n)` that converts an integer (1–3999) to a Roman numeral strin
 ## Examples
 
 ```
-to_roman(3)    → "III"
 to_roman(4)    → "IV"
 to_roman(9)    → "IX"
-to_roman(58)   → "LVIII"
 to_roman(1994) → "MCMXCIV"
 ```
 
-> **Hint:** Use a list of `(value, symbol)` pairs in descending order. Subtract the value and add the symbol repeatedly.
+Hint: Use a list of `(value, symbol)` pairs in descending order. While `n >= value`, add the symbol and subtract the value.
 
 ### Initial Code
 
@@ -74,5 +72,5 @@ assert to_roman(1994) == "MCMXCIV"
 assert to_roman(2024) == "MMXXIV"
 assert to_roman(3999) == "MMMCMXCIX"
 assert isinstance(to_roman(10), str), "Must return a string"
-print("✅ All tests passed!")
+print("All tests passed!")
 ```

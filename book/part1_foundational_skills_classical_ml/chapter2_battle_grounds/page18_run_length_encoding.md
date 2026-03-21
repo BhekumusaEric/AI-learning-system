@@ -3,28 +3,26 @@ title: "Kata 18: Run-Length Encoding"
 type: "practice"
 ---
 
-# ⚔️ Kata 18: Run-Length Encoding
+# Kata 18: Run-Length Encoding
 
 A simple compression technique. Consecutive repeated characters are replaced with the character and its count.
 
 ## Rules
 
-Write `encode(s)` that:
-- Compresses a string using run-length encoding
-- `"aaa"` → `"3a"`, `"ab"` → `"1a1b"`, `"aabbb"` → `"2a3b"`
+Write `encode(s)` that compresses a string:
+- `"aaa"` → `"3a"`, `"aabbb"` → `"2a3b"`
 
-Write `decode(s)` that:
-- Decompresses a run-length encoded string back to the original
+Write `decode(s)` that decompresses back to the original:
 - `"3a"` → `"aaa"`, `"2a3b"` → `"aabbb"`
 
 ## Examples
 
 ```
-encode("aabbbcccc")  → "2a3b4c"
-encode("abcd")       → "1a1b1c1d"
-decode("2a3b4c")     → "aabbbcccc"
-decode("1a1b1c1d")   → "abcd"
+encode("aabbbcccc") → "2a3b4c"
+decode("2a3b4c")    → "aabbbcccc"
 ```
+
+Hint for decode: Read digits until you hit a letter. The digits form the count, the letter is the character. Repeat the character that many times.
 
 ### Initial Code
 
@@ -47,14 +45,12 @@ def decode(s):
     result = ""
     i = 0
     while i < len(s):
-        # Read the number (may be multiple digits)
         num_str = ""
         while i < len(s) and s[i].isdigit():
             num_str += s[i]
             i += 1
-        # Read the character
         if i < len(s):
-            result += 
+            result += s[i] * int(num_str)
             i += 1
     return result
 ```
@@ -73,9 +69,8 @@ assert decode("1a1b1c1d") == "abcd"
 assert decode("3a") == "aaa"
 assert decode("1a") == "a"
 assert decode("") == ""
-# Encode then decode should give original
 for s in ["hello", "aabbcc", "zzzzz", "abcde"]:
     assert decode(encode(s)) == s, f"Round-trip failed for '{s}'"
 assert decode("10a") == "aaaaaaaaaa", "Handle multi-digit counts"
-print("✅ All tests passed!")
+print("All tests passed!")
 ```
