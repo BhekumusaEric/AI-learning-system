@@ -5,36 +5,37 @@ type: "practice"
 
 # Kata 6: Fibonacci Sequence
 
-Each number in the Fibonacci sequence is the sum of the two before it: 0, 1, 1, 2, 3, 5, 8, 13...
+Each number in the Fibonacci sequence is the sum of the two numbers before it.
 
 ## Rules
 
-Write `fibonacci(n)` that returns a list of the first `n` Fibonacci numbers.
-- Starts with `[0, 1, ...]`
-- `fibonacci(1)` → `[0]`
-- `fibonacci(2)` → `[0, 1]`
+Write a function `fibonacci(n)` that returns a list of the first `n` Fibonacci numbers.
+- The sequence always starts with `[0, 1, ...]`
+- `fibonacci(1)` returns `[0]`
+- `fibonacci(2)` returns `[0, 1]`
+- `fibonacci(0)` returns `[]`
 
 ## Examples
 
 ```
-fibonacci(5) → [0, 1, 1, 2, 3]
-fibonacci(8) → [0, 1, 1, 2, 3, 5, 8, 13]
+fibonacci(5)  → [0, 1, 1, 2, 3]
+fibonacci(8)  → [0, 1, 1, 2, 3, 5, 8, 13]
+fibonacci(10) → [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
 ```
 
-Hint: Start with `[0, 1]` and keep appending the sum of the last two elements until the list has `n` items.
+## Things to think about
+
+- Handle the edge cases for `n <= 0` and `n == 1` first.
+- Start with `[0, 1]` and keep adding the sum of the last two elements until the list has `n` items.
+- `seq[-1]` gives the last element, `seq[-2]` gives the second to last.
+- The length of the returned list must always equal `n`.
 
 ### Initial Code
 
 ```python
 def fibonacci(n):
-    if n <= 0:
-        return []
-    if n == 1:
-        return [0]
-    seq = [0, 1]
-    while len(seq) < n:
-        seq.append(seq[-1] + seq[-2])
-    return 
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

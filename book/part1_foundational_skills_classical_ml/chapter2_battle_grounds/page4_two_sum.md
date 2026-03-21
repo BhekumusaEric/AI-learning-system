@@ -9,7 +9,7 @@ One of the most common coding interview questions at top tech companies.
 
 ## Rules
 
-Write `two_sum(nums, target)` that:
+Write a function `two_sum(nums, target)` that:
 - Returns the indices of the two numbers that add up to `target`
 - Return them as a list `[i, j]` where `i < j`
 - Exactly one solution always exists
@@ -18,22 +18,25 @@ Write `two_sum(nums, target)` that:
 ## Examples
 
 ```
-two_sum([2, 7, 11, 15], 9)  → [0, 1]   (2 + 7 = 9)
-two_sum([3, 2, 4], 6)       → [1, 2]   (2 + 4 = 6)
-two_sum([3, 3], 6)           → [0, 1]
+two_sum([2, 7, 11, 15], 9) → [0, 1]   (nums[0] + nums[1] = 2 + 7 = 9)
+two_sum([3, 2, 4], 6)      → [1, 2]   (nums[1] + nums[2] = 2 + 4 = 6)
+two_sum([3, 3], 6)          → [0, 1]
 ```
 
-Hint: Use two nested loops. For each pair `(i, j)` where `j > i`, check if `nums[i] + nums[j] == target`.
+## Things to think about
+
+- Loop through every pair of indices `(i, j)` where `j > i`.
+- For each pair, check if `nums[i] + nums[j] == target`.
+- `range(i + 1, len(nums))` gives you all indices after `i`.
+- Return the two indices as a list the moment you find the pair.
+- The result must always have the smaller index first.
 
 ### Initial Code
 
 ```python
 def two_sum(nums, target):
-    for i in range(len(nums)):
-        for j in range(i + 1, len(nums)):
-            if nums[i] + nums[j] == target:
-                return 
-    return []
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

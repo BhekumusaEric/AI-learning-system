@@ -9,9 +9,9 @@ Find all elements that appear more than once in a list.
 
 ## Rules
 
-Write `find_duplicates(nums)` that:
+Write a function `find_duplicates(nums)` that:
 - Returns a sorted list of all numbers that appear more than once
-- Each duplicate appears only once in the result
+- Each duplicate appears only once in the result, even if it appears 5 times in the input
 - Returns an empty list if there are no duplicates
 
 ## Examples
@@ -20,19 +20,23 @@ Write `find_duplicates(nums)` that:
 find_duplicates([1, 2, 3, 2, 4, 3]) → [2, 3]
 find_duplicates([1, 2, 3])           → []
 find_duplicates([1, 1, 1, 1])        → [1]
+find_duplicates([])                  → []
 ```
 
-Hint: Use a dictionary to count occurrences. Then collect keys where the count is greater than 1.
+## Things to think about
+
+- Use a dictionary to count how many times each number appears.
+- `counts.get(num, 0)` returns the current count for `num`, or 0 if it has not been seen yet.
+- After counting, collect all keys where the count is greater than 1.
+- Sort the result before returning it.
+- Works with negative numbers too.
 
 ### Initial Code
 
 ```python
 def find_duplicates(nums):
-    counts = {}
-    for num in nums:
-        counts[num] = counts.get(num, 0) + 1
-    duplicates = [num for num, count in counts.items() if count > 1]
-    return sorted(duplicates)
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

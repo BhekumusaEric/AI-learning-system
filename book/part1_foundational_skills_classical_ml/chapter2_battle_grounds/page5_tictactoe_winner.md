@@ -5,17 +5,16 @@ type: "practice"
 
 # Kata 5: Tic-Tac-Toe Winner
 
-Given a Tic-Tac-Toe board, determine the result.
+Given a Tic-Tac-Toe board, determine the result of the game.
 
 ## Rules
 
-Write `tictactoe_winner(board)` that takes a 3x3 board (list of 3 lists).
-Each cell is `"X"`, `"O"`, or `" "` (space means empty).
+Write a function `tictactoe_winner(board)` that takes a 3x3 board represented as a list of 3 lists. Each cell contains `"X"`, `"O"`, or `" "` (a space means the cell is empty).
 
 Return:
 - `"X"` if X has three in a row
 - `"O"` if O has three in a row
-- `"Draw"` if the board is full with no winner
+- `"Draw"` if the board is full and there is no winner
 - `"Ongoing"` if the game is still in progress
 
 ## Example
@@ -25,28 +24,22 @@ board = [["X","X","X"],["O","O"," "],[" "," "," "]]
 tictactoe_winner(board)  → "X"
 ```
 
-Check all 3 rows, all 3 columns, and both diagonals — 8 lines total.
+## Things to think about
+
+- There are 8 possible winning lines: 3 rows, 3 columns, and 2 diagonals.
+- For each line, check if all 3 cells are the same and not empty.
+- To check columns, `board[row][col]` where `col` is fixed and `row` varies.
+- The main diagonal is `board[0][0]`, `board[1][1]`, `board[2][2]`.
+- The anti-diagonal is `board[0][2]`, `board[1][1]`, `board[2][0]`.
+- If no winner and no empty cells remain, it is a draw.
+- If no winner and at least one empty cell exists, the game is ongoing.
 
 ### Initial Code
 
 ```python
 def tictactoe_winner(board):
-    lines = []
-    for row in board:
-        lines.append(row)
-    for col in range(3):
-        lines.append([board[row][col] for row in range(3)])
-    lines.append([board[i][i] for i in range(3)])
-    lines.append([board[i][2 - i] for i in range(3)])
-
-    for line in lines:
-        if line[0] == line[1] == line[2] and line[0] != " ":
-            return line[0]
-
-    flat = [cell for row in board for cell in row]
-    if " " in flat:
-        return "Ongoing"
-    return 
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

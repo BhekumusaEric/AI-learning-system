@@ -9,29 +9,34 @@ Count how many vowels appear in a string.
 
 ## Rules
 
-Write `count_vowels(s)` that returns the number of vowels in `s`.
-- Vowels are: a, e, i, o, u (and their uppercase versions)
-- Count each occurrence — `"aaa"` has 3 vowels
+Write a function `count_vowels(s)` that returns the total number of vowels in `s`.
+- Vowels are: a, e, i, o, u and their uppercase versions A, E, I, O, U
+- Count every occurrence — `"aaa"` has 3 vowels
 
 ## Examples
 
 ```
-count_vowels("hello")        → 2
-count_vowels("HELLO")        → 2
+count_vowels("hello")        → 2   (e, o)
+count_vowels("HELLO")        → 2   (E, O)
 count_vowels("rhythm")       → 0
-count_vowels("Hello World!") → 3
+count_vowels("aeiou")        → 5
+count_vowels("Hello World!") → 3   (e, o, o)
 ```
+
+## Things to think about
+
+- Loop through each character in the string.
+- Check if the character is in the string `"aeiouAEIOU"`.
+- Keep a running count and return it at the end.
+- An empty string should return 0.
+- The return value must be an integer.
 
 ### Initial Code
 
 ```python
 def count_vowels(s):
-    vowels = "aeiouAEIOU"
-    count = 0
-    for char in s:
-        if char in vowels:
-            count += 1
-    return 
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

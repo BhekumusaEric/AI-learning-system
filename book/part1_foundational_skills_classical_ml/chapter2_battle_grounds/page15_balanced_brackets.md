@@ -9,36 +9,37 @@ Check if every opening bracket has a matching closing bracket in the correct ord
 
 ## Rules
 
-Write `is_balanced(s)` that returns `True` if all brackets are properly balanced and nested.
+Write a function `is_balanced(s)` that returns `True` if all brackets are properly balanced and nested, `False` otherwise.
 - Bracket pairs: `()`, `[]`, `{}`
 - Ignore all non-bracket characters
 
 ## Examples
 
 ```
-is_balanced("()")       → True
-is_balanced("()[]{}")   → True
-is_balanced("([])")     → True
-is_balanced("(]")       → False
-is_balanced("([)]")     → False
+is_balanced("()")        → True
+is_balanced("()[]{}")    → True
+is_balanced("([])")      → True
+is_balanced("(]")        → False
+is_balanced("([)]")      → False
+is_balanced("{")         → False
+is_balanced("")          → True
 ```
 
-Hint: Use a stack (a list). Push opening brackets onto it. When you see a closing bracket, check if the top of the stack is the matching opener. If not, return False. At the end, the stack must be empty.
+## Things to think about
+
+- Use a stack — a list where you push and pop from the end.
+- When you see an opening bracket `(`, `[`, or `{`, push it onto the stack.
+- When you see a closing bracket `)`, `]`, or `}`, check if the top of the stack is the matching opener.
+- If the stack is empty when you need to pop, or the top does not match, return `False`.
+- At the end, the stack must be empty — any leftover openers mean unmatched brackets.
+- Use a dictionary to map each closer to its opener: `{')': '(', ']': '[', '}': '{'}`.
 
 ### Initial Code
 
 ```python
 def is_balanced(s):
-    stack = []
-    matching = {')': '(', ']': '[', '}': '{'}
-    for char in s:
-        if char in '([{':
-            stack.append(char)
-        elif char in ')]}':
-            if not stack or stack[-1] != matching[char]:
-                return False
-            stack.pop()
-    return len(stack) == 0
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

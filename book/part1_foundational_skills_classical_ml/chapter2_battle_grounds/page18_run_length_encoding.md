@@ -5,54 +5,50 @@ type: "practice"
 
 # Kata 18: Run-Length Encoding
 
-A simple compression technique. Consecutive repeated characters are replaced with the character and its count.
+A simple text compression technique. Consecutive repeated characters are replaced with the character and its count.
 
 ## Rules
 
-Write `encode(s)` that compresses a string:
-- `"aaa"` → `"3a"`, `"aabbb"` → `"2a3b"`
+Write two functions:
 
-Write `decode(s)` that decompresses back to the original:
-- `"3a"` → `"aaa"`, `"2a3b"` → `"aabbb"`
+`encode(s)` — compresses a string using run-length encoding.
+- `"aaa"` becomes `"3a"`, `"aabbb"` becomes `"2a3b"`
+- Single characters still get a count: `"ab"` becomes `"1a1b"`
+
+`decode(s)` — decompresses a run-length encoded string back to the original.
+- `"3a"` becomes `"aaa"`, `"2a3b"` becomes `"aabbb"`
 
 ## Examples
 
 ```
 encode("aabbbcccc") → "2a3b4c"
+encode("abcd")      → "1a1b1c1d"
 decode("2a3b4c")    → "aabbbcccc"
+decode("10a")       → "aaaaaaaaaa"
 ```
 
-Hint for decode: Read digits until you hit a letter. The digits form the count, the letter is the character. Repeat the character that many times.
+## Things to think about
+
+For `encode`:
+- Walk through the string, counting consecutive identical characters.
+- When the character changes, append the count and the character to your result, then reset the count.
+- Do not forget to handle the last group after the loop ends.
+
+For `decode`:
+- Walk through the string reading digits first, then the character that follows.
+- The digits may be more than one character long (e.g. `"10a"`), so keep reading while the current character is a digit.
+- Repeat the character by the number you read: `char * count`.
 
 ### Initial Code
 
 ```python
 def encode(s):
-    if not s:
-        return ""
-    result = ""
-    count = 1
-    for i in range(1, len(s)):
-        if s[i] == s[i - 1]:
-            count += 1
-        else:
-            result += str(count) + s[i - 1]
-            count = 1
-    result += str(count) + s[-1]
-    return result
+    # your code here
+    pass
 
 def decode(s):
-    result = ""
-    i = 0
-    while i < len(s):
-        num_str = ""
-        while i < len(s) and s[i].isdigit():
-            num_str += s[i]
-            i += 1
-        if i < len(s):
-            result += s[i] * int(num_str)
-            i += 1
-    return result
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

@@ -9,9 +9,9 @@ Count how many times each word appears in a sentence.
 
 ## Rules
 
-Write `word_frequency(text)` that returns a dictionary mapping each word to its count.
-- Ignore case — "The" and "the" are the same word
-- Strip punctuation from the edges of words (`.`, `,`, `!`, `?`, `"`, `'`)
+Write a function `word_frequency(text)` that returns a dictionary mapping each word to its count.
+- Ignore case — `"The"` and `"the"` count as the same word
+- Strip punctuation from the edges of words: `.`, `,`, `!`, `?`, `"`, `'`
 
 ## Examples
 
@@ -21,19 +21,25 @@ word_frequency("the cat sat on the mat")
 
 word_frequency("Hello hello HELLO")
 → {"hello": 3}
+
+word_frequency("To be or not to be")
+→ {"to": 2, "be": 2, "or": 1, "not": 1}
 ```
+
+## Things to think about
+
+- Split the text into words using `.split()`.
+- For each word, apply `.lower()` and `.strip('.,!?"\'')` to clean it.
+- Skip any word that becomes empty after cleaning.
+- Use a dictionary to count: `counts[word] = counts.get(word, 0) + 1`.
+- Return the dictionary at the end.
 
 ### Initial Code
 
 ```python
 def word_frequency(text):
-    counts = {}
-    words = text.split()
-    for word in words:
-        cleaned = word.lower().strip('.,!?"\'')
-        if cleaned:
-            counts[cleaned] = counts.get(cleaned, 0) + 1
-    return counts
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

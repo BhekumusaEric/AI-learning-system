@@ -9,7 +9,7 @@ Convert an integer to its Roman numeral representation.
 
 ## Rules
 
-Write `to_roman(n)` that converts an integer (1 to 3999) to a Roman numeral string.
+Write a function `to_roman(n)` that converts an integer from 1 to 3999 into a Roman numeral string.
 
 | Symbol | Value |
 |--------|-------|
@@ -32,26 +32,24 @@ Write `to_roman(n)` that converts an integer (1 to 3999) to a Roman numeral stri
 ```
 to_roman(4)    → "IV"
 to_roman(9)    → "IX"
+to_roman(58)   → "LVIII"
 to_roman(1994) → "MCMXCIV"
+to_roman(2024) → "MMXXIV"
 ```
 
-Hint: Use a list of `(value, symbol)` pairs in descending order. While `n >= value`, add the symbol and subtract the value.
+## Things to think about
+
+- Create a list of `(value, symbol)` pairs ordered from largest to smallest.
+- Loop through the list. While `n >= value`, add the symbol to your result and subtract the value from `n`.
+- The subtractive pairs like `CM`, `CD`, `XC`, `XL`, `IX`, `IV` must be in the list — they are not derived automatically.
+- Keep subtracting until `n` reaches 0.
 
 ### Initial Code
 
 ```python
 def to_roman(n):
-    values = [
-        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
-        (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
-        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")
-    ]
-    result = ""
-    for value, symbol in values:
-        while n >= value:
-            result += symbol
-            n -= value
-    return result
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

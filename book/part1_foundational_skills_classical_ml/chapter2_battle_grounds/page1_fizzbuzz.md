@@ -10,35 +10,30 @@ The most famous coding challenge of all time. Simple rules, but you must handle 
 ## Rules
 
 Write a function `fizzbuzz(n)` that returns a list of strings for numbers 1 to n:
-- Multiples of 3 → `"Fizz"`
-- Multiples of 5 → `"Buzz"`
-- Multiples of both 3 and 5 → `"FizzBuzz"`
-- Everything else → the number as a string e.g. `"1"`, `"2"`
+- Multiples of 3 return `"Fizz"`
+- Multiples of 5 return `"Buzz"`
+- Multiples of both 3 and 5 return `"FizzBuzz"`
+- Everything else returns the number as a string, e.g. `"1"`, `"2"`
 
-## Example
+## Examples
 
 ```
-fizzbuzz(5) → ["1", "2", "Fizz", "4", "Buzz"]
+fizzbuzz(5)  → ["1", "2", "Fizz", "4", "Buzz"]
 fizzbuzz(15) → ["1","2","Fizz","4","Buzz","Fizz","7","8","Fizz","Buzz","11","Fizz","13","14","FizzBuzz"]
 ```
 
-Check for FizzBuzz first, then Fizz, then Buzz — order matters.
+## Things to think about
+
+- The check for both 3 and 5 must come before the individual checks, otherwise it will never be reached.
+- Every element in the returned list must be a string, including the numbers.
+- Use the modulo operator `%` to check divisibility. `n % 3 == 0` means n is divisible by 3.
 
 ### Initial Code
 
 ```python
 def fizzbuzz(n):
-    result = []
-    for i in range(1, n + 1):
-        if i % 3 == 0 and i % 5 == 0:
-            result.append()
-        elif i % 3 == 0:
-            result.append()
-        elif i % 5 == 0:
-            result.append()
-        else:
-            result.append()
-    return result
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

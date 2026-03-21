@@ -9,10 +9,10 @@ Reverse the order of words in a sentence, keeping each word's letters intact.
 
 ## Rules
 
-Write `reverse_words(sentence)` that:
+Write a function `reverse_words(sentence)` that:
 - Reverses the order of words, not the letters within each word
-- Handles multiple spaces between words
-- Strips leading and trailing spaces from the result
+- Handles multiple spaces between words — treat them as one separator
+- Returns no leading or trailing spaces
 
 ## Examples
 
@@ -20,16 +20,23 @@ Write `reverse_words(sentence)` that:
 reverse_words("Hello World")      → "World Hello"
 reverse_words("I love Python")    → "Python love I"
 reverse_words("  spaces  here  ") → "here spaces"
+reverse_words("one")              → "one"
+reverse_words("")                 → ""
 ```
 
-Hint: `.split()` with no arguments splits on any whitespace and removes empty strings automatically.
+## Things to think about
+
+- `sentence.split()` with no arguments splits on any whitespace and automatically removes empty strings from extra spaces.
+- After splitting, you have a list of words. Reverse that list.
+- `list[::-1]` reverses a list.
+- Join the reversed list back into a string with `" ".join(...)`.
 
 ### Initial Code
 
 ```python
 def reverse_words(sentence):
-    words = sentence.split()
-    return " ".join(words[::-1])
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

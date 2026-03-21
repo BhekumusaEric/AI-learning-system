@@ -9,11 +9,11 @@ Julius Caesar encrypted messages by shifting each letter a fixed number of posit
 
 ## Rules
 
-Write `caesar_cipher(text, shift)` that:
-- Shifts each letter by `shift` positions
+Write a function `caesar_cipher(text, shift)` that:
+- Shifts each letter by `shift` positions forward in the alphabet
 - Wraps around — shifting `'z'` by 1 gives `'a'`
-- Preserves case — uppercase stays uppercase
-- Leaves non-letters unchanged (spaces, numbers, punctuation)
+- Preserves case — uppercase letters stay uppercase, lowercase stay lowercase
+- Leaves non-letter characters unchanged (spaces, numbers, punctuation stay as-is)
 
 ## Examples
 
@@ -21,23 +21,23 @@ Write `caesar_cipher(text, shift)` that:
 caesar_cipher("abc", 1)           → "bcd"
 caesar_cipher("xyz", 3)           → "abc"
 caesar_cipher("Hello, World!", 3) → "Khoor, Zruog!"
+caesar_cipher("Hello", 0)         → "Hello"
 ```
 
-Hint: Use `ord()` to get a character's number and `chr()` to convert back. `'a'` is 97, `'A'` is 65. Use `% 26` to wrap around.
+## Things to think about
+
+- `ord(char)` gives the ASCII number of a character. `chr(number)` converts back to a character.
+- `'a'` is 97, `'A'` is 65. Use these as your base depending on the case.
+- Use `% 26` to wrap around the alphabet.
+- The formula is: `chr((ord(char) - base + shift) % 26 + base)`
+- Check `char.isalpha()` before shifting. If it is not a letter, keep it unchanged.
 
 ### Initial Code
 
 ```python
 def caesar_cipher(text, shift):
-    result = ""
-    for char in text:
-        if char.isalpha():
-            base = 65 if char.isupper() else 97
-            shifted = chr((ord(char) - base + shift) % 26 + base)
-            result += shifted
-        else:
-            result += char
-    return result
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

@@ -9,29 +9,33 @@ A palindrome reads the same forwards and backwards.
 
 ## Rules
 
-Write `is_palindrome(s)` that returns `True` if `s` is a palindrome, `False` otherwise.
+Write a function `is_palindrome(s)` that returns `True` if `s` is a palindrome, `False` otherwise.
 - Ignore case — `"Racecar"` is a palindrome
 - Ignore spaces — `"race car"` is a palindrome
-- Ignore punctuation — only keep letters
+- Only consider letters, ignore everything else
 
 ## Examples
 
 ```
-is_palindrome("racecar")                      → True
-is_palindrome("hello")                        → False
-is_palindrome("A man a plan a canal Panama")  → True
+is_palindrome("racecar")                     → True
+is_palindrome("hello")                       → False
+is_palindrome("A man a plan a canal Panama") → True
+is_palindrome("Was it a car or a cat I saw") → True
 ```
 
-Hint: Clean the string first (lowercase, keep only letters), then compare it to its reverse with `[::-1]`.
+## Things to think about
+
+- Clean the string first: make it lowercase and remove all non-letter characters.
+- A string can be compared to its reverse using `[::-1]`.
+- `char.isalpha()` returns `True` if a character is a letter.
+- An empty string after cleaning is considered a palindrome.
 
 ### Initial Code
 
 ```python
 def is_palindrome(s):
-    # Step 1: keep only letters and make lowercase
-    cleaned = ''.join(c.lower() for c in s if c.isalpha())
-    # Step 2: return True if cleaned equals its reverse
-    return 
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

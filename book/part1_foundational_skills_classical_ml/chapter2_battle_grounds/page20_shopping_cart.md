@@ -5,16 +5,17 @@ type: "practice"
 
 # Kata 20: Shopping Cart
 
-Build a shopping cart class. This tests your understanding of classes and object-oriented programming.
+Build a shopping cart using a class. This kata tests your understanding of object-oriented programming.
 
 ## Rules
 
-Write a `ShoppingCart` class with these methods:
-- `add_item(name, price, quantity=1)` — adds an item, or increases quantity if it already exists
-- `remove_item(name)` — removes an item completely (does nothing if item not found)
-- `get_total()` — returns the total price (price x quantity for all items, rounded to 2 decimal places)
-- `get_item_count()` — returns the total number of individual items (sum of all quantities)
-- `apply_discount(percent)` — reduces each item's price by the given percentage (e.g. 10 means 10% off)
+Write a class `ShoppingCart` with the following methods:
+
+- `add_item(name, price, quantity=1)` — adds an item to the cart. If the item already exists, increase its quantity by the given amount.
+- `remove_item(name)` — removes an item completely. Does nothing if the item is not in the cart.
+- `get_total()` — returns the total price as a float rounded to 2 decimal places. Total is the sum of `price * quantity` for all items.
+- `get_item_count()` — returns the total number of individual items (the sum of all quantities).
+- `apply_discount(percent)` — reduces each item's price by the given percentage. For example, `10` means 10% off.
 
 ## Example
 
@@ -28,33 +29,41 @@ cart.apply_discount(10)
 cart.get_total()       → 3.15
 ```
 
+## Things to think about
+
+- Store items in a dictionary: `self.items = {}` where each key is the item name and the value holds the price and quantity.
+- `{"price": price, "quantity": quantity}` is a good structure for each item.
+- For `get_total`, multiply price by quantity for each item and sum them all up.
+- For `apply_discount`, multiply each item's price by `(1 - percent / 100)`.
+- An empty cart should have a total of 0 and an item count of 0.
+
 ### Initial Code
 
 ```python
 class ShoppingCart:
     def __init__(self):
-        self.items = {}
+        # your code here
+        pass
 
     def add_item(self, name, price, quantity=1):
-        if name in self.items:
-            self.items[name]["quantity"] += quantity
-        else:
-            self.items[name] = {"price": price, "quantity": quantity}
+        # your code here
+        pass
 
     def remove_item(self, name):
-        if name in self.items:
-            del self.items[name]
+        # your code here
+        pass
 
     def get_total(self):
-        total = sum(item["price"] * item["quantity"] for item in self.items.values())
-        return round(total, 2)
+        # your code here
+        pass
 
     def get_item_count(self):
-        return sum(item["quantity"] for item in self.items.values())
+        # your code here
+        pass
 
     def apply_discount(self, percent):
-        for name in self.items:
-            self.items[name]["price"] = round(self.items[name]["price"] * (1 - percent / 100), 10)
+        # your code here
+        pass
 ```
 
 ### Evaluation Code

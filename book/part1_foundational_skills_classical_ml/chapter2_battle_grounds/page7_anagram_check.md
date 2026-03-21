@@ -9,7 +9,7 @@ Two words are anagrams if they use the exact same letters rearranged. "listen" a
 
 ## Rules
 
-Write `is_anagram(s1, s2)` that returns `True` if the two strings are anagrams.
+Write a function `is_anagram(s1, s2)` that returns `True` if the two strings are anagrams of each other, `False` otherwise.
 - Ignore case
 - Ignore spaces
 
@@ -19,17 +19,23 @@ Write `is_anagram(s1, s2)` that returns `True` if the two strings are anagrams.
 is_anagram("listen", "silent")          → True
 is_anagram("hello", "world")            → False
 is_anagram("Astronomer", "Moon starer") → True
+is_anagram("Dormitory", "Dirty room")   → True
+is_anagram("The eyes", "They see")      → True
 ```
 
-Hint: Clean both strings (lowercase, remove spaces), sort the characters, and compare.
+## Things to think about
+
+- Clean both strings: convert to lowercase and remove all spaces.
+- Two strings are anagrams if their sorted characters are identical.
+- `sorted("abc")` returns `['a', 'b', 'c']` — you can compare two sorted lists directly.
+- Different lengths after cleaning means they cannot be anagrams.
 
 ### Initial Code
 
 ```python
 def is_anagram(s1, s2):
-    clean1 = sorted(s1.lower().replace(" ", ""))
-    clean2 = sorted(s2.lower().replace(" ", ""))
-    return 
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

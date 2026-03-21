@@ -9,7 +9,7 @@ Turn a nested list into a single flat list.
 
 ## Rules
 
-Write `flatten(nested)` that takes a list containing integers or other lists (one level deep) and returns a single flat list with all integers in order.
+Write a function `flatten(nested)` that takes a list which may contain integers or other lists (one level deep only) and returns a single flat list with all integers in order.
 
 ## Examples
 
@@ -17,21 +17,24 @@ Write `flatten(nested)` that takes a list containing integers or other lists (on
 flatten([1, [2, 3], [4, 5], 6]) → [1, 2, 3, 4, 5, 6]
 flatten([[1, 2], [3, 4]])        → [1, 2, 3, 4]
 flatten([1, 2, 3])               → [1, 2, 3]
+flatten([])                      → []
+flatten([[]])                    → []
 ```
 
-Hint: Loop through each item. If it is a list, use `.extend()` to add all its elements. If it is not, use `.append()`.
+## Things to think about
+
+- Loop through each item in the input list.
+- Use `isinstance(item, list)` to check if an item is itself a list.
+- If it is a list, use `result.extend(item)` to add all its elements to your result.
+- If it is not a list, use `result.append(item)` to add it directly.
+- An empty inner list `[]` should contribute nothing to the result.
 
 ### Initial Code
 
 ```python
 def flatten(nested):
-    result = []
-    for item in nested:
-        if isinstance(item, list):
-            result.extend(item)
-        else:
-            result.append(item)
-    return result
+    # your code here
+    pass
 ```
 
 ### Evaluation Code

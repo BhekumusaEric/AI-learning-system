@@ -5,39 +5,39 @@ type: "practice"
 
 # Kata 16: Number to Words
 
-Convert a number (0 to 99) into its English word representation.
+Convert a number from 0 to 99 into its English word representation.
 
 ## Rules
 
-Write `number_to_words(n)` that converts integers 0 to 99 to English words.
-- 0 to 19 have unique names
+Write a function `number_to_words(n)` that converts an integer to its English word string.
+- 0 to 19 each have a unique name
 - 20, 30, 40... 90 are "twenty", "thirty"... "ninety"
-- 21 to 99 (excluding multiples of 10) use a hyphen: "twenty-one", "forty-two"
+- Numbers 21 to 99 that are not multiples of 10 use a hyphen: "twenty-one", "forty-two", "ninety-nine"
 
 ## Examples
 
 ```
 number_to_words(0)  → "zero"
 number_to_words(13) → "thirteen"
+number_to_words(20) → "twenty"
 number_to_words(42) → "forty-two"
 number_to_words(99) → "ninety-nine"
 ```
+
+## Things to think about
+
+- Define two lookup lists: one for 0-19, one for the tens (20, 30... 90).
+- For numbers less than 20, return directly from the ones list.
+- For exact multiples of 10 (20, 30...), return from the tens list.
+- For everything else, combine the tens word, a hyphen, and the ones word.
+- `n // 10` gives the tens digit, `n % 10` gives the ones digit.
 
 ### Initial Code
 
 ```python
 def number_to_words(n):
-    ones = ["zero","one","two","three","four","five","six","seven","eight","nine",
-            "ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen",
-            "seventeen","eighteen","nineteen"]
-    tens = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"]
-
-    if n < 20:
-        return ones[n]
-    elif n % 10 == 0:
-        return tens[n // 10]
-    else:
-        return tens[n // 10] + "-" + ones[n % 10]
+    # your code here
+    pass
 ```
 
 ### Evaluation Code
