@@ -64,6 +64,35 @@ pyodideReadyPromise = load().then(() => {
   self.postMessage({ type: 'ready' });
 });
 
+// Transforms test code so each assert shows got vs expected on failure.
+// Converts:  assert expr == expected, "msg"
+// Into a try/except that evaluates both sides and raises a clear error.
+function buildTestRunner(tests) {
+  const lines = tests.split('\n');
+  const out = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Match:  assert <lhs> == <rhs>  or  assert <lhs> == <rhs>, "msg"
+    const m = trimmed.match(/^assert\s+(.+?)\s*==\s*(.+?)(?:,\s*(['"`].*['"`])\s*)?$/);
+    if (m) {
+      const indent = line.match(/^(\s*)/)[1];
+      const lhs = m[1].trim();
+      const rhs = m[2].trim();
+      const msg = m[3] ? m[3].slice(1, -1) : '';
+      out.push(`${indent}try:`);
+      out.push(`${indent}  __got = ${lhs}`);
+      out.push(`${indent}  __exp = ${rhs}`);
+      out.push(`${indent}  assert __got == __exp`);
+      out.push(`${indent}except AssertionError:`);
+      const label = msg ? `"${msg} — " + ` : '""+';
+      out.push(`${indent}  raise AssertionError(${label}f"\\nYour output:  {repr(__got)}\\nExpected:     {repr(__exp)}")`);
+    } else {
+      out.push(line);
+    }
+  }
+  return out.join('\n');
+}
+
 self.onmessage = async (event) => {
   await pyodideReadyPromise;
 
@@ -101,7 +130,7 @@ sys.stdout = io.StringIO(__captured_stdout__)
       `);
 
       try {
-        testResult = await self.pyodide.runPythonAsync(tests);
+        testResult = await self.pyodide.runPythonAsync(buildTestRunner(tests));
       } finally {
         await self.pyodide.runPythonAsync(`
 import sys

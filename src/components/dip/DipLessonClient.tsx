@@ -82,31 +82,27 @@ export default function DipLessonClient({
       };
 
       if (isAssertion) {
-        // Extract the assert expression from the traceback (the line starting with "assert")
-        const assertLine = errorLines.find(l => l.trim().startsWith('assert'));
-        // Extract the failure message after "AssertionError:"
-        const assertMsgRaw = error.split('AssertionError:')[1]?.split('\n')[0]?.trim() || '';
+        // Error message is now structured: "label — \nYour output: ...\nExpected: ..."
+        const raw = error.split('AssertionError:').slice(1).join('AssertionError:').trim();
+        // raw may have a label line then \nYour output: ...\nExpected: ...
+        const yourMatch = raw.match(/Your output:\s*(.+)/s);
+        const expMatch  = raw.match(/Expected:\s*(.+)/s);
+        // label is everything before the first \nYour output
+        const labelPart = raw.split('\nYour output:')[0].replace(/\s*—\s*$/, '').trim();
 
-        // Build a clear got/expected message
-        // assertMsgRaw is the f-string message e.g. "Got [1, 2, 3]"
-        // assertLine is the full assert expression e.g. "assert fizzbuzz(3) == [\"1\",\"2\",\"Fizz\"]"
+        const gotVal  = yourMatch ? yourMatch[1].split('\n')[0].trim() : '';
+        const expVal  = expMatch  ? expMatch[1].split('\n')[0].trim()  : '';
+
         let displayError = '';
-        if (assertMsgRaw) {
-          displayError += `Your output:  ${assertMsgRaw.replace(/^Got\s*/i, '')}\n`;
-        }
-        if (assertLine) {
-          // Try to extract the expected value from "== <expected>" in the assert expression
-          const expectedMatch = assertLine.match(/==\s*(.+?)(?:,\s*["'].*["']\s*)?$/);
-          if (expectedMatch) {
-            displayError += `Expected:     ${expectedMatch[1].trim()}`;
-          }
-        }
+        if (labelPart) displayError += `${labelPart}\n`;
+        if (gotVal)    displayError += `Your output:  ${gotVal}\n`;
+        if (expVal)    displayError += `Expected:     ${expVal}`;
         if (!displayError) displayError = 'A test assertion failed. Check your logic.';
 
         setResults([
           { id: 0, name: 'Output Console', passed: true, error: stdout || 'No output' },
           { id: 1, name: 'Test Failed', passed: false, errorType: 'AssertionError', lineNumber,
-            hint: hints[errorType] || 'Compare your output to the expected value above.',
+            hint: 'Compare your output to the expected value above and trace through your logic.',
             error: displayError },
         ]);
       } else {

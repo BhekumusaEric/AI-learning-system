@@ -110,22 +110,22 @@ export default function LessonPageClient({
       }
 
       if (isAssertionError) {
-        const assertLine = errorLines.find(l => l.trim().startsWith('assert'));
-        const assertMsgRaw = error.split('AssertionError:')[1]?.split('\n')[0]?.trim() || '';
+        const raw = error.split('AssertionError:').slice(1).join('AssertionError:').trim();
+        const yourMatch = raw.match(/Your output:\s*(.+)/s);
+        const expMatch  = raw.match(/Expected:\s*(.+)/s);
+        const labelPart = raw.split('\nYour output:')[0].replace(/\s*—\s*$/, '').trim();
+        const gotVal  = yourMatch ? yourMatch[1].split('\n')[0].trim() : '';
+        const expVal  = expMatch  ? expMatch[1].split('\n')[0].trim()  : '';
         let displayError = '';
-        if (assertMsgRaw) {
-          displayError += `Your output:  ${assertMsgRaw.replace(/^Got\s*/i, '')}\n`;
-        }
-        if (assertLine) {
-          const expectedMatch = assertLine.match(/==\s*(.+?)(?:,\s*["'].*["']\s*)?$/);
-          if (expectedMatch) {
-            displayError += `Expected:     ${expectedMatch[1].trim()}`;
-          }
-        }
+        if (labelPart) displayError += `${labelPart}\n`;
+        if (gotVal)    displayError += `Your output:  ${gotVal}\n`;
+        if (expVal)    displayError += `Expected:     ${expVal}`;
         if (!displayError) displayError = 'A test assertion failed. Check your logic.';
         setResults([
           { id: 0, name: "Output Console", passed: true, error: stdout || "No output" },
-          { id: 1, name: "Test Failed", passed: false, errorType, lineNumber, hint: generatedHint, error: displayError }
+          { id: 1, name: "Test Failed", passed: false, errorType, lineNumber,
+            hint: 'Compare your output to the expected value above and trace through your logic.',
+            error: displayError }
         ]);
       } else {
         setResults([
