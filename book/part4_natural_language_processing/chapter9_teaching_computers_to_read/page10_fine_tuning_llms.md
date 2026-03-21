@@ -1,6 +1,6 @@
 ---
 title: "Fine-tuning LLMs"
-type: "read"
+type: "practice"
 resources:
   - title: "Hugging Face: Fine-tune a pretrained model"
     url: "https://huggingface.co/docs/transformers/training"

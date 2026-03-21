@@ -1,6 +1,6 @@
 ---
 title: "Word Embeddings: Meaning as Numbers"
-type: "read"
+type: "practice"
 resources:
   - title: "Jay Alammar: The Illustrated Word2vec"
     url: "https://jalammar.github.io/illustrated-word2vec/"

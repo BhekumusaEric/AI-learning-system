@@ -1,6 +1,6 @@
 ---
 title: "Creating Arrays"
-type: "read"
+type: "practice"
 resources:
   - title: "NumPy: Array Creation"
     url: "https://numpy.org/doc/stable/user/quickstart.html#array-creation"

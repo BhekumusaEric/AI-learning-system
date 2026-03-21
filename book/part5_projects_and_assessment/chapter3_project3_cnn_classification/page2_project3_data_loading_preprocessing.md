@@ -1,6 +1,6 @@
 ---
 title: "Data Loading and Preprocessing"
-type: "read"
+type: "practice"
 ---
 
 # Data Loading and Preprocessing

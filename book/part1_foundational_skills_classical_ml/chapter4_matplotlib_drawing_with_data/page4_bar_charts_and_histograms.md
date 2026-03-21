@@ -1,6 +1,6 @@
 ---
 title: "Bar Charts and Histograms"
-type: "read"
+type: "practice"
 resources:
   - title: "Matplotlib: matplotlib.pyplot.bar"
     url: "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.bar.html"
@@ -17,20 +17,23 @@ Create a bar chart showing favorite ice cream flavors.
 ```python
 import matplotlib.pyplot as plt
 
-# Ice cream data
 flavors = ['Vanilla', 'Chocolate', 'Strawberry', 'Mint']
 votes = [12, 8, 6, 4]
 
-# Create a bar chart
-plt.bar(flavors, votes)
+# 1. Create a bar chart of flavors vs votes
 
-# Add labels and title
-plt.xlabel('Ice Cream Flavors')
-plt.ylabel('Number of Votes')
-plt.title('Favorite Ice Cream Flavors')
 
-# Show the plot
-plt.show()
+# 2. Label the x-axis 'Ice Cream Flavors'
+
+
+# 3. Label the y-axis 'Number of Votes'
+
+
+# 4. Add a title 'Favorite Ice Cream Flavors'
+
+
+# 5. Show the plot
+
 ```
 
 ### Hidden Tests

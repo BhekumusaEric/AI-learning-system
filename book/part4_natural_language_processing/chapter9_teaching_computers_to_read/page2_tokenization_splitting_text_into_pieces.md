@@ -1,6 +1,6 @@
 ---
 title: "Tokenization: Splitting Text into Pieces"
-type: "read"
+type: "practice"
 resources:
   - title: "Hugging Face: Tokenizers"
     url: "https://huggingface.co/learn/nlp-course/chapter2/4"

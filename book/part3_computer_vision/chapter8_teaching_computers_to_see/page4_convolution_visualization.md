@@ -1,6 +1,6 @@
 ---
 title: "Convolution Visualization"
-type: "read"
+type: "practice"
 resources:
   - title: "Setosa: Image Kernels Visualized"
     url: "https://setosa.io/ev/image-kernels/"

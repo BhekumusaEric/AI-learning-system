@@ -1,6 +1,6 @@
 ---
 title: "Creating the Dashboard"
-type: "read"
+type: "practice"
 ---
 
 # Creating the Interactive Dashboard

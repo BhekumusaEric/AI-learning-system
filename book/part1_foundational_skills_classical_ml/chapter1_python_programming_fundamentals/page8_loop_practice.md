@@ -1,6 +1,6 @@
 ---
 title: "Loop Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "W3Schools: Python For Loops"
     url: "https://www.w3schools.com/python/python_for_loops.asp"

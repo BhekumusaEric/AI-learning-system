@@ -1,6 +1,6 @@
 ---
 title: "Linear Regression Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "StatQuest: Linear Regression"
     url: "https://www.youtube.com/watch?v=nk2CQITm_eo"
@@ -22,16 +22,19 @@ import numpy as np
 sizes = np.array([1000, 1500, 2000, 2500, 3000]).reshape(-1, 1)
 prices = np.array([200, 250, 300, 350, 400])
 
-# 1. Create and train the model
-model = LinearRegression()
-model.fit(sizes, prices)
+# 1. Create a LinearRegression model
+model = 
 
-# 2. Predict price for a 1800 sq ft house
+# 2. Train the model on sizes and prices
+# Hint: use model.fit(X, y)
+
+
+# 3. Predict the price for a 1800 sq ft house
 new_size = np.array([[1800]])
-predicted_price = model.predict(new_size)
+predicted_price = 
 
-# 3. Get the slope (coefficient)
-slope = model.coef_[0]
+# 4. Get the slope (coefficient) from the trained model
+slope = 
 
 # Don't change the code below - it's for testing
 def check_model():

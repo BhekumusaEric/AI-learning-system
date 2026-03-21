@@ -1,6 +1,6 @@
 ---
 title: "Logistic Regression Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "StatQuest: Logistic Regression"
     url: "https://www.youtube.com/watch?v=yIYKR4sgzI8"
@@ -20,40 +20,35 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import numpy as np
 
-# Sample email features: [contains_free, contains_winner, contains_urgent, num_exclamation_marks]
+# Email features: [contains_free, contains_winner, contains_urgent, num_exclamation_marks]
 # Labels: 1 = spam, 0 = not spam
 X = np.array([
-    [1, 0, 1, 3],  # Spam: "FREE!!! URGENT WINNER!"
-    [0, 0, 0, 0],  # Not spam: "Meeting tomorrow"
-    [1, 1, 0, 2],  # Spam: "You WON! FREE prize!"
-    [0, 0, 1, 1],  # Not spam: "Urgent: Project deadline"
-    [1, 0, 0, 5],  # Spam: "FREE!!!!!"
-    [0, 0, 0, 1],  # Not spam: "Hello!"
-    [0, 1, 1, 4],  # Spam: "WINNER! URGENT!!!!"
-    [0, 0, 0, 0]   # Not spam: "Thanks for your help"
+    [1, 0, 1, 3], [0, 0, 0, 0], [1, 1, 0, 2], [0, 0, 1, 1],
+    [1, 0, 0, 5], [0, 0, 0, 1], [0, 1, 1, 4], [0, 0, 0, 0]
 ])
-
 y = np.array([1, 0, 1, 0, 1, 0, 1, 0])
 
-# 1. Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+# 1. Split into train/test sets (test_size=0.25, random_state=42)
+X_train, X_test, y_train, y_test = 
 
-# 2. Create and train logistic regression model
-model = LogisticRegression()
-model.fit(X_train, y_train)
+# 2. Create a LogisticRegression model
+model = 
 
-# 3. Make predictions on test set
-predictions = model.predict(X_test)
+# 3. Train the model
 
-# 4. Calculate accuracy
-accuracy = accuracy_score(y_test, predictions)
 
-# 5. Get probability predictions for test set
-probabilities = model.predict_proba(X_test)
+# 4. Predict on the test set
+predictions = 
+
+# 5. Calculate accuracy
+accuracy = 
+
+# 6. Get probability predictions (predict_proba)
+probabilities = 
 
 # Don't change the code below - it's for testing
 def check_logistic():
-    return accuracy >= 0.5, probabilities.shape[1] == 2, len(predictions) == len(y_test)
+    return accuracy, probabilities.shape, len(predictions)
 ```
 
 ### Hidden Tests

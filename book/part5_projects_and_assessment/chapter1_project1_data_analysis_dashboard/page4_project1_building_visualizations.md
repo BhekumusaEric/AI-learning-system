@@ -1,6 +1,6 @@
 ---
 title: "Building Visualizations"
-type: "read"
+type: "practice"
 ---
 
 # Building Visualizations

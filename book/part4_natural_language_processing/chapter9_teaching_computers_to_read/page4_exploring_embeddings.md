@@ -1,6 +1,6 @@
 ---
 title: "Exploring Embeddings"
-type: "read"
+type: "practice"
 resources:
   - title: "PyTorch: nn.Embedding"
     url: "https://pytorch.org/docs/stable/generated/torch.nn.Embedding.html"

@@ -1,6 +1,6 @@
 ---
 title: "PCA Visualization Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "StatQuest: PCA Main Ideas"
     url: "https://www.youtube.com/watch?v=FgakZw6K1QQ"
@@ -16,49 +16,28 @@ Use PCA to reduce the Iris dataset from 4 dimensions to 2, then visualize the cl
 
 ```python
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.datasets import load_iris
 
-# Load the Iris dataset (4 features: sepal length/width, petal length/width)
 iris = load_iris()
-X = iris.data  # Shape: (150, 4)
-y = iris.target  # Species labels: 0, 1, 2
-feature_names = iris.feature_names
+X = iris.data   # shape: (150, 4)
+y = iris.target
 
-# 1. Create PCA model to reduce to 2 dimensions
-pca = PCA(n_components=2)
+# 1. Create a PCA model that reduces to 2 components
+pca = 
 
-# 2. Fit and transform the data
-X_pca = pca.fit_transform(X)
+# 2. Fit and transform X in one step (fit_transform)
+X_pca = 
 
-# 3. Check how much variance is explained
-explained_variance = pca.explained_variance_ratio_
-total_variance = explained_variance.sum()
+# 3. Store the explained variance ratio for each component
+explained_variance = 
 
-# 4. Create a scatter plot of the reduced data
-# Color points by species
-plt.figure(figsize=(8, 6))
-colors = ['red', 'green', 'blue']
-species_names = ['Setosa', 'Versicolor', 'Virginica']
-
-for i, (color, species) in enumerate(zip(colors, species_names)):
-    mask = y == i
-    plt.scatter(X_pca[mask, 0], X_pca[mask, 1], 
-               c=color, label=species, alpha=0.7)
-
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.title('Iris Dataset - PCA Reduced to 2D')
-plt.legend()
-plt.grid(True, alpha=0.3)
-
-# Show the plot
-plt.show()
+# 4. Store the total variance explained (sum of both components)
+total_variance = 
 
 # Don't change the code below - it's for testing
 def check_pca():
-    return X_pca.shape, total_variance > 0.9, len(explained_variance)
+    return X_pca.shape, total_variance, len(explained_variance)
 ```
 
 ### Hidden Tests

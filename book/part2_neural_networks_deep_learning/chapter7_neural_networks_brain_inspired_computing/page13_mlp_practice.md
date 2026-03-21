@@ -1,6 +1,6 @@
 ---
 title: "MLP Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "PyTorch: Optimizing Model Parameters"
     url: "https://pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
@@ -21,31 +21,40 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 
-# Load data
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
 train_data = datasets.MNIST('.', train=True, download=True, transform=transform)
 train_loader = torch.utils.data.DataLoader(train_data, batch_size=64, shuffle=True)
 
-# Define an MLP with one hidden layer
+# 1. Define an MLP with TWO hidden layers
+#    Architecture: 784 → 128 → 64 → 10
 class MLP(nn.Module):
     def __init__(self):
         super().__init__()
-        self.fc1 = nn.Linear(28*28, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, 10)
+        # Layer 1: 784 → 128
+        self.fc1 = 
+        # Layer 2: 128 → 64
+        self.fc2 = 
+        # Layer 3: 64 → 10
+        self.fc3 = 
 
     def forward(self, x):
-        x = x.view(-1, 28*28)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        # Flatten input
+        x = x.view(-1, 28 * 28)
+        # Apply fc1 + ReLU
+        x = 
+        # Apply fc2 + ReLU
+        x = 
+        # Apply fc3 (no activation)
+        x = 
         return x
 
 model = MLP()
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-# Train for 1 epoch
+# 2. Loss function and Adam optimizer (lr=0.001)
+criterion = 
+optimizer = 
+
+# 3. Train for one epoch
 model.train()
 for images, labels in train_loader:
     optimizer.zero_grad()
@@ -54,7 +63,7 @@ for images, labels in train_loader:
     loss.backward()
     optimizer.step()
 
-# Quick evaluation on a small subset
+# 4. Evaluate on one batch
 model.eval()
 with torch.no_grad():
     sample_images, sample_labels = next(iter(train_loader))
@@ -64,7 +73,7 @@ with torch.no_grad():
 
 # Don't change the code below - it's for testing
 def check_mlp():
-    return accuracy > 0.5, loss.item() > 0, len(list(model.parameters())) > 0
+    return accuracy, loss.item(), len(list(model.parameters()))
 ```
 
 ### Hidden Tests

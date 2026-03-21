@@ -1,6 +1,6 @@
 ---
 title: "Array Operations"
-type: "read"
+type: "practice"
 resources:
   - title: "NumPy: Universal Functions (ufunc)"
     url: "https://numpy.org/doc/stable/user/quickstart.html#universal-functions"

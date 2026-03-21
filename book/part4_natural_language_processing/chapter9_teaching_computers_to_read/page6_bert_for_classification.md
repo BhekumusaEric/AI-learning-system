@@ -1,6 +1,6 @@
 ---
 title: "BERT for Classification"
-type: "read"
+type: "practice"
 resources:
   - title: "Hugging Face: Sequence Classification"
     url: "https://huggingface.co/docs/transformers/tasks/sequence_classification"

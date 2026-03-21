@@ -1,6 +1,6 @@
 ---
 title: "Loss Functions: Measuring Mistakes"
-type: "read"
+type: "practice"
 resources:
   - title: "Google ML Crash Course: Descending into ML"
     url: "https://developers.google.com/machine-learning/crash-course/descending-into-ml/video-lecture"

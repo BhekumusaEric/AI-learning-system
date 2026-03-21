@@ -1,6 +1,6 @@
 ---
 title: "CNN Building Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "PyTorch: Training a Classifier"
     url: "https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html"

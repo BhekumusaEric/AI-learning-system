@@ -1,6 +1,6 @@
 ---
 title: "Transfer Learning Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "PyTorch: Transfer Learning Tutorial"
     url: "https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html"

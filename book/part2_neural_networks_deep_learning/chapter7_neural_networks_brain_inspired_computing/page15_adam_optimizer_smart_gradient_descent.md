@@ -1,6 +1,6 @@
 ---
 title: "Adam Optimizer: Smart Gradient Descent"
-type: "read"
+type: "practice"
 resources:
   - title: "PyTorch: optim.Adam"
     url: "https://pytorch.org/docs/stable/generated/torch.optim.Adam.html"
@@ -8,54 +8,80 @@ resources:
 
 # Adam Optimizer: Smart Gradient Descent
 
-## Adaptive Learning Rates for Every Parameter
+## Practice: Compare SGD vs Adam
 
-Adam is a popular optimizer that adapts learning rates for each parameter based on past gradients, making training faster and more stable.
+Adam adapts the learning rate for each parameter automatically. Let's train the same network with both SGD and Adam and compare how fast they converge.
 
-### Why Adam Works Well
+### Initial Code
 
-Adam combines ideas from two earlier methods:
-- **Momentum**: Smooths gradients by keeping a moving average
-- **RMSProp**: Scales learning rates based on recent gradient magnitudes
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torchvision import datasets, transforms
 
-### The Algorithm (High Level)
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
+train_data = datasets.MNIST('.', train=True, download=True, transform=transform)
+train_loader = torch.utils.data.DataLoader(train_data, batch_size=64, shuffle=True)
 
-1. Compute gradient `g` for each parameter
-2. Update moving averages:
-   - `m` (mean of gradients)
-   - `v` (mean of squared gradients)
-3. Correct bias in `m` and `v` (especially early in training)
-4. Update parameters using `m / (sqrt(v) + ε)`
+def make_model():
+    return nn.Sequential(
+        nn.Flatten(),
+        nn.Linear(784, 128),
+        nn.ReLU(),
+        nn.Linear(128, 10)
+    )
 
-### Typical Hyperparameters
+def train_one_epoch(model, optimizer):
+    criterion = nn.CrossEntropyLoss()
+    model.train()
+    total_loss = 0
+    for images, labels in train_loader:
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+    return total_loss / len(train_loader)
 
-- `learning_rate` (α): often 0.001
-- `beta1`: momentum term (default 0.9)
-- `beta2`: second moment term (default 0.999)
-- `epsilon`: small constant for numerical stability (1e-8)
+# 1. Train with SGD (lr=0.01)
+model_sgd = make_model()
+# Create an SGD optimizer for model_sgd with lr=0.01
+optimizer_sgd = 
+loss_sgd = train_one_epoch(model_sgd, optimizer_sgd)
 
-### Why Adam is Popular
+# 2. Train with Adam (lr=0.001)
+model_adam = make_model()
+# Create an Adam optimizer for model_adam with lr=0.001
+optimizer_adam = 
+loss_adam = train_one_epoch(model_adam, optimizer_adam)
 
-- Works well with little tuning
-- Handles sparse gradients (e.g., NLP embeddings)
-- Fast convergence in many applications
+# 3. Which optimizer achieved lower loss after one epoch?
+#    Set best_optimizer to either 'sgd' or 'adam'
+best_optimizer = 
 
-### When to Use Adam
+# Don't change the code below - it's for testing
+def check_optimizers():
+    return loss_sgd, loss_adam, best_optimizer
+```
 
-- When you want a reliable optimizer with minimal tuning
-- For deep networks and large datasets
-- When gradients vary significantly across parameters
+### Hidden Tests
 
-### When Not to Use Adam
+Test 1: loss_sgd is a positive float
+Test 2: loss_adam is a positive float
+Test 3: best_optimizer is 'adam' (Adam typically converges faster)
 
-- Some problems benefit from SGD with momentum
-- Can sometimes generalize worse (requires tuning)
-- Less interpretable than simple SGD
+### Evaluation Code
+```python
+assert isinstance(loss_sgd, float) and loss_sgd > 0, "loss_sgd should be a positive float"
+assert isinstance(loss_adam, float) and loss_adam > 0, "loss_adam should be a positive float"
+assert best_optimizer == 'adam', "Adam typically achieves lower loss in one epoch"
+```
 
-### Remember
-- Adam adapts learning rates per parameter
-- Combines momentum and RMSProp ideas
-- Great default choice for many models
-- Still benefit from learning rate scheduling
-
-Next: Use Adam in your neural network training.
+### Hints
+- `optim.SGD(model.parameters(), lr=0.01)`
+- `optim.Adam(model.parameters(), lr=0.001)`
+- Compare `loss_sgd` and `loss_adam` to decide `best_optimizer`
+- Adam usually converges faster because it adapts the learning rate per parameter

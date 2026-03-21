@@ -1,6 +1,6 @@
 ---
 title: "If Statements: Making Decisions"
-type: "read"
+type: "practice"
 resources:
   - title: "Python Control Flow: if statements"
     url: "https://docs.python.org/3/tutorial/controlflow.html#if-statements"

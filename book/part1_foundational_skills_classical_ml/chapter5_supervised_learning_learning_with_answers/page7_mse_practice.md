@@ -1,6 +1,6 @@
 ---
 title: "MSE Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "Scikit-Learn: mean_squared_error"
     url: "https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html"
@@ -21,24 +21,25 @@ import numpy as np
 actual_prices = np.array([300000, 250000, 400000, 350000, 275000])
 predicted_prices = np.array([310000, 240000, 390000, 360000, 280000])
 
-# 1. Calculate squared errors for each prediction
-squared_errors = (actual_prices - predicted_prices) ** 2
+# 1. Calculate the squared error for each prediction
+#    Hint: (actual - predicted) ** 2
+squared_errors = 
 
 # 2. Calculate Mean Squared Error (MSE)
-mse = np.mean(squared_errors)
+#    Hint: mean of squared_errors
+mse = 
 
 # 3. Calculate Root Mean Squared Error (RMSE)
-rmse = np.sqrt(mse)
+#    Hint: square root of mse
+rmse = 
 
-# 4. Calculate Mean Absolute Error (MAE) for comparison
-mae = np.mean(np.abs(actual_prices - predicted_prices))
-
-# 5. Which error metric is larger: MSE or MAE?
-# (Since MSE squares errors, it should be larger)
+# 4. Calculate Mean Absolute Error (MAE)
+#    Hint: mean of absolute differences
+mae = 
 
 # Don't change the code below - it's for testing
 def check_mse():
-    return mse > 0, rmse > 0, mae > 0, mse > mae
+    return mse, rmse, mae
 ```
 
 ### Hidden Tests

@@ -1,6 +1,6 @@
 ---
 title: "Backpropagation: Learning from Mistakes"
-type: "read"
+type: "practice"
 resources:
   - title: "3Blue1Brown: Backpropagation"
     url: "https://www.3blue1brown.com/lessons/backpropagation-calculus"

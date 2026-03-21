@@ -1,6 +1,6 @@
 ---
 title: "PCA: Simplifying Complex Data"
-type: "read"
+type: "practice"
 resources:
   - title: "Scikit-Learn: PCA"
     url: "https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html"

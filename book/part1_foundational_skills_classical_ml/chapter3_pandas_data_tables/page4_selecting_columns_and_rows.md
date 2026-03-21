@@ -1,6 +1,6 @@
 ---
 title: "Selecting Columns and Rows"
-type: "read"
+type: "practice"
 resources:
   - title: "Pandas: Indexing and Selecting Data"
     url: "https://pandas.pydata.org/docs/user_guide/indexing.html"

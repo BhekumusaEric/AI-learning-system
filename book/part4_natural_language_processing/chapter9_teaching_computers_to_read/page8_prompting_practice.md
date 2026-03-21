@@ -1,6 +1,6 @@
 ---
 title: "Prompting Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "Learn Prompting Framework"
     url: "https://learnprompting.org/docs/intro"

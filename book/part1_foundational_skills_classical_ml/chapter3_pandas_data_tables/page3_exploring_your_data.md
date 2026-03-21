@@ -1,6 +1,6 @@
 ---
 title: "Exploring Your Data"
-type: "read"
+type: "practice"
 resources:
   - title: "Pandas: Essential Basic Functionality"
     url: "https://pandas.pydata.org/docs/user_guide/basics.html"

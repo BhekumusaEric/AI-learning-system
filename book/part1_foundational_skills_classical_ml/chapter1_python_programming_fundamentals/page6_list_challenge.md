@@ -1,6 +1,6 @@
 ---
 title: "List Challenge"
-type: "read"
+type: "practice"
 resources:
   - title: "W3Schools: Python Lists"
     url: "https://www.w3schools.com/python/python_lists.asp"

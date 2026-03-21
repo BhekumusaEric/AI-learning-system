@@ -1,6 +1,6 @@
 ---
 title: "Activation Functions: The Decision Maker"
-type: "read"
+type: "practice"
 resources:
   - title: "ML Glossary: Activation Functions"
     url: "https://ml-cheatsheet.readthedocs.io/en/latest/activation_functions.html"

@@ -1,6 +1,6 @@
 ---
 title: "Decision Trees: 20 Questions"
-type: "read"
+type: "practice"
 resources:
   - title: "Scikit-Learn: Decision Trees"
     url: "https://scikit-learn.org/stable/modules/tree.html"

@@ -1,6 +1,6 @@
 ---
 title: "K-Means Clustering: Finding Groups"
-type: "read"
+type: "practice"
 resources:
   - title: "Scikit-Learn: K-Means"
     url: "https://scikit-learn.org/stable/modules/clustering.html#k-means"

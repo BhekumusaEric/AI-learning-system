@@ -1,6 +1,6 @@
 ---
 title: "Logistic Regression: Yes/No Predictions"
-type: "read"
+type: "practice"
 resources:
   - title: "Scikit-Learn: Logistic Regression"
     url: "https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression"

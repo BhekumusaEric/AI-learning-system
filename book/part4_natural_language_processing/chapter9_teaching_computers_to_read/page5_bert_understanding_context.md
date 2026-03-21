@@ -1,6 +1,6 @@
 ---
 title: "BERT: Understanding Context"
-type: "read"
+type: "practice"
 resources:
   - title: "Jay Alammar: A Visual Guide to BERT"
     url: "https://jalammar.github.io/a-visual-guide-to-using-bert-for-the-first-time/"

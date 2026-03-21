@@ -1,6 +1,6 @@
 ---
 title: "Project Overview: CNN Classification"
-type: "read"
+type: "practice"
 ---
 
 # Project 3: CNN Image Classification

@@ -1,6 +1,6 @@
 ---
 title: "Classification Metrics Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "Scikit-Learn: Classification Report"
     url: "https://scikit-learn.org/stable/modules/generated/sklearn.metrics.classification_report.html"
@@ -8,112 +8,60 @@ resources:
 
 # Classification Metrics Practice
 
-## Hands-On Practice with Accuracy, Precision, and Recall
+## Practice: Calculate Accuracy, Precision, and Recall
 
-Now that you understand the different ways to measure classification performance, let's practice calculating these metrics yourself.
+A spam classifier was tested on 100 emails. Here are the results:
 
-### Task: Evaluate a Spam Email Classifier
+- **True Positives (TP):** 45 — correctly flagged as spam
+- **False Positives (FP):** 10 — legitimate emails wrongly flagged
+- **True Negatives (TN):** 35 — correctly identified as legitimate
+- **False Negatives (FN):** 10 — spam emails that slipped through
 
-You have a spam email classifier that you tested on 100 emails. Here are the results:
-
-- **True Positives (TP):** 45 emails correctly identified as spam
-- **False Positives (FP):** 10 emails incorrectly flagged as spam (they were legitimate)
-- **True Negatives (TN):** 35 emails correctly identified as legitimate
-- **False Negatives (FN):** 10 emails missed as spam (they were spam but not caught)
-
-### Your Mission
-
-Calculate the three key metrics for this classifier:
-
-1. **Accuracy:** What percentage of all predictions were correct?
-2. **Precision:** When the classifier said "spam," what percentage was actually spam?
-3. **Recall:** Of all the actual spam emails, what percentage did we catch?
-
-### The Formulas (Quick Reference)
+Use the formulas below to calculate the three metrics:
 
 ```
-Accuracy = (TP + TN) / (TP + TN + FP + FN)
+Accuracy  = (TP + TN) / (TP + TN + FP + FN)
 Precision = TP / (TP + FP)
-Recall = TP / (TP + FN)
+Recall    = TP / (TP + FN)
 ```
 
-### Code Template
+### Initial Code
 
 ```python
-# Spam classifier evaluation
-# Given results from testing on 100 emails
+# Confusion matrix values
+true_positives  = 45
+false_positives = 10
+true_negatives  = 35
+false_negatives = 10
 
-true_positives = 45    # Correctly identified spam
-false_positives = 10   # Incorrectly flagged as spam
-true_negatives = 35    # Correctly identified legitimate
-false_negatives = 10   # Missed spam emails
+# 1. Calculate accuracy
+accuracy = 
 
-# Calculate total predictions and actual positives
-total_predictions = true_positives + false_positives + true_negatives + false_negatives
-total_actual_spam = true_positives + false_negatives
-total_actual_legitimate = true_negatives + false_positives
+# 2. Calculate precision
+precision = 
 
-# Calculate accuracy
-accuracy = (true_positives + true_negatives) / total_predictions
-
-# Calculate precision
-precision = true_positives / (true_positives + false_positives)
-
-# Calculate recall
-recall = true_positives / (true_positives + false_negatives)
-
-# Print results as percentages (multiply by 100)
-print(f"Accuracy: {accuracy * 100:.1f}%")
-print(f"Precision: {precision * 100:.1f}%")
-print(f"Recall: {recall * 100:.1f}%")
+# 3. Calculate recall
+recall = 
 
 # Don't change the code below - it's for testing
-
 def check_metrics():
-    return (
-        abs(accuracy - 0.8) < 1e-6 and
-        abs(precision - 0.8181818181818182) < 1e-6 and
-        abs(recall - 0.8181818181818182) < 1e-6
-    )
+    return accuracy, precision, recall
 ```
 
-### Expected Results
+### Hidden Tests
 
-When you run this code, you should get:
-- Accuracy: 80.0%
-- Precision: 81.8%
-- Recall: 81.8%
+Test 1: accuracy == 0.8
+Test 2: precision ≈ 0.818
+Test 3: recall ≈ 0.818
 
-### Understanding Your Results
+### Evaluation Code
+```python
+assert abs(accuracy - 0.8) < 1e-6, "Accuracy should be 0.8 (80%)"
+assert abs(precision - (45/55)) < 1e-6, "Precision should be 45/55 ≈ 0.818"
+assert abs(recall - (45/55)) < 1e-6, "Recall should be 45/55 ≈ 0.818"
+```
 
-**Accuracy (80%)**: The classifier got 4 out of 5 emails right overall.
-
-**Precision (81.8%)**: When it flagged an email as spam, it was right about 82% of the time.
-
-**Recall (81.8%)**: It caught 82% of all the actual spam emails.
-
-### Bonus Challenge: What If?
-
-Try changing the numbers and see how the metrics change:
-
-1. **More false positives:** What if FP = 20 instead of 10?
-2. **More false negatives:** What if FN = 20 instead of 10?
-3. **Perfect classifier:** What if FP = 0 and FN = 0?
-
-How do these changes affect accuracy, precision, and recall differently?
-
-### Key Takeaways
-
-- **Accuracy** tells you overall correctness
-- **Precision** tells you reliability when you predict positive
-- **Recall** tells you coverage of actual positives
-- Different problems prioritize different metrics
-- There's often a tradeoff between precision and recall
-
-### Real-World Applications
-
-- **Medical diagnosis:** High recall (catch all diseases) more important than precision
-- **Spam filtering:** High precision (don't block good emails) more important than recall
-- **Fraud detection:** Balance both - miss some fraud but don't annoy legitimate customers
-
-Great job! You now know how to evaluate classification models properly.
+### Hints
+- Accuracy: correct predictions out of all predictions
+- Precision: how reliable is a positive prediction?
+- Recall: how many actual positives did we catch?

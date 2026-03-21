@@ -1,6 +1,6 @@
 ---
 title: "Activation Function Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "PyTorch: Non-linear Activations"
     url: "https://pytorch.org/docs/stable/nn.html#non-linear-activations-weighted-sum-nonlinearity"
@@ -16,44 +16,35 @@ Implement and compare different activation functions on the same input.
 
 ```python
 import numpy as np
-import matplotlib.pyplot as plt
 
-# Define activation functions
+# Implement each activation function from scratch
+
 def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-def tanh(x):
-    return np.tanh(x)
+    # Returns values between 0 and 1
+    # Formula: 1 / (1 + e^(-x))
+    pass
 
 def relu(x):
-    return np.maximum(0, x)
+    # Returns x if x > 0, else 0
+    # Hint: np.maximum()
+    pass
 
-def leaky_relu(x, alpha=0.01):
-    return np.where(x > 0, x, alpha * x)
+def tanh_activation(x):
+    # Returns values between -1 and 1
+    # Hint: np.tanh()
+    pass
 
 # Test inputs
-x = np.linspace(-5, 5, 100)
+x = np.array([-3.0, -1.0, 0.0, 1.0, 3.0])
 
-# 1. Apply each activation function
+# Apply each function
 sigmoid_out = sigmoid(x)
-tanh_out = tanh(x)
 relu_out = relu(x)
-leaky_out = leaky_relu(x)
-
-# 2. Find the range (min/max) of each activation's output
-sigmoid_range = (sigmoid_out.min(), sigmoid_out.max())
-tanh_range = (tanh_out.min(), tanh_out.max())
-relu_range = (relu_out.min(), relu_out.max())
-leaky_range = (leaky_out.min(), leaky_out.max())
-
-# 3. Test specific values
-test_value = 2.0
-sigmoid_test = sigmoid(test_value)
-relu_test = relu(test_value)
+tanh_out = tanh_activation(x)
 
 # Don't change the code below - it's for testing
 def check_activations():
-    return sigmoid_range, relu_range, sigmoid_test > 0.5, relu_test == test_value
+    return sigmoid_out, relu_out, tanh_out
 ```
 
 ### Hidden Tests

@@ -1,6 +1,6 @@
 ---
 title: "Convolutional Layers: Pattern Detectors"
-type: "read"
+type: "practice"
 resources:
   - title: "Stanford CS231n: Convolutional Networks"
     url: "https://cs231n.github.io/convolutional-networks/"

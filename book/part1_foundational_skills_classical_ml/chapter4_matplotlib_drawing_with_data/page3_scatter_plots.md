@@ -1,6 +1,6 @@
 ---
 title: "Scatter Plots"
-type: "read"
+type: "practice"
 resources:
   - title: "Matplotlib: matplotlib.pyplot.scatter"
     url: "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.scatter.html"
@@ -21,16 +21,20 @@ import matplotlib.pyplot as plt
 study_hours = [2, 3, 1, 4, 5, 2, 3, 4]
 test_scores = [65, 75, 55, 85, 95, 70, 80, 90]
 
-# Create a scatter plot
-plt.scatter(study_hours, test_scores)
+# 1. Create a scatter plot of study_hours vs test_scores
 
-# Add labels and title
-plt.xlabel('Study Hours')
-plt.ylabel('Test Score')
-plt.title('Study Hours vs Test Scores')
 
-# Show the plot
-plt.show()
+# 2. Label the x-axis 'Study Hours'
+
+
+# 3. Label the y-axis 'Test Score'
+
+
+# 4. Add a title 'Study Hours vs Test Scores'
+
+
+# 5. Show the plot
+
 ```
 
 ### Hidden Tests

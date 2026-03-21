@@ -1,6 +1,6 @@
 ---
 title: "Creating DataFrames"
-type: "read"
+type: "practice"
 resources:
   - title: "Pandas: DataFrame Object"
     url: "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html"

@@ -1,6 +1,6 @@
 ---
 title: "Image Loading Practice"
-type: "read"
+type: "practice"
 resources:
   - title: "PyTorch: Torchvision Datasets"
     url: "https://pytorch.org/vision/stable/datasets.html"

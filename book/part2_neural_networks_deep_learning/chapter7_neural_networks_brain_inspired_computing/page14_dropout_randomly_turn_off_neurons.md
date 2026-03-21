@@ -1,6 +1,6 @@
 ---
 title: "Dropout: Randomly Turn Off Neurons"
-type: "read"
+type: "practice"
 resources:
   - title: "PyTorch: nn.Dropout"
     url: "https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html"
@@ -8,60 +8,88 @@ resources:
 
 # Dropout: Randomly Turn Off Neurons
 
-## Preventing Overfitting with Randomness
+## Practice: Add Dropout to Prevent Overfitting
 
-Dropout is a regularization technique that randomly turns off (drops) a percentage of neurons during training. This forces the network to rely on multiple paths and prevents it from memorizing the training data.
+Dropout randomly turns off neurons during training, forcing the network to learn more robust features. Add it between layers using `nn.Dropout(p=0.5)` where `p` is the probability of dropping a neuron.
 
-### How Dropout Works
+### Initial Code
 
-During training:
-- Each neuron is kept with probability `p` (e.g., 0.5)
-- Dropped neurons are ignored for that batch
-- This creates a different “thinned” network each step
-
-During evaluation:
-- All neurons are active
-- Outputs are scaled to match training behavior
-
-### Why Dropout Helps
-
-- Prevents co-adaptation (neurons relying on each other)
-- Encourages redundancy (multiple neurons learn similar features)
-- Acts like model averaging (ensemble of sub-networks)
-
-### Typical Dropout Rates
-
-- Hidden layers: 0.2 – 0.5
-- Input layer: 0.1 – 0.2
-
-### Using Dropout in Code
-
-In PyTorch:
 ```python
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torchvision import datasets, transforms
 
-dropout = nn.Dropout(p=0.5)
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
+train_data = datasets.MNIST('.', train=True, download=True, transform=transform)
+train_loader = torch.utils.data.DataLoader(train_data, batch_size=64, shuffle=True)
 
-x = dropout(x)
+# 1. Define an MLP with Dropout added between layers
+class MLPWithDropout(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(784, 256)
+        # Add a Dropout layer with p=0.5
+        self.dropout1 = 
+        self.fc2 = nn.Linear(256, 128)
+        # Add another Dropout layer with p=0.3
+        self.dropout2 = 
+        self.fc3 = nn.Linear(128, 10)
+
+    def forward(self, x):
+        x = x.view(-1, 784)
+        # Apply fc1 → ReLU → dropout1
+        x = 
+        x = 
+        # Apply fc2 → ReLU → dropout2
+        x = 
+        x = 
+        # Apply fc3 (no dropout on output layer)
+        x = self.fc3(x)
+        return x
+
+model = MLPWithDropout()
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+# 2. Train for one epoch
+model.train()
+for images, labels in train_loader:
+    optimizer.zero_grad()
+    outputs = model(images)
+    loss = criterion(outputs, labels)
+    loss.backward()
+    optimizer.step()
+
+# 3. Switch to eval mode (disables dropout) and evaluate
+model.eval()
+with torch.no_grad():
+    imgs, lbls = next(iter(train_loader))
+    preds = model(imgs)
+    _, predicted = torch.max(preds, 1)
+    accuracy = (predicted == lbls).float().mean().item()
+
+# Don't change the code below - it's for testing
+def check_dropout():
+    return accuracy, loss.item(), model.dropout1.p, model.dropout2.p
 ```
 
-In Keras:
+### Hidden Tests
+
+Test 1: dropout1.p == 0.5
+Test 2: dropout2.p == 0.3
+Test 3: loss > 0
+
+### Evaluation Code
 ```python
-from tensorflow.keras.layers import Dropout
-
-dropout = Dropout(0.5)
+assert model.dropout1.p == 0.5, "dropout1 should have p=0.5"
+assert model.dropout2.p == 0.3, "dropout2 should have p=0.3"
+assert loss.item() > 0, "loss should be positive"
 ```
 
-### When Not to Use Dropout
-
-- Small datasets: may underfit
-- Batch normalization: sometimes less effective together
-- During inference: dropout is disabled (only in training)
-
-### Remember
-- Dropout is a regularization technique
-- Randomly drops neurons during training
-- Improves generalization by preventing overfitting
-- Always disabled during evaluation
-
-Next: Learn about the Adam optimizer for smarter learning rates.
+### Hints
+- `nn.Dropout(p=0.5)` creates a dropout layer that drops 50% of neurons
+- Apply it after ReLU: `x = self.dropout1(F.relu(self.fc1(x)))`
+- Always call `model.eval()` before evaluating — this disables dropout
+- Never apply dropout to the output layer
