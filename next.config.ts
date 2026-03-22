@@ -4,7 +4,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*)',
+        // COOP/COEP required for SharedArrayBuffer (pyodide input() support)
+        // Only apply to DIP and SAAIO lesson routes — NOT WRP (which embeds YouTube)
+        source: '/(lesson|dip/lesson)/:path*',
         headers: [
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
           { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
@@ -15,6 +17,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/lesson/[id]': ['./book/**/*'],
     '/dip/lesson/[id]': ['./book/**/*'],
+    '/wrp/lesson/[id]': ['./book/**/*'],
     '/admin': ['./book/**/*'],
     '/api/content/grounds': ['./book/**/*'],
     '/api/content/ground/[groundId]': ['./book/**/*'],
