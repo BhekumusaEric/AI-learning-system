@@ -52,6 +52,12 @@ I'm currently looking for [OPPORTUNITY].
 
 <video-embed src="https://www.youtube.com/embed/Ks-_Mh1QhMc" title="How to Give a Perfect Elevator Pitch" />
 
+## 📺 Watch: Amy Cuddy — Your Body Language Shapes Who You Are
+
+<video-embed src="https://www.youtube.com/embed/RVmMeMcGc0Y" title="Amy Cuddy: Your Body Language Shapes Who You Are" />
+
+> *One of the most-watched TED Talks ever. Amy Cuddy's research shows your posture changes your brain chemistry — not just how others see you. Watch this before any high-stakes situation.*
+
 ---
 
 ## Common Verbal Communication Mistakes

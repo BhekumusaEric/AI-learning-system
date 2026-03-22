@@ -118,3 +118,11 @@ Before sending any important email, pause and ask:
 3. Have I proofread it at least once?
 
 If yes to all three — send it. If not — revise first.
+
+---
+
+## 📺 Watch: Professional Email Writing Tips
+
+<video-embed src="https://www.youtube.com/embed/iqXvNm9S73k" title="How to Write Professional Emails" />
+
+> *A short, practical guide to writing emails that get responses — covering subject lines, tone, structure, and common mistakes.*

@@ -133,3 +133,11 @@ Building a resume can feel overwhelming — especially if you feel like you "don
 Here's the truth: **everyone starts somewhere.** Volunteer work, school projects, part-time jobs, community involvement — all of it counts. Your job is to frame it professionally.
 
 Take 3 deep breaths. Then write down 5 things you've done in your life that you're proud of. Those are the seeds of your resume.
+
+---
+
+## 📺 Watch: How to Write a Resume With No Experience
+
+<video-embed src="https://www.youtube.com/embed/xpaz7nrNmXA" title="How to Write a Resume With No Experience" />
+
+> *Specifically for people entering the job market for the first time — how to frame your skills, education, and life experience into a resume that gets noticed.*

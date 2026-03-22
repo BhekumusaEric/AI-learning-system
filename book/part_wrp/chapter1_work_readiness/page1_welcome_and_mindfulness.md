@@ -56,6 +56,14 @@ Your skills got you in the room. Your communication skills will get you the job.
 
 ---
 
+## 📺 Watch: Start With Why — The Mindset That Gets You Hired
+
+<video-embed src="https://www.youtube.com/embed/qp0HIF3SfI4" title="Simon Sinek: How Great Leaders Inspire Action" />
+
+> *Simon Sinek's TED Talk is one of the most-watched of all time. Understanding your "why" — your purpose and motivation — is the foundation of every great elevator pitch, interview answer, and personal brand.*
+
+---
+
 ## Program Structure
 
 | Module | Topic |

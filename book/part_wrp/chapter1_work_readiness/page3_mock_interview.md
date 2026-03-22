@@ -66,6 +66,14 @@ The chatbot below will simulate a real job interview. It will ask you common int
 
 ---
 
+## 📺 Watch: How to Answer "Tell Me About Yourself" Perfectly
+
+<video-embed src="https://www.youtube.com/embed/kayOhGRcNt4" title="How to Answer Tell Me About Yourself" />
+
+> *This is the most common opening interview question and the one most people answer badly. Watch this before your next real interview.*
+
+---
+
 ## Common Interview Questions to Prepare For
 
 1. Tell me about yourself.
