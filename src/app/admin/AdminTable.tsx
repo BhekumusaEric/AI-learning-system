@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export interface AdminUser {
@@ -249,6 +249,67 @@ function BulkImport({ platform, onDone }: { platform: 'saaio' | 'dip'; onDone: (
   );
 }
 
+function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip', totalPages: number) {
+  // Sort by completedCount desc for ranking
+  const sorted = [...users].sort((a, b) => b.completedCount - a.completedCount);
+
+  const rows = sorted.map((u, i) => {
+    const pct = totalPages > 0 ? Math.min(100, Math.round((u.completedCount / totalPages) * 100)) : 0;
+    const row: Record<string, any> = {
+      'Rank': i + 1,
+      'Login ID': u.login_id,
+      'Full Name': u.full_name,
+      'Email': u.email || '—',
+      'Completed Topics': u.completedCount,
+      'Total Topics': totalPages,
+      'Completion %': `${pct}%`,
+      'Last Active': u.lastActive ? new Date(u.lastActive).toLocaleString() : '—',
+      'Registered': new Date(u.created_at).toLocaleDateString(),
+    };
+    if (platform === 'dip') {
+      row['Exam Score'] = u.examScore !== null ? `${u.examScore}%` : '—';
+      row['Exam Passed'] = u.examPassed === true ? 'Yes' : u.examPassed === false ? 'No' : '—';
+    }
+    return row;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Column widths
+  ws['!cols'] = [
+    { wch: 6 }, { wch: 12 }, { wch: 24 }, { wch: 28 },
+    { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 14 },
+    ...(platform === 'dip' ? [{ wch: 12 }, { wch: 12 }] : []),
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const sheetName = platform === 'dip' ? 'DIP Students' : 'SAAIO Students';
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+  // Summary sheet
+  const completed = users.filter(u => u.completedCount >= totalPages).length;
+  const avgPct = users.length > 0
+    ? Math.round(users.reduce((s, u) => s + Math.min(100, (u.completedCount / totalPages) * 100), 0) / users.length)
+    : 0;
+  const summaryData = [
+    ['Report Generated', new Date().toLocaleString()],
+    ['Platform', platform === 'dip' ? 'IDC SEF / DIP' : 'SAAIO Training Grounds'],
+    ['Total Students', users.length],
+    ['Total Topics', totalPages],
+    ['Avg Completion', `${avgPct}%`],
+    ['Fully Completed', completed],
+    ...(platform === 'dip' ? [
+      ['Exam Pass Rate', users.length > 0 ? `${Math.round((users.filter(u => u.examPassed).length / users.length) * 100)}%` : '—'],
+    ] : []),
+  ];
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+  wsSummary['!cols'] = [{ wch: 20 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+  const date = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `${platform}_students_report_${date}.xlsx`);
+}
+
 export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSaaioPages: number; totalDipPages: number }) {
   const [platform, setPlatform] = useState<'saaio' | 'dip'>('saaio');
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -400,6 +461,16 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
             >
               <FileSpreadsheet className="w-4 h-4" />
               Bulk Import
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadReport(users, platform, totalPages)}
+              disabled={users.length === 0}
+              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Download Excel report"
+            >
+              <Download className="w-4 h-4" />
+              Export Report
             </button>
           </div>
         </form>
