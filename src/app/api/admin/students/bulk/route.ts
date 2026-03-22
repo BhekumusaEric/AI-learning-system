@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'platform and students array required' }, { status: 400 });
   }
 
-  const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
+  const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
 
   const results: { full_name: string; login_id: string; plainPassword: string; email: string | null; success: boolean; error?: string; emailSent?: boolean }[] = [];
   const emailPromises: Promise<void>[] = [];

@@ -91,8 +91,8 @@ export async function GET(request: Request) {
   if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { searchParams } = new URL(request.url);
   const platform = searchParams.get('platform') || 'saaio';
-  const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
-  const progressTable = platform === 'dip' ? 'dip_progress' : 'user_progress';
+  const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
+  const progressTable = platform === 'dip' ? 'dip_progress' : platform === 'wrp' ? 'wrp_progress' : 'user_progress';
 
   const { data: students, error } = await supabase
     .from(table)
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
   const { full_name, email, platform } = await request.json();
   if (!full_name || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
-  const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
+  const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   const login_id = await nextUniqueLoginId(platform);
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
@@ -165,7 +165,7 @@ export async function PATCH(request: Request) {
   const { login_id, platform } = await request.json();
   if (!login_id || !platform) return NextResponse.json({ error: 'login_id and platform required' }, { status: 400 });
 
-  const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
+  const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 
@@ -204,7 +204,7 @@ export async function DELETE(request: Request) {
   const platform = searchParams.get('platform') || 'saaio';
   if (!login_id) return NextResponse.json({ error: 'login_id required' }, { status: 400 });
 
-  const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
+  const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   const { error } = await supabase.from(table).delete().eq('login_id', login_id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

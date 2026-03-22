@@ -18,10 +18,12 @@ function generatePassword(length = 8) {
 }
 
 async function sendCredentialsEmail(to: string, full_name: string, login_id: string, password: string, platform: string) {
-  const platformName = platform === 'dip' ? 'IDC SEF Digital Inclusion Program' : 'SAAIO Training Grounds';
+  const platformName = platform === 'dip' ? 'IDC SEF Digital Inclusion Program' : platform === 'wrp' ? 'WeThinkCode_ Work Readiness Program' : 'SAAIO Training Grounds';
   const loginUrl = platform === 'dip'
     ? 'https://ai-learning-system-ten.vercel.app/dip/login'
-    : 'https://ai-learning-system-ten.vercel.app/saaio/login';
+    : platform === 'wrp'
+      ? 'https://ai-learning-system-ten.vercel.app/wrp/login'
+      : 'https://ai-learning-system-ten.vercel.app/saaio/login';
 
   const html = `
     <div style="font-family:monospace;background:#000;color:#fff;padding:32px;max-width:480px;margin:0 auto;border-radius:12px;">
@@ -58,7 +60,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'full_name, email, and platform are required' }, { status: 400 });
   }
 
-  const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
+  const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   const normalizedEmail = email.trim().toLowerCase();
 
   // Check if email already exists

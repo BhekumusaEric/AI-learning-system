@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 function formatLoginId(platform: string, index: number) {
-  const prefix = platform === 'dip' ? 'DIP' : 'SAAIO';
+  const prefix = platform === 'dip' ? 'DIP' : platform === 'wrp' ? 'WRP' : 'SAAIO';
   const year = new Date().getFullYear();
   return `${prefix}-${year}-${String(index).padStart(3, '0')}`;
 }
@@ -13,8 +13,8 @@ function formatLoginId(platform: string, index: number) {
  * concurrent inserts, and count-based race conditions.
  */
 export async function nextUniqueLoginId(platform: string): Promise<string> {
-  const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
-  const prefix = platform === 'dip' ? 'DIP' : 'SAAIO';
+  const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
+  const prefix = platform === 'dip' ? 'DIP' : platform === 'wrp' ? 'WRP' : 'SAAIO';
   const year = new Date().getFullYear();
 
   // Fetch all existing login_ids for this year's prefix to find the true max

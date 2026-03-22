@@ -310,8 +310,8 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip', totalPage
   XLSX.writeFile(wb, `${platform}_students_report_${date}.xlsx`);
 }
 
-export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSaaioPages: number; totalDipPages: number }) {
-  const [platform, setPlatform] = useState<'saaio' | 'dip'>('saaio');
+export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPages }: { totalSaaioPages: number; totalDipPages: number; totalWrpPages: number }) {
+  const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp'>('saaio');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -398,7 +398,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
     }
   };
 
-  const totalPages = platform === 'saaio' ? totalSaaioPages : totalDipPages;
+  const totalPages = platform === 'saaio' ? totalSaaioPages : platform === 'dip' ? totalDipPages : totalWrpPages;
 
   return (
     <>
@@ -407,13 +407,13 @@ export default function AdminTable({ totalSaaioPages, totalDipPages }: { totalSa
       <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
         {/* Platform Tabs */}
         <div className="flex border-b border-border-subtle">
-          {(['saaio', 'dip'] as const).map(p => (
+          {(['saaio', 'dip', 'wrp'] as const).map(p => (
             <button
               key={p}
               onClick={() => setPlatform(p)}
               className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider transition-all ${platform === p ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'}`}
             >
-              {p === 'saaio' ? 'SAAIO Training Grounds' : 'IDC SEF / DIP'}
+              {p === 'saaio' ? 'SAAIO Training Grounds' : p === 'dip' ? 'IDC SEF / DIP' : 'WRP'}
             </button>
           ))}
         </div>

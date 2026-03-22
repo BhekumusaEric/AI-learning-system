@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'login_id and platform are required' }, { status: 400 });
   }
 
-  const table = platform === 'dip' ? 'dip_students' : 'saaio_students';
+  const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
 
   const { data, error } = await supabase
     .from(table)
