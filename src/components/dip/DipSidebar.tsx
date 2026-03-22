@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, Circle, Menu, ChevronLeft, Award, BookOpen } from 'lucide-react';
+import { CheckCircle2, Circle, Menu, ChevronLeft, Award, BookOpen, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PartData } from '@/lib/syllabus';
 import { useProgress } from '@/components/providers/ProgressProvider';
 
-export default function DipSidebar({ syllabus }: { syllabus: PartData[] }) {
+export default function DipSidebar({ syllabus, onClose }: { syllabus: PartData[]; onClose?: () => void }) {
   const pathname = usePathname();
   const { completedPages } = useProgress();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -27,12 +27,21 @@ export default function DipSidebar({ syllabus }: { syllabus: PartData[] }) {
     <aside className={`h-full border-r border-border-subtle bg-background flex flex-col shrink-0 overflow-hidden transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-72'}`}>
       <div className="p-4 border-b border-border-subtle shrink-0 flex items-center justify-between">
         {!isCollapsed && <h2 className="text-sm font-bold text-secondary-text uppercase tracking-wider">Table of Contents</h2>}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className={`p-1.5 hover:bg-secondary rounded text-secondary-text hover:text-white transition-colors ${isCollapsed ? 'mx-auto mt-2' : ''}`}
-        >
-          {isCollapsed ? <Menu className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-1">
+          {/* X button — mobile drawer close */}
+          {onClose && (
+            <button onClick={onClose} className="p-1.5 hover:bg-secondary rounded text-secondary-text hover:text-white transition-colors md:hidden">
+              <X className="w-5 h-5" />
+            </button>
+          )}
+          {/* Collapse toggle — desktop only */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className={`p-1.5 hover:bg-secondary rounded text-secondary-text hover:text-white transition-colors hidden md:flex ${isCollapsed ? 'mx-auto mt-2' : ''}`}
+          >
+            {isCollapsed ? <Menu className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {!isCollapsed && (

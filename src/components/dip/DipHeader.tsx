@@ -1,11 +1,11 @@
 "use client";
 
 import React from 'react';
-import { BookOpen, UserCircle } from 'lucide-react';
+import { BookOpen, UserCircle, Menu } from 'lucide-react';
 import { useProgress } from '@/components/providers/ProgressProvider';
 import { PartData } from '@/lib/syllabus';
 
-export default function DipHeader({ syllabus }: { syllabus: PartData[] }) {
+export default function DipHeader({ syllabus, onMenuClick }: { syllabus: PartData[]; onMenuClick?: () => void }) {
   const { completedPages } = useProgress();
 
   // DIP = chapter 1 only
@@ -15,14 +15,20 @@ export default function DipHeader({ syllabus }: { syllabus: PartData[] }) {
   const pct = totalPages > 0 ? Math.min(100, Math.round((completedCount / totalPages) * 100)) : 0;
 
   return (
-    <header className="h-16 w-full border-b border-border-subtle bg-secondary flex items-center justify-between px-6 shrink-0 z-20">
+    <header className="h-16 w-full border-b border-border-subtle bg-secondary flex items-center justify-between px-4 md:px-6 shrink-0 z-20">
       <div className="flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        {onMenuClick && (
+          <button onClick={onMenuClick} className="p-1.5 hover:bg-background rounded text-secondary-text hover:text-white transition-colors md:hidden">
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
         <div className="bg-accent/20 p-2 rounded-lg">
-          <BookOpen className="w-6 h-6 text-accent" />
+          <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-accent" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-foreground tracking-tight leading-tight">Digital Inclusion Program</h1>
-          <p className="text-[11px] text-secondary-text leading-tight">Powered by IDC SEF · 40 hrs</p>
+          <h1 className="text-sm md:text-lg font-bold text-foreground tracking-tight leading-tight">Digital Inclusion Program</h1>
+          <p className="text-[10px] md:text-[11px] text-secondary-text leading-tight">Powered by IDC SEF · 40 hrs</p>
         </div>
       </div>
 
