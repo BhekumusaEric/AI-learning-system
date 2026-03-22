@@ -177,13 +177,35 @@ export default function CvBuilder() {
 
   const handleDownload = async () => {
     if (!previewRef.current) return;
-    const html2canvas = (await import('html2canvas')).default;
-    const { jsPDF } = await import('jspdf');
-    const canvas = await html2canvas(previewRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pdfW = pdf.internal.pageSize.getWidth();
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, (canvas.height * pdfW) / canvas.width);
-    pdf.save(`${tab === 'cv' ? 'CV' : 'Cover-Letter'}-${cv.fullName.replace(/\s+/g, '-') || 'document'}.pdf`);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      const el = previewRef.current;
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+        windowWidth: el.scrollWidth,
+        windowHeight: el.scrollHeight,
+      });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = pdf.internal.pageSize.getHeight();
+      const imgH = (canvas.height * pdfW) / canvas.width;
+      // Multi-page support
+      let y = 0;
+      while (y < imgH) {
+        if (y > 0) pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, -y, pdfW, imgH);
+        y += pdfH;
+      }
+      pdf.save(`${tab === 'cv' ? 'CV' : 'Cover-Letter'}-${cv.fullName.replace(/\s+/g, '-') || 'document'}.pdf`);
+    } catch (e) {
+      console.error('PDF generation failed:', e);
+      alert('PDF generation failed. Please try switching to Preview mode first, then download.');
+    }
   };
 
   const handleEmail = async () => {
@@ -191,9 +213,16 @@ export default function CvBuilder() {
     setEmailStatus('sending');
     try {
       const res = await fetch('/api/wrp/send-document', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: emailAddr, type: tab, cv, cover }) });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error('Email failed:', body);
+      }
       setEmailStatus(res.ok ? 'sent' : 'error');
-    } catch { setEmailStatus('error'); }
-    setTimeout(() => setEmailStatus('idle'), 4000);
+    } catch (e) {
+      console.error('Email exception:', e);
+      setEmailStatus('error');
+    }
+    setTimeout(() => setEmailStatus('idle'), 5000);
   };
 
   const sectionHead = (title: string) => (
@@ -368,9 +397,9 @@ export default function CvBuilder() {
           </div>
         )}
 
-        {/* Preview panel */}
-        <div className={`${mode === 'edit' ? 'hidden lg:block lg:w-[420px]' : 'w-full'} overflow-y-auto max-h-[700px] bg-gray-100`}>
-          <div ref={previewRef}>
+        {/* Preview panel — always rendered so html2canvas can capture it */}
+        <div className={`${mode === 'edit' ? 'lg:block lg:w-[420px]' : 'w-full'} overflow-y-auto max-h-[700px] bg-gray-100 ${mode === 'edit' ? 'hidden' : ''}`}>
+          <div ref={previewRef} style={{ background: '#ffffff' }}>
             {tab === 'cv' ? <CvPreview cv={cv} /> : <CoverPreview cover={cover} cv={cv} />}
           </div>
         </div>
