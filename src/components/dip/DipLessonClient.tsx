@@ -216,7 +216,17 @@ export default function DipLessonClient({
     ) : (
       <>
         <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { resetCode(); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} onInputRequest={cb => setInputCallback(cb)} />
-        <FeedbackPanel results={results} isRunning={isRunning} />
+        <FeedbackPanel
+          results={results}
+          isRunning={isRunning}
+          onNext={isLastPage
+            ? () => { markCompleted(pageId); router.push('/dip/exam'); }
+            : nextPageId
+              ? () => { markCompleted(pageId); navigate(nextPageId); }
+              : undefined
+          }
+          nextLabel={isLastPage ? 'Go to Final Exam' : 'Next Lesson'}
+        />
       </>
     )
   ) : null;

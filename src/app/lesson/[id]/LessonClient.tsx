@@ -261,9 +261,13 @@ export default function LessonPageClient({
           isLoading={isEnvLoading}
           onInputRequest={cb => setInputCallback(cb)}
         />
-        <FeedbackPanel 
-          results={results} 
-          isRunning={isRunning} 
+        <FeedbackPanel
+          results={results}
+          isRunning={isRunning}
+          onNext={nextPageId
+            ? () => { markCompleted(pageId); navigate(nextPageId); }
+            : undefined
+          }
         />
       </>
     )

@@ -19,9 +19,10 @@ interface FeedbackPanelProps {
   results: TestResult[] | null;
   isRunning: boolean;
   onNext?: () => void;
+  nextLabel?: string;
 }
 
-export default function FeedbackPanel({ results, isRunning, onNext }: FeedbackPanelProps) {
+export default function FeedbackPanel({ results, isRunning, onNext, nextLabel = 'Next Lesson' }: FeedbackPanelProps) {
   if (isRunning) {
     return (
       <div className="flex-1 p-6 flex items-center justify-center flex-col gap-4 text-secondary-text">
@@ -131,15 +132,15 @@ export default function FeedbackPanel({ results, isRunning, onNext }: FeedbackPa
             <CheckCircle2 className="w-8 h-8 text-accent" />
           </div>
           <div>
-            <h4 className="font-bold text-xl text-accent mb-1">Excellent Work!</h4>
-            <p className="text-secondary-text">All tests passed successfully.</p>
+            <h4 className="font-bold text-xl text-accent mb-1">All Tests Passed! 🎉</h4>
+            <p className="text-secondary-text text-sm">Great work — your solution is correct.</p>
           </div>
           {onNext && (
-            <button 
+            <button
               onClick={onNext}
               className="mt-2 flex items-center gap-2 px-6 py-2.5 bg-accent text-black font-bold rounded-lg hover:bg-accent/90 transition-colors"
             >
-              Next Lesson
+              {nextLabel}
               <ChevronRight className="w-4 h-4" />
             </button>
           )}
