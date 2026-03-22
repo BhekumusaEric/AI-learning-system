@@ -81,7 +81,7 @@ const EXAM_QUESTIONS: Question[] = [
     options: ["4", "2", "8", "Error"],
     correct: 2,
   },
-  { id: 30, question: "What are the inputs to a function called?", options: ["Returns", "Variables", "Parameters", "Arguments and parameters"], correct: 3 },
+  { id: 30, question: "What are the variables listed in a function definition called?", options: ["Returns", "Variables", "Parameters", "Arguments"], correct: 2 },
 
   // ── Indentation & Syntax ───────────────────────────────────────────────────
   { id: 31, question: "In Python, what does indentation define?", options: ["Style only", "The end of a block", "Which block a line belongs to", "Speed of execution"], correct: 2 },
@@ -95,61 +95,88 @@ const EXAM_QUESTIONS: Question[] = [
   { id: 34, question: "Which of these correctly defines a function that adds two numbers?", options: ["function add(a,b): return a+b", "def add(a,b): return a+b", "def add(a,b) => a+b", "define add(a,b): a+b"], correct: 1 },
   { id: 35, question: "What does Python use instead of curly braces {} to define code blocks?", options: ["Parentheses", "Square brackets", "Indentation", "BEGIN/END keywords"], correct: 2 },
 
-  // ── NumPy ──────────────────────────────────────────────────────────────────
-  { id: 36, question: "What is the main advantage of NumPy arrays over Python lists?", options: ["They can store strings", "They are optimised for mathematical operations", "They use less syntax", "They are easier to print"], correct: 1 },
-  { id: 37, question: "How do you create a NumPy array from a list [1,2,3]?", options: ["numpy.list([1,2,3])", "np.array([1,2,3])", "np.create([1,2,3])", "array([1,2,3])"], correct: 1 },
+  // ── Built-in Functions & Type Conversion ───────────────────────────────────
+  { id: 36, question: "What does sorted([3, 1, 2]) return?", options: ["[3,1,2] modified in place", "[1,2,3] as a new list", "1", "Error"], correct: 1 },
   {
-    id: 38, question: "What does this code produce?",
-    code: "import numpy as np\na = np.array([1, 2, 3])\nprint(a * 2)",
-    options: ["[1,2,3,1,2,3]", "[2,4,6]", "Error", "[1,2,3,2]"],
-    correct: 1,
-  },
-  { id: 39, question: "What does .shape return on a 3×4 NumPy array?", options: ["12", "(4,3)", "(3,4)", "[3,4]"], correct: 2 },
-  {
-    id: 40, question: "What is the output?",
-    code: "import numpy as np\na = np.array([10, 20, 30, 40])\nprint(a[1:3])",
-    options: ["[10,20]", "[20,30]", "[20,30,40]", "[10,20,30]"],
-    correct: 1,
-  },
-
-  // ── Pandas ─────────────────────────────────────────────────────────────────
-  { id: 41, question: "What is a Pandas DataFrame?", options: ["A list of numbers", "A table-like data structure with rows and columns", "A type of loop", "A NumPy array"], correct: 1 },
-  { id: 42, question: "Which method shows the first 5 rows of a DataFrame?", options: [".first()", ".top()", ".head()", ".show()"], correct: 2 },
-  { id: 43, question: "How do you select a column named 'age' from a DataFrame df?", options: ["df.age()", "df->age", "df['age']", "df.select('age')"], correct: 2 },
-  { id: 44, question: "What does df.info() show?", options: ["The first 5 rows", "Column names, types, and non-null counts", "Summary statistics", "The last 5 rows"], correct: 1 },
-  { id: 45, question: "Which method gives count, mean, min, max for numeric columns?", options: [".info()", ".head()", ".describe()", ".summary()"], correct: 2 },
-
-  // ── Matplotlib ─────────────────────────────────────────────────────────────
-  { id: 46, question: "What is Matplotlib used for?", options: ["Database queries", "Creating data visualisations", "Training ML models", "Web scraping"], correct: 1 },
-  {
-    id: 47, question: "What does this code create?",
-    code: "import matplotlib.pyplot as plt\nplt.plot([1,2,3],[4,5,6])\nplt.show()",
-    options: ["A bar chart", "A scatter plot", "A line plot", "A histogram"],
+    id: 37, question: "What does this code print?",
+    code: "nums = [3, 1, 4, 1, 5]\nprint(max(nums))",
+    options: ["1", "3", "5", "4"],
     correct: 2,
   },
-  { id: 48, question: "Which function creates a scatter plot in Matplotlib?", options: ["plt.line()", "plt.scatter()", "plt.bar()", "plt.dots()"], correct: 1 },
-  { id: 49, question: "What does plt.xlabel('Time') do?", options: ["Sets the chart title", "Labels the x-axis", "Labels the y-axis", "Saves the chart"], correct: 1 },
-  { id: 50, question: "Which chart is best for showing the distribution of a single variable?", options: ["Line plot", "Scatter plot", "Bar chart", "Histogram"], correct: 3 },
+  { id: 38, question: "What does sum([10, 20, 30]) return?", options: ["10", "30", "60", "[10,20,30]"], correct: 2 },
+  { id: 39, question: "What does str(42) return?", options: ["42", "42.0", "\"42\"", "Error"], correct: 2 },
+  { id: 40, question: "What does list.sort() do differently from sorted(list)?", options: ["They are identical", "list.sort() modifies in place; sorted() returns a new list", "sorted() modifies in place; list.sort() returns a new list", "list.sort() only works on numbers"], correct: 1 },
 
-  // ── Machine Learning Concepts ──────────────────────────────────────────────
-  { id: 51, question: "What is supervised learning?", options: ["Learning without any data", "Learning from labelled examples with correct answers", "Grouping data without labels", "Reducing data dimensions"], correct: 1 },
-  { id: 52, question: "What is the purpose of splitting data into train and test sets?", options: ["To make training faster", "To test on unseen data and check real performance", "To reduce the dataset size", "To remove duplicates"], correct: 1 },
-  { id: 53, question: "What does a linear regression model predict?", options: ["A category label", "A continuous numeric value", "A cluster assignment", "A probability only"], correct: 1 },
-  { id: 54, question: "What does MSE (Mean Squared Error) measure?", options: ["Model accuracy as a percentage", "Average squared difference between predictions and actual values", "Number of correct predictions", "Speed of the model"], correct: 1 },
-  { id: 55, question: "What is overfitting?", options: ["Model is too simple to learn patterns", "Model memorises training data but fails on new data", "Model trains too slowly", "Model has too few parameters"], correct: 1 },
-  { id: 56, question: "What does K-Nearest Neighbors (KNN) classify a point as?", options: ["The average of all points", "The class of the majority of its K closest neighbours", "A random class", "The class of the furthest point"], correct: 1 },
-  { id: 57, question: "What is the purpose of a decision tree?", options: ["To cluster data", "To ask a series of yes/no questions to reach a prediction", "To reduce dimensions", "To generate images"], correct: 1 },
-  { id: 58, question: "What does unsupervised learning do?", options: ["Learns from labelled data", "Finds patterns or groups in data without labels", "Always predicts a number", "Requires a test set"], correct: 1 },
-  { id: 59, question: "What does K-Means clustering do?", options: ["Predicts a numeric value", "Classifies using labelled data", "Groups data into K clusters based on similarity", "Reduces features to 2D"], correct: 2 },
+  // ── Strings & Indexing ─────────────────────────────────────────────────────
+  { id: 41, question: "What does 'hello'[1] return?", options: ["\"h\"", "\"e\"", "\"l\"", "Error"], correct: 1 },
   {
-    id: 60, question: "What will this sklearn code do?",
-    code: "from sklearn.model_selection import train_test_split\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42\n)",
-    options: [
-      "Train a model on 20% of the data",
-      "Split data so 80% is for training and 20% for testing",
-      "Remove 20% of the data permanently",
-      "Shuffle the data only",
-    ],
+    id: 42, question: "What does this code print?",
+    code: "name = \"Alice\"\nprint(name[-1])",
+    options: ["\"A\"", "\"i\"", "\"e\"", "Error"],
+    correct: 2,
+  },
+  { id: 43, question: "What does 'hello'[::-1] produce?", options: ["\"hello\"", "\"olleh\"", "\"h\"", "Error"], correct: 1 },
+  {
+    id: 44, question: "What is the output?",
+    code: "x = \"5\"\nprint(int(x) * 2)",
+    options: ["\"55\"", "10", "\"5\"*2", "Error"],
+    correct: 1,
+  },
+  { id: 45, question: "Which operator joins two strings together?", options: ["+", "*", "&", "||"], correct: 0 },
+
+  // ── Logic & Scope ──────────────────────────────────────────────────────────
+  {
+    id: 46, question: "What does this function return when called as add(3, 4)?",
+    code: "def add(a, b):\n    return a + b",
+    options: ["3", "4", "7", "Nothing"],
+    correct: 2,
+  },
+  { id: 47, question: "What does a function return if it has no return statement?", options: ["0", "An empty string", "None", "Error"], correct: 2 },
+  {
+    id: 48, question: "What is the output?",
+    code: "def is_even(n):\n    return n % 2 == 0\nprint(is_even(7))",
+    options: ["True", "False", "1", "0"],
+    correct: 1,
+  },
+  { id: 49, question: "What does the 'and' operator do?", options: ["Returns True if either condition is True", "Returns True only if both conditions are True", "Inverts a boolean", "Checks equality"], correct: 1 },
+  {
+    id: 50, question: "What does this print?",
+    code: "x = 10\nif x > 5 and x < 20:\n    print('yes')\nelse:\n    print('no')",
+    options: ["no", "yes", "True", "Error"],
+    correct: 1,
+  },
+
+  // ── Dictionaries ───────────────────────────────────────────────────────────
+  { id: 51, question: "How do you create a dictionary in Python?", options: ["d = [\"key\": \"value\"]", "d = (\"key\", \"value\")", "d = {\"key\": \"value\"}", "d = <\"key\": \"value\">"], correct: 2 },
+  { id: 52, question: "How do you access the value for key 'age' in a dictionary called person?", options: ["person.age", "person(\"age\")", "person[\"age\"]", "person.get[\"age\"]"], correct: 2 },
+  {
+    id: 53, question: "What does this code print?",
+    code: "d = {\"x\": 10, \"y\": 20}\nd[\"x\"] = 99\nprint(d[\"x\"])",
+    options: ["10", "20", "99", "Error"],
+    correct: 2,
+  },
+  { id: 54, question: "Which method returns all the keys in a dictionary?", options: [".values()", ".items()", ".keys()", ".all()"], correct: 2 },
+  {
+    id: 55, question: "What does this code output?",
+    code: "scores = {\"Alice\": 90, \"Bob\": 75}\nprint(len(scores))",
+    options: ["90", "75", "2", "165"],
+    correct: 2,
+  },
+
+  // ── String Methods ─────────────────────────────────────────────────────────
+  { id: 56, question: "What does 'Hello World'.lower() return?", options: ["\"Hello World\"", "\"HELLO WORLD\"", "\"hello world\"", "Error"], correct: 2 },
+  { id: 57, question: "What does '  hello  '.strip() return?", options: ["\"  hello  \"", "\"hello  \"", "\"  hello\"", "\"hello\""], correct: 3 },
+  {
+    id: 58, question: "What does this code produce?",
+    code: "words = \"the cat sat\".split()\nprint(len(words))",
+    options: ["1", "2", "3", "11"],
+    correct: 2,
+  },
+  { id: 59, question: "What does 'banana'.count('a') return?", options: ["1", "2", "3", "0"], correct: 2 },
+  {
+    id: 60, question: "What does this code print?",
+    code: "text = \"I love cats\"\nprint(text.replace(\"cats\", \"dogs\"))",
+    options: ["\"I love cats\"", "\"I love dogs\"", "\"cats\"", "Error"],
     correct: 1,
   },
 ];
@@ -172,12 +199,23 @@ export default function DipExamPage() {
     const correct = EXAM_QUESTIONS.filter(q => answers[q.id] === q.correct).length;
     setScore(correct);
     setSubmitted(true);
-    if (correct / TOTAL >= PASS_THRESHOLD) {
+    const passed = correct / TOTAL >= PASS_THRESHOLD;
+    const scorePct = Math.round((correct / TOTAL) * 100);
+    if (passed) {
       localStorage.setItem('dip_exam_passed', 'true');
       localStorage.setItem('dip_exam_score', String(correct));
       localStorage.setItem('dip_exam_total', String(TOTAL));
     } else {
       localStorage.removeItem('dip_exam_passed');
+    }
+    // Persist to DB
+    const username = localStorage.getItem('ioai_user');
+    if (username) {
+      fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, examScore: scorePct, examPassed: passed }),
+      }).catch(() => {});
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

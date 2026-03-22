@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 // POST: Update user progress
 export async function POST(request: Request) {
   const body = await request.json();
-  const { username, completedPages } = body;
+  const { username, completedPages, examScore, examPassed } = body;
 
   if (!username) return NextResponse.json({ error: 'username required' }, { status: 400 });
 
@@ -38,13 +38,17 @@ export async function POST(request: Request) {
 
   // Merge with existing
   const { data: existing } = await supabase.from(table).select('completed_pages').eq(idField, username).maybeSingle();
-  const merged = { ...(existing?.completed_pages || {}), ...completedPages };
+  const merged = { ...(existing?.completed_pages || {}), ...(completedPages || {}) };
 
-  const { error } = await supabase.from(table).upsert({
+  const upsertPayload: Record<string, any> = {
     [idField]: username,
     completed_pages: merged,
     last_active: new Date().toISOString(),
-  });
+  };
+  if (examScore !== undefined) upsertPayload.exam_score = examScore;
+  if (examPassed !== undefined) upsertPayload.exam_passed = examPassed;
+
+  const { error } = await supabase.from(table).upsert(upsertPayload);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
