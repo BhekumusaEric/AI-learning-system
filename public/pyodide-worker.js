@@ -101,6 +101,9 @@ function buildTestRunner(tests) {
   }
   return out.join('\n');
 }
+// SharedArrayBuffer for blocking input(): index 0 = status (0=waiting,1=ready), rest = UTF-8 bytes
+let inputBuffer = null;
+
 self.onmessage = async (event) => {
   await pyodideReadyPromise;
 
@@ -119,7 +122,34 @@ import matplotlib.pyplot as plt
 plt.close('all')
     `);
 
-    // Run user code
+    // Run user code — override input() to request from main thread via Atomics.wait
+    inputBuffer = new SharedArrayBuffer(4 + 1024);
+    new Int32Array(inputBuffer)[0] = 0;
+
+    // Expose a JS-level input function that blocks the worker via Atomics.wait
+    self.pyodide.globals.set('__input_sab__', inputBuffer);
+    self.pyodide.globals.set('__input_request_fn__', (prompt) => {
+      // Reset status
+      new Int32Array(inputBuffer)[0] = 0;
+      // Ask main thread for input — send the SAB so main thread can write directly
+      self.postMessage({ type: 'input_request', id, prompt: prompt || '', buffer: inputBuffer });
+      // Block worker thread until main thread writes the response
+      Atomics.wait(new Int32Array(inputBuffer), 0, 0);
+      // Read the response bytes
+      const n = new Int32Array(inputBuffer)[0];
+      const bytes = new Uint8Array(inputBuffer, 4, n - 1);
+      new Int32Array(inputBuffer)[0] = 0;
+      return new TextDecoder().decode(bytes);
+    });
+
+    await self.pyodide.runPythonAsync(`
+import builtins, js
+def _browser_input(prompt=''):
+    if prompt:
+        print(prompt, end='', flush=True)
+    return js.globalThis.__input_request_fn__(prompt)
+builtins.input = _browser_input
+    `);
     await self.pyodide.runPythonAsync(code);
 
     // Optionally run tests

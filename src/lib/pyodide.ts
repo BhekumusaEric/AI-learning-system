@@ -14,6 +14,12 @@ let msgId = 0;
 let isReady = false;
 const resolvers: Record<number, { resolve: (val: any) => void; reject: (err: any) => void }> = {};
 
+let inputCallback: ((prompt: string) => Promise<string>) | null = null;
+
+export function setInputCallback(cb: (prompt: string) => Promise<string>) {
+  inputCallback = cb;
+}
+
 /** True once all packages have finished loading in the worker */
 export function isPyodideReady() {
   return isReady;
@@ -29,7 +35,18 @@ export async function getPyodide(): Promise<void> {
     pyodideWorker.onmessage = (event) => {
       const { id, success, result, error, stdout, stderr, type } = event.data;
 
-      // Worker sends a special 'ready' message once all packages are loaded
+      if (type === 'input_request') {
+        const prompt = event.data.prompt || '';
+        const sab: SharedArrayBuffer = event.data.buffer;
+        const value = inputCallback ? await inputCallback(prompt) : '';
+        const encoded = new TextEncoder().encode(value + '\n');
+        const view = new Uint8Array(sab, 4);
+        for (let i = 0; i < Math.min(encoded.length, view.length - 1); i++) view[i] = encoded[i];
+        Atomics.store(new Int32Array(sab), 0, encoded.length + 1);
+        Atomics.notify(new Int32Array(sab), 0);
+        return;
+      }
+
       if (type === 'ready') {
         isReady = true;
         return;
