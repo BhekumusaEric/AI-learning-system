@@ -5,7 +5,7 @@ wrp: true
 video: "https://www.youtube.com/embed/HG68Ymazo18"
 ---
 
-# Interview Readiness & Final Reflection 🏁
+# Interview Readiness & Final Reflection
 
 ## The Week Before Your Interview
 
@@ -36,6 +36,8 @@ Use this to answer: *"Why do you want to work here?"* — the most common interv
 ---
 
 ## What to Wear
+
+<img-block src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&q=80" caption="First impressions are formed in 7 seconds — dress like the professional you are becoming" />
 
 When in doubt: **overdress slightly**. It is always better to be slightly overdressed than underdressed.
 
@@ -90,7 +92,7 @@ Always prepare 2–3 questions. Great options:
 
 ---
 
-## 🧘 Final Breathing Exercise — Completion Ceremony
+## Final Breathing Exercise
 
 You've completed the Work Readiness Program. Before you go, take a moment to honour that.
 
@@ -104,7 +106,7 @@ Repeat 3 times.
 
 ---
 
-## 🎓 You Are Ready
+## You Are Ready
 
 You now have:
 - ✅ A polished elevator pitch
@@ -116,7 +118,7 @@ You now have:
 
 The job market is competitive. But you are now better prepared than most people who walk into interviews.
 
-**Go get it. You've earned it.** 🚀
+**Go get it. You have earned it.**
 
 ---
 

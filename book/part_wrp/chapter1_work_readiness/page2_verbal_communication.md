@@ -5,7 +5,7 @@ wrp: true
 video: "https://www.youtube.com/embed/Ks-_Mh1QhMc"
 ---
 
-# Verbal Communication & Your Elevator Pitch 🎤
+# Verbal Communication & Your Elevator Pitch
 
 ## Why Verbal Communication Matters
 
@@ -62,6 +62,8 @@ I'm currently looking for [OPPORTUNITY].
 
 ## Common Verbal Communication Mistakes
 
+<img-block src="https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=900&q=80" caption="Public speaking is a skill — and like all skills, it improves with deliberate practice" />
+
 | Mistake | Fix |
 |---------|-----|
 | Speaking too fast | Slow down — pause between sentences |
@@ -72,7 +74,7 @@ I'm currently looking for [OPPORTUNITY].
 
 ---
 
-## 🧘 Mindfulness Moment — Power Pose
+## Mindfulness — Power Pose
 
 Before any important conversation or interview, try this for **2 minutes**:
 

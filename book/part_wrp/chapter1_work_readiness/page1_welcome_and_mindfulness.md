@@ -4,7 +4,7 @@ type: "read"
 wrp: true
 ---
 
-# Welcome to the Work Readiness Program 🌱
+# Welcome to the Work Readiness Program
 
 You are here because you are ready to take the next step. This program will give you the tools, confidence, and skills to walk into any professional environment and thrive.
 
@@ -23,7 +23,7 @@ Professional environments can feel intimidating. That's completely normal. The b
 
 ---
 
-## 🧘 Breathing Exercise — 4-7-8 Technique
+## Breathing Exercise — 4-7-8 Technique — 4-7-8 Technique
 
 This takes **60 seconds**. Do it now before continuing.
 
@@ -37,6 +37,8 @@ This technique activates your parasympathetic nervous system — it physically r
 ---
 
 ## What is Work Readiness?
+
+<img-block src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=900&q=80" caption="A professional team collaborating — the environment you are preparing to enter" />
 
 Work readiness is not just about having the right qualifications. It is about:
 
@@ -85,4 +87,4 @@ Your skills got you in the room. Your communication skills will get you the job.
 - Everyone in this room started somewhere
 - The goal is progress, not perfection
 
-Take a deep breath. You've got this. Let's begin. 🚀
+Take a deep breath. You've got this. Let us begin.

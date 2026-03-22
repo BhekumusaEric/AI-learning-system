@@ -3,10 +3,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ChevronLeft, ChevronRight, Award, CheckCircle2, Send, RotateCcw, Mic } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Award, CheckCircle2, Send, RotateCcw, Video, FileText, Lightbulb, BookOpen } from 'lucide-react';
 import { useProgress } from '@/components/providers/ProgressProvider';
 import { useRouter } from 'next/navigation';
 import { WrpPage } from '@/lib/wrpSyllabus';
+import CvBuilder from '@/components/wrp/CvBuilder';
 
 // ── Mock Interview Bot ────────────────────────────────────────────────────────
 
@@ -291,7 +292,7 @@ function BreathingTimer() {
 
 function WrpContent({ content, video }: { content: string; video?: string | null }) {
   // Split content on custom tags and render each segment
-  const segments = content.split(/(<video-embed[^>]*\/?>|<mock-interview-bot\s*\/>|<email-practice[^>]*\/>)/g);
+  const segments = content.split(/(<video-embed[^>]*\/?>|<mock-interview-bot\s*\/>|<email-practice[^>]*\/>|<cv-builder\s*\/>|<img-block[^>]*\/>)/g);
 
   return (
     <div className="flex flex-col">
@@ -309,6 +310,21 @@ function WrpContent({ content, video }: { content: string; video?: string | null
         if (seg.startsWith('<email-practice')) {
           const scenarioMatch = seg.match(/scenario="([^"]+)"/);
           return <EmailPractice key={i} scenario={scenarioMatch?.[1] || ''} />;
+        }
+        if (seg.startsWith('<img-block')) {
+          const srcMatch = seg.match(/src="([^"]+)"/);
+          const captionMatch = seg.match(/caption="([^"]+)"/);
+          const src = srcMatch?.[1] || '';
+          const caption = captionMatch?.[1] || '';
+          return src ? (
+            <figure key={i} className="my-6">
+              <img src={src} alt={caption} className="w-full rounded-xl border border-border-subtle object-cover max-h-72" />
+              {caption && <figcaption className="text-center text-xs text-secondary-text mt-2 italic">{caption}</figcaption>}
+            </figure>
+          ) : null;
+        }
+        if (seg.startsWith('<cv-builder')) {
+          return <CvBuilder key={i} />;
         }
         if (!seg.trim()) return null;
         return (

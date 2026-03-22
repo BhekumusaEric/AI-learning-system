@@ -4,7 +4,7 @@ type: "read"
 wrp: true
 ---
 
-# Resume Building 📄
+# Resume Building
 
 ## The Purpose of a Resume
 
@@ -93,6 +93,8 @@ Instead of "responsible for" or "helped with", use:
 
 ## The "So What?" Test
 
+<img-block src="https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=900&q=80" caption="A CV is a marketing document — every line must earn its place on the page" />
+
 For every bullet point on your resume, ask: **"So what?"**
 
 - "Helped customers" → So what? → "Resolved 20+ customer complaints weekly, reducing escalations by 30%"
@@ -126,7 +128,7 @@ If your bullet point doesn't answer "so what?", rewrite it.
 
 ---
 
-## 🧘 Mindfulness Moment
+## Mindfulness Moment
 
 Building a resume can feel overwhelming — especially if you feel like you "don't have enough experience."
 

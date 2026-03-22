@@ -5,7 +5,7 @@ wrp: true
 video: "https://www.youtube.com/embed/BvkHMzPMHMQ"
 ---
 
-# LinkedIn & Your Personal Brand 🌐
+# LinkedIn & Your Personal Brand
 
 ## What is Personal Branding?
 
@@ -18,6 +18,8 @@ In 2025, your LinkedIn profile is often the **first thing an employer sees** bef
 ---
 
 ## LinkedIn: The Professional Network
+
+<img-block src="https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=900&q=80" caption="Your LinkedIn profile works for you 24 hours a day — even while you sleep" />
 
 LinkedIn has over **1 billion users**. Recruiters actively search it daily. A strong profile means you get found — even when you're not actively applying.
 
@@ -100,7 +102,7 @@ Your online presence extends beyond LinkedIn:
 
 ---
 
-## 🧘 Mindfulness Moment — Visualisation
+## Mindfulness — Visualisation
 
 Close your eyes for 60 seconds. Imagine yourself 12 months from now:
 - You have the job you want

@@ -4,7 +4,7 @@ type: "interview"
 wrp: true
 ---
 
-# Mock Interview Practice 🎯
+# Mock Interview Practice
 
 ## What to Expect in a Real Interview
 
@@ -21,6 +21,8 @@ Interviews come in several formats:
 ---
 
 ## The STAR Method
+
+<img-block src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=900&q=80" caption="Every great interview answer tells a story — STAR gives you the structure to tell it well" />
 
 For behavioural questions, always use **STAR**:
 
@@ -39,7 +41,7 @@ For behavioural questions, always use **STAR**:
 
 ---
 
-## 🧘 Pre-Interview Breathing
+## Pre-Interview Breathing
 
 Do this **right before** your mock interview below:
 
@@ -52,7 +54,7 @@ This is called "box breathing" — used by Navy SEALs before high-stress situati
 
 ---
 
-## 🤖 Mock Interview Chatbot
+## Mock Interview Chatbot
 
 The chatbot below will simulate a real job interview. It will ask you common interview questions one at a time. Type your answers as you would speak them in a real interview.
 

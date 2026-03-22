@@ -4,7 +4,7 @@ type: "email-practice"
 wrp: true
 ---
 
-# Email Writing Practice ✍️
+# Email Writing Practice
 
 ## Your Challenge
 

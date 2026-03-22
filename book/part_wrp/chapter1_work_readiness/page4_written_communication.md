@@ -4,7 +4,7 @@ type: "read"
 wrp: true
 ---
 
-# Written Communication — Professional Emails ✉️
+# Written Communication — Professional Emails
 
 ## Why Email Etiquette Matters
 
@@ -86,6 +86,8 @@ Kind regards,
 
 ## Email Etiquette Rules
 
+<img-block src="https://images.unsplash.com/photo-1596526131083-e8c633c948d2?w=900&q=80" caption="Your inbox is a professional space — treat every email as a reflection of your character" />
+
 | Rule | Why it matters |
 |------|---------------|
 | Always use a subject line | Emails without subjects often go unread |
@@ -110,7 +112,7 @@ When emailing colleagues or teams:
 
 ---
 
-## 🧘 Mindfulness Moment
+## Mindfulness Moment
 
 Before sending any important email, pause and ask:
 1. Would I be comfortable if my manager saw this?
