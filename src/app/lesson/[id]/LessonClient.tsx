@@ -7,6 +7,7 @@ import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
 import ColabPanel from '@/components/editor/ColabPanel';
 import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
 import { runPythonCode, getPyodide, isPyodideReady, setInputCallback } from '@/lib/pyodide';
+import { usePersistedCode } from '@/lib/usePersistedCode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -39,7 +40,7 @@ export default function LessonPageClient({
   nextPage: PageData | null;
   colabNotebook: string | null;
 }) {
-  const [code, setCode] = useState(initialCodeProp || "# Write your python code here\\n\\n");
+  const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
   const [isRunning, setIsRunning] = useState(false);
   const [isEnvLoading, setIsEnvLoading] = useState(true);
   const [results, setResults] = useState<TestResult[] | null>(null);
@@ -61,11 +62,7 @@ export default function LessonPageClient({
     return () => clearInterval(interval);
   }, [isPractice]);
 
-  // Update editor code safely when navigating
-  useEffect(() => {
-    setCode(initialCodeProp || "# Write your python code here\\n\\n");
-    setResults(null);
-  }, [initialCodeProp]);
+  useEffect(() => { setResults(null); }, [pageId]);
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -142,7 +139,7 @@ export default function LessonPageClient({
   };
 
   const handleReset = () => {
-    setCode(initialCodeProp || "");
+    resetCode();
     setResults(null);
   };
 

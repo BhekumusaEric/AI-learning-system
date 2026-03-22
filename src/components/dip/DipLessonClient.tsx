@@ -7,6 +7,7 @@ import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
 import ColabPanel from '@/components/editor/ColabPanel';
 import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
 import { runPythonCode, getPyodide, isPyodideReady, setInputCallback } from '@/lib/pyodide';
+import { usePersistedCode } from '@/lib/usePersistedCode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -36,7 +37,7 @@ export default function DipLessonClient({
   pageId, content, initialCodeProp, testCodeProp, isPractice, pageType, resources,
   prevPageId, prevPageTitle, nextPageId, nextPageTitle, isLastPage, colabNotebook,
 }: DipLessonClientProps) {
-  const [code, setCode] = useState(initialCodeProp || '# Write your python code here\n\n');
+  const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
   const [isRunning, setIsRunning] = useState(false);
   const [isEnvLoading, setIsEnvLoading] = useState(true);
   const [results, setResults] = useState<TestResult[] | null>(null);
@@ -52,7 +53,7 @@ export default function DipLessonClient({
     }, 300);
     return () => clearInterval(interval);
   }, [isPractice]);
-  useEffect(() => { setCode(initialCodeProp || '# Write your python code here\n\n'); setResults(null); }, [initialCodeProp]);
+  useEffect(() => { setResults(null); }, [pageId]);
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -214,7 +215,7 @@ export default function DipLessonClient({
       />
     ) : (
       <>
-        <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { setCode(initialCodeProp || ''); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} onInputRequest={cb => setInputCallback(cb)} />
+        <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { resetCode(); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} onInputRequest={cb => setInputCallback(cb)} />
         <FeedbackPanel results={results} isRunning={isRunning} />
       </>
     )
