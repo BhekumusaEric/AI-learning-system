@@ -264,8 +264,8 @@ export default function LessonPageClient({
         <FeedbackPanel
           results={results}
           isRunning={isRunning}
-          onNext={nextPageId
-            ? () => { markCompleted(pageId); navigate(nextPageId); }
+          onNext={nextPage
+            ? () => { markCompleted(pageId); router.push(`/lesson/${nextPage.id}`); }
             : undefined
           }
         />
