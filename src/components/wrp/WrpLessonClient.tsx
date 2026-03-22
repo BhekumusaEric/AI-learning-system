@@ -8,6 +8,7 @@ import { useProgress } from '@/components/providers/ProgressProvider';
 import { useRouter } from 'next/navigation';
 import { WrpPage } from '@/lib/wrpSyllabus';
 import CvBuilder from '@/components/wrp/CvBuilder';
+import { SpotTheMistakeGame, SpinTheWheelGame, BuzzwordBingoGame } from '@/components/wrp/WrpGames';
 
 // ── Mock Interview Bot ────────────────────────────────────────────────────────
 
@@ -292,7 +293,7 @@ function BreathingTimer() {
 
 function WrpContent({ content, video }: { content: string; video?: string | null }) {
   // Split content on custom tags and render each segment
-  const segments = content.split(/(<video-embed[^>]*\/?>|<mock-interview-bot\s*\/>|<email-practice[^>]*\/>|<cv-builder\s*\/>|<img-block[^>]*\/>)/g);
+  const segments = content.split(/(<video-embed[^>]*\/?>|<mock-interview-bot\s*\/>|<email-practice[^>]*\/>|<cv-builder\s*\/>|<img-block[^>]*\/>|<spot-the-mistake\s*\/>|<spin-the-wheel\s*\/>|<buzzword-bingo\s*\/>)/g);
 
   return (
     <div className="flex flex-col">
@@ -311,6 +312,9 @@ function WrpContent({ content, video }: { content: string; video?: string | null
           const scenarioMatch = seg.match(/scenario="([^"]+)"/);
           return <EmailPractice key={i} scenario={scenarioMatch?.[1] || ''} />;
         }
+        if (seg.startsWith('<spot-the-mistake')) return <SpotTheMistakeGame key={i} />;
+        if (seg.startsWith('<spin-the-wheel')) return <SpinTheWheelGame key={i} />;
+        if (seg.startsWith('<buzzword-bingo')) return <BuzzwordBingoGame key={i} />;
         if (seg.startsWith('<img-block')) {
           const srcMatch = seg.match(/src="([^"]+)"/);
           const captionMatch = seg.match(/caption="([^"]+)"/);
