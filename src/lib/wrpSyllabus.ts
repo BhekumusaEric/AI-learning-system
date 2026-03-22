@@ -7,7 +7,7 @@ const wrpDirectory = path.join(process.cwd(), 'book', 'part_wrp', 'chapter1_work
 export interface WrpPage {
   id: string;
   title: string;
-  type: 'read' | 'interview' | 'email-practice' | 'games' | 'cv-builder';
+  type: 'read' | 'interview' | 'email-practice' | 'games' | 'cv-builder' | 'quiz';
   order: number;
   video?: string;
 }

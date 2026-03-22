@@ -11,6 +11,9 @@ const TYPE_ICON: Record<string, string> = {
   read: '📖',
   interview: '🎯',
   'email-practice': '✉️',
+  games: '🎮',
+  'cv-builder': '📄',
+  quiz: '⚡',
 };
 
 export default function WrpSidebar({ pages, onClose }: { pages: WrpPage[]; onClose?: () => void }) {
