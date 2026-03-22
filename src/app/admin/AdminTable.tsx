@@ -75,7 +75,7 @@ interface BulkResult {
   emailSent?: boolean;
 }
 
-function BulkImport({ platform, onDone }: { platform: 'saaio' | 'dip'; onDone: () => void }) {
+function BulkImport({ platform, onDone }: { platform: 'saaio' | 'dip' | 'wrp'; onDone: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -249,7 +249,7 @@ function BulkImport({ platform, onDone }: { platform: 'saaio' | 'dip'; onDone: (
   );
 }
 
-function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip', totalPages: number) {
+function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', totalPages: number) {
   // Sort by completedCount desc for ranking
   const sorted = [...users].sort((a, b) => b.completedCount - a.completedCount);
 
