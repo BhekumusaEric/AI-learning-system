@@ -291,7 +291,7 @@ function BreathingTimer() {
 
 function WrpContent({ content, video }: { content: string; video?: string | null }) {
   // Split content on custom tags and render each segment
-  const segments = content.split(/(<video-embed[^/]*\/>|<mock-interview-bot\s*\/>|<email-practice[^/]*\/>)/g);
+  const segments = content.split(/(<video-embed[^>]*\/?>|<mock-interview-bot\s*\/>|<email-practice[^>]*\/>)/g);
 
   return (
     <div className="flex flex-col">
