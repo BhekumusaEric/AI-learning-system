@@ -4,6 +4,29 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Download, XCircle, ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+// Auto-uses /public/wtc-logo.png if present, otherwise renders SVG lettermark
+function WtcLogo() {
+  const [useImg, setUseImg] = React.useState(true);
+  if (useImg) {
+    return (
+      <img
+        src="/wtc-logo.png"
+        alt="WeThinkCode_"
+        width={64} height={64}
+        style={{ borderRadius: 8, objectFit: 'contain' }}
+        onError={() => setUseImg(false)}
+      />
+    );
+  }
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="64" height="64" rx="8" fill="#000" />
+      <path d="M7 13 L15 13 L22 38 L29 18 L35 18 L42 38 L49 13 L57 13 L46 51 L35 30 L29 30 L18 51 Z" fill="#FFFFFF" />
+      <rect x="7" y="55" width="50" height="5" rx="2.5" fill="#00FF9D" />
+    </svg>
+  );
+}
+
 export default function WrpCertificatePage() {
   const [studentName, setStudentName] = useState('');
   const [allowed, setAllowed] = useState<boolean | null>(null);
@@ -160,14 +183,17 @@ export default function WrpCertificatePage() {
 
           {/* WeThinkCode_ Logo area */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-            {/* WTC Logo SVG */}
-            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="52" height="52" rx="8" fill="#000000" />
-              <text x="26" y="34" textAnchor="middle" fontFamily="monospace" fontWeight="bold" fontSize="18" fill="#00ff9d">W_</text>
-            </svg>
+            {/*
+              WeThinkCode_ logo: black rounded square,
+              white geometric W (two overlapping chevrons),
+              neon green underscore bar at bottom.
+              Matches their actual brand identity.
+              To use the real PNG: drop wtc-logo.png into /public/ and it auto-loads.
+            */}
+            <WtcLogo />
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: 1, color: '#000', fontFamily: 'monospace' }}>WeThinkCode_</div>
-              <div style={{ fontSize: 10, letterSpacing: 4, color: '#666', textTransform: 'uppercase', marginTop: 1 }}>Work Readiness Program</div>
+              <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 0.5, color: '#000', fontFamily: 'monospace' }}>WeThinkCode_</div>
+              <div style={{ fontSize: 10, letterSpacing: 4, color: '#666', textTransform: 'uppercase', marginTop: 2 }}>Work Readiness Program</div>
             </div>
           </div>
 
