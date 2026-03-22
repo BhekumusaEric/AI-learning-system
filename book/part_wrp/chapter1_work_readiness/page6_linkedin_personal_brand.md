@@ -2,7 +2,7 @@
 title: "LinkedIn & Personal Brand"
 type: "read"
 wrp: true
-video: "https://www.youtube.com/embed/BvkHMzPMHMQ"
+video: "https://www.youtube.com/embed/SG5TMTqR9qY"
 ---
 
 # LinkedIn & Your Personal Brand
@@ -72,7 +72,7 @@ LinkedIn has over **1 billion users**. Recruiters actively search it daily. A st
 
 ## 📺 Watch: How to Build a LinkedIn Profile That Gets You Hired
 
-<video-embed src="https://www.youtube.com/embed/BvkHMzPMHMQ" title="LinkedIn Profile Tips" />
+<video-embed src="https://www.youtube.com/embed/SG5TMTqR9qY" title="LinkedIn Profile Tips" />
 
 ---
 

@@ -140,6 +140,6 @@ Take 3 deep breaths. Then write down 5 things you've done in your life that you'
 
 ## 📺 Watch: How to Write a Resume With No Experience
 
-<video-embed src="https://www.youtube.com/embed/xpaz7nrNmXA" title="How to Write a Resume With No Experience" />
+<video-embed src="https://www.youtube.com/embed/y8YH0QjIKZQ" title="How to Write a Resume With No Experience" />
 
 > *Specifically for people entering the job market for the first time — how to frame your skills, education, and life experience into a resume that gets noticed.*
