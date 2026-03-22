@@ -68,15 +68,25 @@ pyodideReadyPromise = load().then(() => {
 // Converts:  assert expr == expected, "msg"
 // Into a try/except that evaluates both sides and raises a clear error.
 function buildTestRunner(tests) {
+  function stripMessage(body) {
+    let depth = 0, lastMsgIdx = -1;
+    for (let i = 0; i < body.length; i++) {
+      const c = body[i];
+      if (c === '(' || c === '[') depth++;
+      else if (c === ')' || c === ']') depth--;
+      else if (depth === 0 && c === ',' && i + 1 < body.length) {
+        if (/^\s*f?["']/.test(body.slice(i + 1))) lastMsgIdx = i;
+      }
+    }
+    return lastMsgIdx !== -1 ? body.slice(0, lastMsgIdx).trim() : body;
+  }
+
   const lines = tests.split('\n');
   const out = [];
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed.startsWith('assert ')) { out.push(line); continue; }
-    let body = trimmed.slice(7);
-    // Strip trailing message string (no brackets allowed inside) e.g. , "msg" or , f"msg"
-    const msgMatch = body.match(/,\s*f?["'][^\[\]"']*["']\s*$/);
-    if (msgMatch) body = body.slice(0, body.length - msgMatch[0].length).trim();
+    const body = stripMessage(trimmed.slice(7));
     const eqIdx = body.indexOf(' == ');
     if (eqIdx === -1) { out.push(line); continue; }
     const lhs = body.slice(0, eqIdx).trim();
