@@ -32,7 +32,7 @@ export async function getPyodide(): Promise<void> {
     isReady = false;
     pyodideWorker = new Worker('/pyodide-worker.js');
 
-    pyodideWorker.onmessage = (event) => {
+    pyodideWorker.onmessage = async (event) => {
       const { id, success, result, error, stdout, stderr, type } = event.data;
 
       if (type === 'input_request') {
