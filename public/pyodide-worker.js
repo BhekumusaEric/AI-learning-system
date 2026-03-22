@@ -72,25 +72,25 @@ function buildTestRunner(tests) {
   const out = [];
   for (const line of lines) {
     const trimmed = line.trim();
-    // Match:  assert <lhs> == <rhs>  or  assert <lhs> == <rhs>, "msg"
-    const m = trimmed.match(/^assert\s+(.+?)\s*==\s*(.+?)(?:\s*,\s*(?:f)?['"`].*['"`]\s*)?$/);
-    if (m) {
-      const indent = line.match(/^(\s*)/)[1];
-      const lhs = m[1].trim();
-      const rhs = m[2].trim();
-      out.push(`${indent}try:`);
-      out.push(`${indent}  __got = ${lhs}`);
-      out.push(`${indent}  __exp = ${rhs}`);
-      out.push(`${indent}  assert __got == __exp`);
-      out.push(`${indent}except AssertionError:`);
-      out.push(indent + "  raise AssertionError(f'\\nYour output:  {repr(__got)}\\nExpected:     {repr(__exp)}')");
-    } else {
-      out.push(line);
-    }
+    if (!trimmed.startsWith('assert ')) { out.push(line); continue; }
+    let body = trimmed.slice(7);
+    // Strip trailing message string (no brackets allowed inside) e.g. , "msg" or , f"msg"
+    const msgMatch = body.match(/,\s*f?["'][^\[\]"']*["']\s*$/);
+    if (msgMatch) body = body.slice(0, body.length - msgMatch[0].length).trim();
+    const eqIdx = body.indexOf(' == ');
+    if (eqIdx === -1) { out.push(line); continue; }
+    const lhs = body.slice(0, eqIdx).trim();
+    const rhs = body.slice(eqIdx + 4).trim();
+    const indent = line.match(/^(\s*)/)[1];
+    out.push(indent + 'try:');
+    out.push(indent + '  __got = ' + lhs);
+    out.push(indent + '  __exp = ' + rhs);
+    out.push(indent + '  assert __got == __exp');
+    out.push(indent + 'except AssertionError:');
+    out.push(indent + "  raise AssertionError(f'\\nYour output:  {repr(__got)}\\nExpected:     {repr(__exp)}')");
   }
   return out.join('\n');
 }
-
 self.onmessage = async (event) => {
   await pyodideReadyPromise;
 
