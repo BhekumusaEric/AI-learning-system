@@ -9,7 +9,7 @@ export default function DipLoginPage() {
   const [loginId, setLoginId] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [emailGate, setEmailGate] = useState<{ loginId: string; destination: string } | null>(null);
+  const [emailGate, setEmailGate] = useState<{ loginId: string; fullName: string; destination: string } | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,13 +32,14 @@ export default function DipLoginPage() {
         return;
       }
 
-      localStorage.setItem('ioai_user', data.login_id);
-      localStorage.setItem('ioai_name', data.full_name);
       if (!data.has_email) {
-        setEmailGate({ loginId: data.login_id, destination: '/dip/lesson/page1_your_first_python_program' });
+        setEmailGate({ loginId: data.login_id, fullName: data.full_name, destination: '/dip/lesson/page1_your_first_python_program' });
         setIsLoading(false);
         return;
       }
+
+      localStorage.setItem('ioai_user', data.login_id);
+      localStorage.setItem('ioai_name', data.full_name);
       window.location.href = '/dip/lesson/page1_your_first_python_program';
     } catch {
       setError('Something went wrong. Please try again.');
@@ -52,7 +53,11 @@ export default function DipLoginPage() {
         <EmailGate
           loginId={emailGate.loginId}
           platform="dip"
-          onVerified={() => { window.location.href = emailGate.destination; }}
+          onVerified={() => {
+            localStorage.setItem('ioai_user', emailGate.loginId);
+            localStorage.setItem('ioai_name', emailGate.fullName);
+            window.location.href = emailGate.destination;
+          }}
         />
       )}
       <div className="w-full max-w-md bg-secondary border border-border-subtle rounded-2xl p-8 shadow-2xl">
