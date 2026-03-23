@@ -174,8 +174,8 @@ function BulkImport({ platform, onDone }: { platform: 'saaio' | 'dip' | 'wrp'; o
           </div>
         </div>
         <div className="flex gap-4 mb-3">
-          <span className="text-accent text-sm font-bold">✓ {passed.length} registered</span>
-          {failed.length > 0 && <span className="text-error text-sm font-bold">✗ {failed.length} failed</span>}
+          <span className="text-accent text-sm font-bold">{passed.length} registered</span>
+          {failed.length > 0 && <span className="text-error text-sm font-bold">{failed.length} failed</span>}
           <span className="text-secondary-text text-sm">{passed.filter(r => r.emailSent).length} emails sent</span>
         </div>
         <div className="max-h-64 overflow-y-auto">
@@ -199,7 +199,7 @@ function BulkImport({ platform, onDone }: { platform: 'saaio' | 'dip' | 'wrp'; o
                   <td className="py-1 px-2 text-foreground">{r.full_name}</td>
                   <td className="py-1 px-2 text-warning">{r.plainPassword || (r.error ? <span className="text-error">{r.error}</span> : '—')}</td>
                   <td className="py-1 px-2 text-secondary-text">
-                    {r.emailSent ? '📧 sent' : r.email ? 'not sent' : '—'}
+                    {r.emailSent ? 'sent' : r.email ? 'not sent' : '—'}
                   </td>
                 </tr>
               ))}
@@ -355,10 +355,10 @@ function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onC
         <p className="text-sm text-secondary-text leading-relaxed mb-2">
           Each student will receive a personalised congratulatory email that includes:
         </p>
-        <ul className="text-sm text-secondary-text space-y-1 list-none">
-          <li>🎓 <span className="text-foreground">A warm congratulations</span> addressed to them by first name</li>
-          <li>🏅 <span className="text-foreground">A list of skills</span> they've earned through the program</li>
-          <li>🔗 <span className="text-foreground">A direct link</span> to download their Certificate of Completion</li>
+        <ul className="text-sm text-secondary-text space-y-1 list-disc list-inside">
+          <li><span className="text-foreground">A warm congratulations</span> addressed to them by first name</li>
+          <li><span className="text-foreground">A list of skills</span> they've earned through the program</li>
+          <li><span className="text-foreground">A direct link</span> to download their Certificate of Completion</li>
         </ul>
         <p className="text-xs text-secondary-text mt-3">
           Certificate link: <span className="text-accent font-mono">{certUrl}</span>
@@ -369,8 +369,8 @@ function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onC
 
       {result && (
         <div className="flex items-center gap-4 mb-3 text-sm">
-          <span className="text-[#d4af37] font-bold">🎓 {result.sent} sent</span>
-          {result.failed > 0 && <span className="text-error font-bold">✗ {result.failed} failed</span>}
+          <span className="text-[#d4af37] font-bold">{result.sent} sent</span>
+          {result.failed > 0 && <span className="text-error font-bold">{result.failed} failed</span>}
           <span className="text-secondary-text">out of {result.total} students with emails</span>
         </div>
       )}
@@ -395,9 +395,9 @@ function NotifyPanel({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
 
   const BUTTONS: { type: 'reminder' | 'mark_done' | 'kaggle'; label: string; desc: string }[] = [
-    { type: 'reminder', label: '🚀 Course Reminder', desc: 'Nudge students to continue their course content' },
-    { type: 'mark_done', label: '✅ Mark Done Reminder', desc: 'Remind students to click Mark as Done to save progress' },
-    { type: 'kaggle', label: '🏆 Kaggle Challenges', desc: 'Announce new Kaggle challenges have been added' },
+    { type: 'reminder', label: 'Course Reminder', desc: 'Nudge students to continue their course content' },
+    { type: 'mark_done', label: 'Mark Done Reminder', desc: 'Remind students to click Mark as Done to save progress' },
+    { type: 'kaggle', label: 'Kaggle Challenges', desc: 'Announce new Kaggle challenges have been added' },
   ];
 
   const send = async () => {
@@ -465,8 +465,8 @@ function NotifyPanel({ onClose }: { onClose: () => void }) {
 
       {result && (
         <div className="flex items-center gap-4 mb-3 text-sm">
-          <span className="text-accent font-bold">✓ {result.sent} sent</span>
-          {result.failed > 0 && <span className="text-error font-bold">✗ {result.failed} failed</span>}
+          <span className="text-accent font-bold">{result.sent} sent</span>
+          {result.failed > 0 && <span className="text-error font-bold">{result.failed} failed</span>}
           <span className="text-secondary-text">out of {result.total} students with emails</span>
         </div>
       )}
@@ -726,7 +726,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                         <td className="py-3 px-5 text-sm">
                           {user.examScore !== null ? (
                             <span className={`font-bold ${user.examPassed ? 'text-accent' : 'text-error'}`}>
-                              {user.examScore}% {user.examPassed ? '✓' : '✗'}
+                              {user.examScore}% {user.examPassed ? 'Pass' : 'Fail'}
                             </span>
                           ) : <span className="text-secondary-text">—</span>}
                         </td>
