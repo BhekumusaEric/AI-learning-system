@@ -109,12 +109,12 @@ Repeat 3 times.
 ## You Are Ready
 
 You now have:
-- ✅ A polished elevator pitch
-- ✅ Professional email skills
-- ✅ A LinkedIn profile strategy
-- ✅ Resume writing skills
-- ✅ Interview preparation tools
-- ✅ The confidence to use all of the above
+-  A polished elevator pitch
+-  Professional email skills
+-  A LinkedIn profile strategy
+-  Resume writing skills
+-  Interview preparation tools
+-  The confidence to use all of the above
 
 The job market is competitive. But you are now better prepared than most people who walk into interviews.
 

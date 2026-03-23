@@ -75,12 +75,12 @@ Kind regards,
 > linkedin.com/in/thabonkosi
 
 **What makes this great:**
-- ✅ Specific subject line with name and role
-- ✅ Professional greeting with the person's name
-- ✅ States the exact role and where it was found
-- ✅ Highlights relevant skills with specific examples
-- ✅ Clear call to action
-- ✅ Full contact details in the signature
+-  Specific subject line with name and role
+-  Professional greeting with the person's name
+-  States the exact role and where it was found
+-  Highlights relevant skills with specific examples
+-  Clear call to action
+-  Full contact details in the signature
 
 ---
 

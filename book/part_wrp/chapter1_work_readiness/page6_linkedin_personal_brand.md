@@ -61,12 +61,12 @@ LinkedIn has over **1 billion users**. Recruiters actively search it daily. A st
 **Activity:** Shares articles, comments on posts, engages with industry content
 
 **What makes this great:**
-- ✅ Professional photo
-- ✅ Headline shows skills AND what you're looking for
-- ✅ About section is specific, personal, and action-oriented
-- ✅ Experience listed even if it's not directly related
-- ✅ Skills section filled in (recruiters filter by skills)
-- ✅ Active on the platform — the algorithm rewards engagement
+-  Professional photo
+-  Headline shows skills AND what you're looking for
+-  About section is specific, personal, and action-oriented
+-  Experience listed even if it's not directly related
+-  Skills section filled in (recruiters filter by skills)
+-  Active on the platform — the algorithm rewards engagement
 
 ---
 
