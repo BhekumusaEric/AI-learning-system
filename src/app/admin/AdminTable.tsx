@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export interface AdminUser {
@@ -310,6 +310,83 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
   XLSX.writeFile(wb, `${platform}_students_report_${date}.xlsx`);
 }
 
+function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
+  const [isSending, setIsSending] = useState(false);
+  const [result, setResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const platformName = platform === 'dip' ? 'IDC SEF Digital Inclusion Program' : 'WeThinkCode_ Work Readiness Program';
+  const certUrl = platform === 'dip'
+    ? 'https://ai-learning-system-ten.vercel.app/dip/certificate'
+    : 'https://ai-learning-system-ten.vercel.app/wrp/certificate';
+
+  const send = async () => {
+    setIsSending(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch('/api/admin/congratulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform }),
+      });
+      const data = await res.json();
+      if (res.ok) setResult(data);
+      else setError(data.error || `Error ${res.status}`);
+    } catch (e: any) {
+      setError(e.message || 'Network error');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className="p-4 border-b border-border-subtle bg-background/50">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Award className="w-4 h-4 text-[#d4af37]" />
+          <span className="text-sm font-bold text-foreground">Send Congratulations & Certificate</span>
+          <span className="text-xs text-secondary-text">(emails all {platformName} students with email addresses)</span>
+        </div>
+        <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
+      </div>
+
+      <div className="bg-[#0d0d0d] border border-[#d4af37]/30 rounded-xl p-4 mb-4">
+        <p className="text-sm text-secondary-text leading-relaxed mb-2">
+          Each student will receive a personalised congratulatory email that includes:
+        </p>
+        <ul className="text-sm text-secondary-text space-y-1 list-none">
+          <li>🎓 <span className="text-foreground">A warm congratulations</span> addressed to them by first name</li>
+          <li>🏅 <span className="text-foreground">A list of skills</span> they've earned through the program</li>
+          <li>🔗 <span className="text-foreground">A direct link</span> to download their Certificate of Completion</li>
+        </ul>
+        <p className="text-xs text-secondary-text mt-3">
+          Certificate link: <span className="text-accent font-mono">{certUrl}</span>
+        </p>
+      </div>
+
+      {error && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2 mb-3">{error}</p>}
+
+      {result && (
+        <div className="flex items-center gap-4 mb-3 text-sm">
+          <span className="text-[#d4af37] font-bold">🎓 {result.sent} sent</span>
+          {result.failed > 0 && <span className="text-error font-bold">✗ {result.failed} failed</span>}
+          <span className="text-secondary-text">out of {result.total} students with emails</span>
+        </div>
+      )}
+
+      <button
+        onClick={send}
+        disabled={isSending}
+        className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+        {isSending ? 'Sending...' : 'Send Congratulatory Emails'}
+      </button>
+    </div>
+  );
+}
+
 function NotifyPanel({ onClose }: { onClose: () => void }) {
   const [type, setType] = useState<'reminder' | 'mark_done' | 'kaggle'>('reminder');
   const [customMessage, setCustomMessage] = useState('');
@@ -420,6 +497,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
   const [newCred, setNewCred] = useState<{ login_id: string; full_name: string; plainPassword: string; isReset?: boolean; emailSent?: boolean } | null>(null);
   const [showBulk, setShowBulk] = useState(false);
   const [showNotify, setShowNotify] = useState(false);
+  const [showCongratulate, setShowCongratulate] = useState(false);
 
   const fetchStudents = useCallback(async () => {
     setIsLoading(true);
@@ -521,6 +599,11 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
         {/* Notify Panel — SAAIO only */}
         {showNotify && platform === 'saaio' && <NotifyPanel onClose={() => setShowNotify(false)} />}
 
+        {/* Congratulate Panel — DIP and WRP only */}
+        {showCongratulate && (platform === 'dip' || platform === 'wrp') && (
+          <CongratulatePanel platform={platform} onClose={() => setShowCongratulate(false)} />
+        )}
+
         {/* Register Form */}
         <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
           {addError && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2">{addError}</p>}
@@ -570,6 +653,16 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
               >
                 <Bell className="w-4 h-4" />
                 Notify Students
+              </button>
+            )}
+            {(platform === 'dip' || platform === 'wrp') && (
+              <button
+                type="button"
+                onClick={() => setShowCongratulate(v => !v)}
+                className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-[#d4af37] hover:border-[#d4af37]/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+              >
+                <Award className="w-4 h-4" />
+                Send Certificates
               </button>
             )}
             <button
