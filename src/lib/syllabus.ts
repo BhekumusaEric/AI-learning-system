@@ -44,7 +44,7 @@ export function getSyllabus(): PartData[] {
   if (!fs.existsSync(bookDirectory)) return [];
 
   const partsDir = fs.readdirSync(bookDirectory, { withFileTypes: true })
-    .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('part'))
+    .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('part') && dirent.name !== 'part_wrp')
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return partsDir.map((partDirent, partIndex) => {
