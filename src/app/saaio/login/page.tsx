@@ -19,7 +19,7 @@ export default function SaaioLoginPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/verify', {
+      const res = await fetch('/api/auth/student-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ login_id: loginId.trim(), password: password.trim(), platform: 'saaio' }),
@@ -84,6 +84,17 @@ export default function SaaioLoginPage() {
               required
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-secondary-text mb-2">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Your password"
+              className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+              required
+            />
+          </div>
 
           {error && (
             <p className="text-error text-sm bg-error/10 border border-error/20 rounded-lg px-4 py-2">{error}</p>
@@ -91,7 +102,7 @@ export default function SaaioLoginPage() {
 
           <button
             type="submit"
-            disabled={isLoading || !loginId.trim()}
+            disabled={isLoading || !loginId.trim() || !password.trim()}
             className="w-full bg-accent text-black font-bold py-3 rounded-lg hover:bg-accent/90 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading
