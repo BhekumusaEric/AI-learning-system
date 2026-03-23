@@ -7,7 +7,7 @@ function expectedToken() {
   return 'admin:' + (process.env.ADMIN_PASSWORD || 'supersecret');
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const url = req.nextUrl;
 
   if (url.pathname.startsWith('/admin')) {
