@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export interface AdminUser {
@@ -310,6 +310,102 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
   XLSX.writeFile(wb, `${platform}_students_report_${date}.xlsx`);
 }
 
+function NotifyPanel({ onClose }: { onClose: () => void }) {
+  const [type, setType] = useState<'reminder' | 'mark_done' | 'kaggle'>('reminder');
+  const [customMessage, setCustomMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [result, setResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const BUTTONS: { type: 'reminder' | 'mark_done' | 'kaggle'; label: string; desc: string }[] = [
+    { type: 'reminder', label: '🚀 Course Reminder', desc: 'Nudge students to continue their course content' },
+    { type: 'mark_done', label: '✅ Mark Done Reminder', desc: 'Remind students to click Mark as Done to save progress' },
+    { type: 'kaggle', label: '🏆 Kaggle Challenges', desc: 'Announce new Kaggle challenges have been added' },
+  ];
+
+  const send = async () => {
+    setIsSending(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch('/api/admin/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, message: customMessage.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (res.ok) setResult(data);
+      else setError(data.error || `Error ${res.status}`);
+    } catch (e: any) {
+      setError(e.message || 'Network error');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className="p-4 border-b border-border-subtle bg-background/50">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Bell className="w-4 h-4 text-accent" />
+          <span className="text-sm font-bold text-foreground">Notify SAAIO Students</span>
+          <span className="text-xs text-secondary-text">(sends to all students with email addresses)</span>
+        </div>
+        <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
+      </div>
+
+      {/* Type selector */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+        {BUTTONS.map(b => (
+          <button
+            key={b.type}
+            onClick={() => setType(b.type)}
+            className={`text-left p-3 rounded-lg border text-sm transition-all ${
+              type === b.type
+                ? 'border-accent bg-accent/10 text-foreground'
+                : 'border-border-subtle text-secondary-text hover:border-accent/40 hover:text-foreground'
+            }`}
+          >
+            <div className="font-semibold mb-0.5">{b.label}</div>
+            <div className="text-xs opacity-70">{b.desc}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Optional custom message */}
+      <div className="mb-4">
+        <label className="block text-xs text-secondary-text mb-1">Custom message (optional — overrides the default email body)</label>
+        <textarea
+          rows={3}
+          placeholder="Leave blank to use the default message for the selected type..."
+          value={customMessage}
+          onChange={e => setCustomMessage(e.target.value)}
+          className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent resize-none font-mono"
+        />
+      </div>
+
+      {error && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2 mb-3">{error}</p>}
+
+      {result && (
+        <div className="flex items-center gap-4 mb-3 text-sm">
+          <span className="text-accent font-bold">✓ {result.sent} sent</span>
+          {result.failed > 0 && <span className="text-error font-bold">✗ {result.failed} failed</span>}
+          <span className="text-secondary-text">out of {result.total} students with emails</span>
+        </div>
+      )}
+
+      <button
+        onClick={send}
+        disabled={isSending}
+        className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+        {isSending ? 'Sending...' : 'Send Notification'}
+      </button>
+    </div>
+  );
+}
+
 export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPages }: { totalSaaioPages: number; totalDipPages: number; totalWrpPages: number }) {
   const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp'>('saaio');
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -323,6 +419,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [newCred, setNewCred] = useState<{ login_id: string; full_name: string; plainPassword: string; isReset?: boolean; emailSent?: boolean } | null>(null);
   const [showBulk, setShowBulk] = useState(false);
+  const [showNotify, setShowNotify] = useState(false);
 
   const fetchStudents = useCallback(async () => {
     setIsLoading(true);
@@ -421,6 +518,9 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
         {/* Bulk Import */}
         {showBulk && <BulkImport platform={platform} onDone={fetchStudents} />}
 
+        {/* Notify Panel — SAAIO only */}
+        {showNotify && platform === 'saaio' && <NotifyPanel onClose={() => setShowNotify(false)} />}
+
         {/* Register Form */}
         <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
           {addError && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2">{addError}</p>}
@@ -462,6 +562,16 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
               <FileSpreadsheet className="w-4 h-4" />
               Bulk Import
             </button>
+            {platform === 'saaio' && (
+              <button
+                type="button"
+                onClick={() => setShowNotify(v => !v)}
+                className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+              >
+                <Bell className="w-4 h-4" />
+                Notify Students
+              </button>
+            )}
             <button
               type="button"
               onClick={() => downloadReport(users, platform, totalPages)}
