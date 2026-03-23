@@ -16,6 +16,7 @@ import { useProgress } from '@/components/providers/ProgressProvider';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { PageData, ResourceData } from '@/lib/syllabus';
+import EmailGate from '@/components/EmailGate';
 
 export default function LessonPageClient({ 
   pageId,
@@ -47,6 +48,21 @@ export default function LessonPageClient({
   const { markCompleted, completedPages } = useProgress();
   const router = useRouter();
   const isCompleted = completedPages[pageId];
+  const [emailGate, setEmailGate] = useState<{ loginId: string; fullName: string } | null>(null);
+
+  useEffect(() => {
+    const loginId = localStorage.getItem('ioai_user');
+    const fullName = localStorage.getItem('ioai_name') || '';
+    if (!loginId) { router.replace('/saaio/login'); return; }
+    fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_id: loginId, platform: 'saaio' }),
+    })
+      .then(r => r.json())
+      .then(data => { if (!data.has_email) setEmailGate({ loginId, fullName }); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!isPractice) return;
@@ -273,5 +289,16 @@ export default function LessonPageClient({
     )
   ) : null;
 
-  return <TwoPanelLayout leftPanel={leftPanel} rightPanel={rightPanel} />;
+  return (
+    <>
+      {emailGate && (
+        <EmailGate
+          loginId={emailGate.loginId}
+          platform="saaio"
+          onVerified={() => setEmailGate(null)}
+        />
+      )}
+      <TwoPanelLayout leftPanel={leftPanel} rightPanel={rightPanel} />
+    </>
+  );
 }
