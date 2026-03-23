@@ -7,7 +7,7 @@ resources:
     url: "https://www.kaggle.com/datasets/vjchoudhary7/customer-segmentation-tutorial-in-python"
 ---
 
-# 🛍️ Lab 5: Customer Segmentation
+# Lab 5: Customer Segmentation
 
 ## The Challenge
 

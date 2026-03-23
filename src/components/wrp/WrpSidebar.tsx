@@ -8,12 +8,12 @@ import { WrpPage } from '@/lib/wrpSyllabus';
 import { useProgress } from '@/components/providers/ProgressProvider';
 
 const TYPE_ICON: Record<string, string> = {
-  read: '📖',
-  interview: '🎯',
-  'email-practice': '✉️',
-  games: '🎮',
-  'cv-builder': '📄',
-  quiz: '⚡',
+  read: '',
+  interview: '',
+  'email-practice': '',
+  games: '',
+  'cv-builder': '',
+  quiz: '',
 };
 
 export default function WrpSidebar({ pages, onClose }: { pages: WrpPage[]; onClose?: () => void }) {
@@ -82,7 +82,7 @@ export default function WrpSidebar({ pages, onClose }: { pages: WrpPage[]; onClo
                     ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
                     : <Circle className="w-4 h-4 text-secondary-text/50 shrink-0 mt-0.5" />}
                   <span className="leading-snug">
-                    <span className="mr-1">{TYPE_ICON[page.type] || '📖'}</span>
+                    <span className="mr-1">{TYPE_ICON[page.type] || ''}</span>
                     {page.title}
                   </span>
                 </Link>

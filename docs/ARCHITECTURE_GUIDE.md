@@ -150,7 +150,7 @@ The platform follows a **layered architecture** with clear boundaries:
 
 ---
 
-## 🚀 Adding New Features
+## Adding New Features
 
 ### Process
 1. **Identify Concern**: Which layer does it belong to?

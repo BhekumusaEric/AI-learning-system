@@ -5,7 +5,7 @@
 | Platform | URL |
 |---|---|
 | 🎓 Student Login (IDC SEF / DIP) | https://ai-learning-system-ten.vercel.app/dip/login |
-| 🛡️ Admin Dashboard | https://ai-learning-system-ten.vercel.app/admin |
+| Admin Dashboard | https://ai-learning-system-ten.vercel.app/admin |
 
 ---
 

@@ -7,7 +7,7 @@ resources:
     url: "https://www.kaggle.com/competitions/titanic"
 ---
 
-# 🚢 Lab 1: Titanic Survival Prediction
+# Lab 1: Titanic Survival Prediction
 
 ## The Challenge
 

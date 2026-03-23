@@ -54,7 +54,7 @@ function MockInterviewBot() {
     const newChat = [
       ...chat,
       { role: 'user' as const, text: userMsg },
-      { role: 'bot' as const, text: `💬 **Feedback:** ${feedback}` + (next < INTERVIEW_QUESTIONS.length ? `\n\n**Question ${next + 1}:** ${INTERVIEW_QUESTIONS[next]}` : '\n\n🎉 **Interview complete!** Well done for completing all 8 questions. Review the feedback above and practice the answers that felt weakest. You\'re more ready than you think!') },
+      { role: 'bot' as const, text: ` **Feedback:** ${feedback}` + (next < INTERVIEW_QUESTIONS.length ? `\n\n**Question ${next + 1}:** ${INTERVIEW_QUESTIONS[next]}` : '\n\n**Interview complete!** Well done for completing all 8 questions. Review the feedback above and practice the answers that felt weakest. You\'re more ready than you think!') },
     ];
     setChat(newChat);
     if (next < INTERVIEW_QUESTIONS.length) setQIndex(next);
@@ -142,7 +142,7 @@ function EmailPractice({ scenario }: { scenario: string }) {
   return (
     <div className="my-6 border border-border-subtle rounded-xl overflow-hidden">
       <div className="px-4 py-3 bg-secondary border-b border-border-subtle">
-        <p className="text-xs text-secondary-text font-mono">📋 Scenario: {scenario}</p>
+        <p className="text-xs text-secondary-text font-mono">Scenario: {scenario}</p>
       </div>
       <div className="p-4">
         <textarea
@@ -185,10 +185,10 @@ function EmailPractice({ scenario }: { scenario: string }) {
                 {score}/9
               </p>
               <p className="text-sm text-secondary-text">
-                {score === 9 ? '🎉 Perfect! Your email is professional and complete.' :
-                 score >= 7 ? '✅ Great work! Review the unchecked items and revise.' :
-                 score >= 5 ? '⚠️ Good effort. Focus on the missing elements and rewrite.' :
-                 '❌ Keep practising. Review the email etiquette module and try again.'}
+                {score === 9 ? 'Perfect! Your email is professional and complete.' :
+                 score >= 7 ? 'Great work! Review the unchecked items and revise.' :
+                 score >= 5 ? 'Good effort. Focus on the missing elements and rewrite.' :
+                 'Keep practising. Review the email etiquette module and try again.'}
               </p>
             </div>
             <button onClick={() => { setSubmitted(false); setChecked(new Array(EMAIL_CHECKLIST.length).fill(false)); }}
@@ -266,7 +266,7 @@ function BreathingTimer() {
 
   return (
     <div className="my-6 p-6 bg-secondary border border-border-subtle rounded-xl text-center">
-      <p className="text-sm text-secondary-text mb-4">🧘 4-7-8 Breathing Exercise</p>
+      <p className="text-sm text-secondary-text mb-4">4-7-8 Breathing Exercise</p>
       {phase === 'idle' ? (
         <>
           <p className="text-secondary-text text-sm mb-4">Takes 60 seconds. Reduces anxiety immediately.</p>

@@ -203,7 +203,7 @@ app.post('/api/progress', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Mobile App API Server running on http://localhost:${PORT}`);
+  console.log(`Mobile App API Server running on http://localhost:${PORT}`);
   console.log('📱 Ready for mobile app connections!');
   console.log('\n📋 Available endpoints:');
   console.log('  POST /api/auth/login');

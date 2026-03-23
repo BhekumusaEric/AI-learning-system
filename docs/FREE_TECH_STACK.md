@@ -16,7 +16,7 @@ The platform is a **static/dynamic web app** with:
 
 ---
 
-## 🛠️ Recommended Free Tech Stack
+## Recommended Free Tech Stack
 
 ### 1. Frontend Framework
 - **Next.js** (React-based): Free, open-source framework for building the UI.
@@ -105,7 +105,7 @@ The platform is a **static/dynamic web app** with:
 
 ---
 
-## 🚀 Getting Started Guide
+## Getting Started Guide
 
 ### Step 1: Set Up Development Environment
 1. Install Node.js (free from nodejs.org).

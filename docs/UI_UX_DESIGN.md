@@ -124,7 +124,7 @@ The IOAI Training Grounds is an interactive learning platform that presents the 
 
 ---
 
-## 🚶 User Flows
+## User Flows
 
 ### 1. First-Time User
 1. Land on homepage → See syllabus overview.
@@ -161,7 +161,7 @@ The IOAI Training Grounds is an interactive learning platform that presents the 
 
 ---
 
-## 🛠️ Technical Considerations
+## Technical Considerations
 
 - **Framework**: React for interactivity, Next.js for SSR.
 - **Code Execution**: Sandboxed environment (e.g., Pyodide for browser Python).

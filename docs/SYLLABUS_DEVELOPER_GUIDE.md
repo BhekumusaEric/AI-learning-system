@@ -88,7 +88,7 @@ This script can:
 
 ---
 
-## 🛠️ Regenerating Solutions
+## Regenerating Solutions
 
 To regenerate the `solutions/` folder after updating practice pages:
 
