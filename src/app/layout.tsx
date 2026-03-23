@@ -12,6 +12,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "SAAIO Training Grounds",
   description: "Learn Artificial Intelligence hands-on.",
+  // build: 2025-email-gate
 };
 
 export default function RootLayout({
