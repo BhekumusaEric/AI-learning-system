@@ -3,11 +3,13 @@
 import React, { useState } from 'react';
 import { BookOpen, LogIn } from 'lucide-react';
 import Link from 'next/link';
+import EmailGate from '@/components/EmailGate';
 
 export default function DipLoginPage() {
   const [loginId, setLoginId] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [emailGate, setEmailGate] = useState<{ loginId: string; destination: string } | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +34,11 @@ export default function DipLoginPage() {
 
       localStorage.setItem('ioai_user', data.login_id);
       localStorage.setItem('ioai_name', data.full_name);
+      if (!data.has_email) {
+        setEmailGate({ loginId: data.login_id, destination: '/dip/lesson/page1_your_first_python_program' });
+        setIsLoading(false);
+        return;
+      }
       window.location.href = '/dip/lesson/page1_your_first_python_program';
     } catch {
       setError('Something went wrong. Please try again.');
@@ -41,6 +48,13 @@ export default function DipLoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground">
+      {emailGate && (
+        <EmailGate
+          loginId={emailGate.loginId}
+          platform="dip"
+          onVerified={() => { window.location.href = emailGate.destination; }}
+        />
+      )}
       <div className="w-full max-w-md bg-secondary border border-border-subtle rounded-2xl p-8 shadow-2xl">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-accent/20 p-4 rounded-2xl mb-4">

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabase
     .from(table)
-    .select('id, login_id, full_name, password_hash')
+    .select('id, login_id, full_name, password_hash, email, email_verified')
     .eq('login_id', login_id.trim().toUpperCase())
     .maybeSingle();
 
@@ -30,5 +30,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
-  return NextResponse.json({ success: true, login_id: data.login_id, full_name: data.full_name });
+  const has_email = !!(data.email && data.email_verified);
+  return NextResponse.json({ success: true, login_id: data.login_id, full_name: data.full_name, has_email });
 }
