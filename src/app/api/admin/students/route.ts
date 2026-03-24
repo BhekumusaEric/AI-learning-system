@@ -43,18 +43,24 @@ function requireAdmin(request: Request) {
   return session === 'admin:' + (process.env.ADMIN_PASSWORD || 'supersecret');
 }
 
-// GET: list all students for a platform
+// GET: list all students for a platform, optionally filtered by cohort
 export async function GET(request: Request) {
   if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { searchParams } = new URL(request.url);
   const platform = searchParams.get('platform') || 'saaio';
+  const cohortId = searchParams.get('cohort_id');
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   const progressTable = platform === 'dip' ? 'dip_progress' : platform === 'wrp' ? 'wrp_progress' : 'user_progress';
 
-  const { data: students, error } = await supabase
+  let query = supabase
     .from(table)
-    .select('id, login_id, full_name, email, created_at')
+    .select('id, login_id, full_name, email, created_at, cohort_id')
     .order('created_at', { ascending: false });
+
+  if (cohortId === 'unassigned') query = query.is('cohort_id', null);
+  else if (cohortId) query = query.eq('cohort_id', cohortId);
+
+  const { data: students, error } = await query;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -77,6 +83,7 @@ export async function GET(request: Request) {
       lastActive: prog?.last_active || null,
       examScore: prog?.exam_score ?? null,
       examPassed: prog?.exam_passed ?? null,
+      cohortId: s.cohort_id ?? null,
     };
   });
 
@@ -116,13 +123,22 @@ export async function POST(request: Request) {
   return NextResponse.json({ ...data, plainPassword, emailSent });
 }
 
-// PATCH: reset a student's password
+// PATCH: reset password OR assign cohort
 export async function PATCH(request: Request) {
   if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { login_id, platform } = await request.json();
+  const body = await request.json();
+  const { login_id, platform } = body;
   if (!login_id || !platform) return NextResponse.json({ error: 'login_id and platform required' }, { status: 400 });
 
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
+
+  // Cohort assignment
+  if ('cohort_id' in body) {
+    const { error } = await supabase.from(table).update({ cohort_id: body.cohort_id }).eq('login_id', login_id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  }
+
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 

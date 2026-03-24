@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export interface AdminUser {
@@ -13,6 +13,15 @@ export interface AdminUser {
   lastActive: string | null;
   examScore: number | null;
   examPassed: boolean | null;
+  cohortId: string | null;
+}
+
+export interface Cohort {
+  id: string;
+  name: string;
+  platform: string;
+  archived: boolean;
+  created_at: string;
 }
 
 function CredentialModal({ cred, onClose, isReset = false }: { cred: { login_id: string; full_name: string; plainPassword: string; emailSent?: boolean }; onClose: () => void; isReset?: boolean }) {
@@ -243,6 +252,152 @@ function BulkImport({ platform, onDone }: { platform: 'saaio' | 'dip' | 'wrp'; o
             <p className="text-sm text-foreground">Drop your Excel or CSV file here</p>
             <p className="text-xs text-secondary-text mt-1">Needs a <code className="text-accent">full_name</code> column. <code className="text-accent">email</code> column is optional.</p>
           </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CohortManager({ platform, cohorts, selectedCohortId, onSelect, onRefresh }: {
+  platform: 'saaio' | 'dip' | 'wrp';
+  cohorts: Cohort[];
+  selectedCohortId: string | null;
+  onSelect: (id: string | null) => void;
+  onRefresh: () => void;
+}) {
+  const [newName, setNewName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const createCohort = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setIsCreating(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/cohorts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim(), platform }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Failed to create cohort'); return; }
+      setNewName('');
+      setShowCreate(false);
+      onRefresh();
+      onSelect(data.id);
+    } catch { setError('Network error'); }
+    finally { setIsCreating(false); }
+  };
+
+  const toggleArchive = async (cohort: Cohort) => {
+    await fetch('/api/admin/cohorts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: cohort.id, archived: !cohort.archived }),
+    });
+    onRefresh();
+    if (selectedCohortId === cohort.id) onSelect(null);
+  };
+
+  const active = cohorts.filter(c => !c.archived);
+  const archived = cohorts.filter(c => c.archived);
+
+  return (
+    <div className="p-4 border-b border-border-subtle bg-background/50">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-accent" />
+          <span className="text-sm font-bold text-foreground">Cohorts</span>
+        </div>
+        <button
+          onClick={() => setShowCreate(v => !v)}
+          className="flex items-center gap-1.5 text-xs text-secondary-text hover:text-accent transition-colors"
+        >
+          <FolderPlus className="w-3.5 h-3.5" /> New Cohort
+        </button>
+      </div>
+
+      {showCreate && (
+        <form onSubmit={createCohort} className="flex gap-2 mb-3">
+          <input
+            type="text"
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            placeholder="e.g. Cohort 2026 Q1"
+            className="flex-1 bg-background border border-border-subtle rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-accent"
+            required
+          />
+          <button
+            type="submit"
+            disabled={isCreating || !newName.trim()}
+            className="flex items-center gap-1.5 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-3 py-1.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
+          >
+            {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Create'}
+          </button>
+          <button type="button" onClick={() => setShowCreate(false)} className="text-secondary-text hover:text-foreground px-2">
+            <X className="w-4 h-4" />
+          </button>
+        </form>
+      )}
+
+      {error && <p className="text-error text-xs mb-2">{error}</p>}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => onSelect(null)}
+          className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+            selectedCohortId === null
+              ? 'bg-accent/10 border-accent text-accent'
+              : 'border-border-subtle text-secondary-text hover:border-accent/40 hover:text-foreground'
+          }`}
+        >
+          All Students
+        </button>
+        <button
+          onClick={() => onSelect('unassigned')}
+          className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+            selectedCohortId === 'unassigned'
+              ? 'bg-accent/10 border-accent text-accent'
+              : 'border-border-subtle text-secondary-text hover:border-accent/40 hover:text-foreground'
+          }`}
+        >
+          Unassigned
+        </button>
+        {active.map(c => (
+          <div key={c.id} className="flex items-center gap-1">
+            <button
+              onClick={() => onSelect(c.id)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                selectedCohortId === c.id
+                  ? 'bg-accent/10 border-accent text-accent'
+                  : 'border-border-subtle text-secondary-text hover:border-accent/40 hover:text-foreground'
+              }`}
+            >
+              {c.name}
+            </button>
+            <button
+              onClick={() => toggleArchive(c)}
+              title="Archive cohort"
+              className="text-secondary-text hover:text-warning transition-colors"
+            >
+              <Archive className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+        {archived.length > 0 && (
+          <details className="text-xs text-secondary-text">
+            <summary className="cursor-pointer hover:text-foreground">Archived ({archived.length})</summary>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {archived.map(c => (
+                <div key={c.id} className="flex items-center gap-1">
+                  <span className="px-3 py-1 rounded-lg border border-border-subtle text-secondary-text opacity-50">{c.name}</span>
+                  <button onClick={() => toggleArchive(c)} title="Restore" className="text-secondary-text hover:text-accent transition-colors text-xs">Restore</button>
+                </div>
+              ))}
+            </div>
+          </details>
         )}
       </div>
     </div>
@@ -498,25 +653,34 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
   const [showBulk, setShowBulk] = useState(false);
   const [showNotify, setShowNotify] = useState(false);
   const [showCongratulate, setShowCongratulate] = useState(false);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [selectedCohortId, setSelectedCohortId] = useState<string | null>(null);
+  const [examEditing, setExamEditing] = useState<string | null>(null);
+  const [examInput, setExamInput] = useState({ score: '', passed: '' });
+
+  const fetchCohorts = useCallback(async () => {
+    const res = await fetch(`/api/admin/cohorts?platform=${platform}`);
+    if (res.ok) setCohorts(await res.json());
+  }, [platform]);
 
   const fetchStudents = useCallback(async () => {
     setIsLoading(true);
     setFetchError(null);
     try {
-      const res = await fetch(`/api/admin/students?platform=${platform}`);
+      const params = new URLSearchParams({ platform });
+      if (selectedCohortId) params.set('cohort_id', selectedCohortId);
+      const res = await fetch(`/api/admin/students?${params}`);
       const data = await res.json();
-      if (res.ok) {
-        setUsers(Array.isArray(data) ? data : []);
-      } else {
-        setFetchError(data.error || `Error ${res.status}`);
-      }
+      if (res.ok) setUsers(Array.isArray(data) ? data : []);
+      else setFetchError(data.error || `Error ${res.status}`);
     } catch (e: any) {
       setFetchError(e.message || 'Network error');
     } finally {
       setIsLoading(false);
     }
-  }, [platform]);
+  }, [platform, selectedCohortId]);
 
+  useEffect(() => { setSelectedCohortId(null); fetchCohorts(); }, [platform]);
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -573,6 +737,27 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
     }
   };
 
+  const handleSaveExam = async (login_id: string) => {
+    const score = examInput.score !== '' ? Number(examInput.score) : undefined;
+    const passed = examInput.passed !== '' ? examInput.passed === 'true' : undefined;
+    await fetch('/api/admin/students/exam', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_id, exam_score: score, exam_passed: passed }),
+    });
+    setExamEditing(null);
+    fetchStudents();
+  };
+
+  const handleAssignCohort = async (login_id: string, cohort_id: string | null) => {
+    await fetch('/api/admin/students', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_id, platform, cohort_id }),
+    });
+    fetchStudents();
+  };
+
   const totalPages = platform === 'saaio' ? totalSaaioPages : platform === 'dip' ? totalDipPages : totalWrpPages;
 
   return (
@@ -595,6 +780,15 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
 
         {/* Bulk Import */}
         {showBulk && <BulkImport platform={platform} onDone={fetchStudents} />}
+
+        {/* Cohort Manager */}
+        <CohortManager
+          platform={platform}
+          cohorts={cohorts}
+          selectedCohortId={selectedCohortId}
+          onSelect={setSelectedCohortId}
+          onRefresh={fetchCohorts}
+        />
 
         {/* Notify Panel — SAAIO only */}
         {showNotify && platform === 'saaio' && <NotifyPanel onClose={() => setShowNotify(false)} />}
@@ -698,6 +892,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                   <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
                   <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Progress</th>
                   {platform === 'dip' && <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
+                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Cohort</th>
                   <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Last Active</th>
                   <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text text-right">Actions</th>
                 </tr>
@@ -724,13 +919,54 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                       </td>
                       {platform === 'dip' && (
                         <td className="py-3 px-5 text-sm">
-                          {user.examScore !== null ? (
-                            <span className={`font-bold ${user.examPassed ? 'text-accent' : 'text-error'}`}>
-                              {user.examScore}% {user.examPassed ? 'Pass' : 'Fail'}
-                            </span>
-                          ) : <span className="text-secondary-text">—</span>}
+                          {examEditing === user.login_id ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                min={0} max={100}
+                                value={examInput.score}
+                                onChange={e => setExamInput(v => ({ ...v, score: e.target.value }))}
+                                placeholder="Score"
+                                className="w-16 bg-background border border-border-subtle rounded px-2 py-1 text-xs focus:outline-none focus:border-accent"
+                              />
+                              <select
+                                value={examInput.passed}
+                                onChange={e => setExamInput(v => ({ ...v, passed: e.target.value }))}
+                                className="bg-background border border-border-subtle rounded px-2 py-1 text-xs focus:outline-none focus:border-accent"
+                              >
+                                <option value="">—</option>
+                                <option value="true">Pass</option>
+                                <option value="false">Fail</option>
+                              </select>
+                              <button onClick={() => handleSaveExam(user.login_id)} className="text-accent hover:text-accent/80 text-xs font-bold"><Check className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => setExamEditing(null)} className="text-secondary-text hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => { setExamEditing(user.login_id); setExamInput({ score: user.examScore?.toString() ?? '', passed: user.examPassed !== null ? String(user.examPassed) : '' }); }}
+                              className="group flex items-center gap-1.5 hover:text-foreground transition-colors"
+                            >
+                              {user.examScore !== null ? (
+                                <span className={`font-bold ${user.examPassed ? 'text-accent' : 'text-error'}`}>
+                                  {user.examScore}% — {user.examPassed ? 'Pass' : 'Fail'}
+                                </span>
+                              ) : <span className="text-secondary-text">Set score</span>}
+                            </button>
+                          )}
                         </td>
                       )}
+                      <td className="py-3 px-5 text-xs">
+                        <select
+                          value={user.cohortId ?? ''}
+                          onChange={e => handleAssignCohort(user.login_id, e.target.value || null)}
+                          className="bg-background border border-border-subtle rounded px-2 py-1 text-xs text-secondary-text focus:outline-none focus:border-accent"
+                        >
+                          <option value="">Unassigned</option>
+                          {cohorts.filter(c => !c.archived).map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </td>
                       <td className="py-3 px-5 text-xs text-secondary-text">
                         {user.lastActive ? (
                           <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(user.lastActive).toLocaleDateString()}</div>
