@@ -10,6 +10,7 @@ import { WrpPage } from '@/lib/wrpSyllabus';
 import CvBuilder from '@/components/wrp/CvBuilder';
 import { SpotTheMistakeGame, SpinTheWheelGame, BuzzwordBingoGame } from '@/components/wrp/WrpGames';
 import LiveQuiz, { QuizLeaderboard } from '@/components/wrp/LiveQuiz';
+import EmailGate from '@/components/EmailGate';
 
 // ── Mock Interview Bot ────────────────────────────────────────────────────────
 
@@ -374,6 +375,21 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
   const { markCompleted, completedPages } = useProgress();
   const router = useRouter();
   const isCompleted = !!completedPages[pageId];
+  const [emailGate, setEmailGate] = React.useState<{ loginId: string; fullName: string } | null>(null);
+
+  React.useEffect(() => {
+    const loginId = localStorage.getItem('ioai_user');
+    const fullName = localStorage.getItem('ioai_name') || '';
+    if (!loginId) { router.replace('/wrp/login'); return; }
+    fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_id: loginId, platform: 'wrp' }),
+    })
+      .then(r => r.json())
+      .then(data => { if (!data.has_email) setEmailGate({ loginId, fullName }); })
+      .catch(() => {});
+  }, []);
 
   const handleNext = () => {
     markCompleted(pageId);
@@ -387,6 +403,13 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
 
   return (
     <div className="h-full overflow-y-auto">
+      {emailGate && (
+        <EmailGate
+          loginId={emailGate.loginId}
+          platform="wrp"
+          onVerified={() => setEmailGate(null)}
+        />
+      )}
       <div className="max-w-3xl mx-auto w-full px-6 py-8">
         {/* Header */}
         <div className="mb-8">
