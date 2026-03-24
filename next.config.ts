@@ -12,6 +12,14 @@ const nextConfig: NextConfig = {
           { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
         ],
       },
+      {
+        // Override: WRP pages live under /lesson/ but embed YouTube — strip COEP
+        source: '/lesson/:path(page1_welcome_and_mindfulness|page2_verbal_communication|page2b_spin_the_wheel|page3_mock_interview|page4_written_communication|page5_email_practice|page6_linkedin_personal_brand|page6b_buzzword_bingo|page7_resume_building|page7b_cv_builder|page8_interview_readiness|page8b_spot_the_mistake|page9_live_quiz)',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'unsafe-none' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'unsafe-none' },
+        ],
+      },
     ];
   },
   outputFileTracingIncludes: {
