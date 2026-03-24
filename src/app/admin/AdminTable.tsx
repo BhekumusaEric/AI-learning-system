@@ -542,7 +542,7 @@ function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onC
   );
 }
 
-function NotifyPanel({ onClose }: { onClose: () => void }) {
+function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp'; onClose: () => void }) {
   const [type, setType] = useState<'reminder' | 'mark_done' | 'kaggle'>('reminder');
   const [customMessage, setCustomMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -563,7 +563,7 @@ function NotifyPanel({ onClose }: { onClose: () => void }) {
       const res = await fetch('/api/admin/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, message: customMessage.trim() || undefined }),
+        body: JSON.stringify({ type, platform, message: customMessage.trim() || undefined }),
       });
       const data = await res.json();
       if (res.ok) setResult(data);
@@ -580,8 +580,8 @@ function NotifyPanel({ onClose }: { onClose: () => void }) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Bell className="w-4 h-4 text-accent" />
-          <span className="text-sm font-bold text-foreground">Notify SAAIO Students</span>
-          <span className="text-xs text-secondary-text">(sends to all students with email addresses)</span>
+          <span className="text-sm font-bold text-foreground">Notify Students</span>
+          <span className="text-xs text-secondary-text">(sends to all {platform.toUpperCase()} students with email addresses)</span>
         </div>
         <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
       </div>
@@ -790,8 +790,8 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
           onRefresh={fetchCohorts}
         />
 
-        {/* Notify Panel — SAAIO only */}
-        {showNotify && platform === 'saaio' && <NotifyPanel onClose={() => setShowNotify(false)} />}
+        {/* Notify Panel — all platforms */}
+        {showNotify && <NotifyPanel platform={platform} onClose={() => setShowNotify(false)} />}
 
         {/* Congratulate Panel — DIP and WRP only */}
         {showCongratulate && (platform === 'dip' || platform === 'wrp') && (
@@ -839,16 +839,14 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
               <FileSpreadsheet className="w-4 h-4" />
               Bulk Import
             </button>
-            {platform === 'saaio' && (
-              <button
-                type="button"
-                onClick={() => setShowNotify(v => !v)}
-                className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
-              >
-                <Bell className="w-4 h-4" />
-                Notify Students
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setShowNotify(v => !v)}
+              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+            >
+              <Bell className="w-4 h-4" />
+              Notify Students
+            </button>
             {(platform === 'dip' || platform === 'wrp') && (
               <button
                 type="button"
