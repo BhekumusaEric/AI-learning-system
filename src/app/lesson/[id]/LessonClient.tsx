@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { PageData, ResourceData } from '@/lib/syllabus';
 import EmailGate from '@/components/EmailGate';
+import { WrpContent } from '@/components/wrp/WrpLessonClient';
 
 export default function LessonPageClient({ 
   pageId,
@@ -159,7 +160,47 @@ export default function LessonPageClient({
     setResults(null);
   };
 
-  const leftPanel = (
+  const isWrp = pageId.startsWith('page') && [
+    'page1_welcome_and_mindfulness','page2_verbal_communication','page2b_spin_the_wheel',
+    'page3_mock_interview','page4_written_communication','page5_email_practice',
+    'page6_linkedin_personal_brand','page6b_buzzword_bingo','page7_resume_building',
+    'page7b_cv_builder','page8_interview_readiness','page8b_spot_the_mistake','page9_live_quiz',
+  ].includes(pageId);
+
+  const leftPanel = isWrp ? (
+    <div className="h-full overflow-y-auto">
+      <div className="max-w-3xl mx-auto w-full px-6 py-8">
+        <WrpContent content={content} />
+        <div className="mt-16 pt-8 border-t border-border-subtle flex items-center justify-between">
+          {prevPage ? (
+            <button onClick={() => router.push(`/lesson/${prevPage.id}`)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary border border-border-subtle text-secondary-text hover:text-white hover:border-accent transition-all">
+              <ChevronLeft className="w-4 h-4" />
+              <div className="flex flex-col items-start px-2">
+                <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Previous</span>
+                <span className="text-sm font-medium">{prevPage.title}</span>
+              </div>
+            </button>
+          ) : <div />}
+          {nextPage ? (
+            <button onClick={() => { markCompleted(pageId); router.push(`/lesson/${nextPage.id}`); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group">
+              <div className="flex flex-col items-end px-2">
+                <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Mark Complete & Next</span>
+                <span className="text-sm font-medium whitespace-nowrap">{nextPage.title}</span>
+              </div>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button onClick={() => markCompleted(pageId)}
+              className="flex items-center gap-2 px-6 py-2 rounded-lg bg-accent text-background hover:bg-accent/90 font-semibold">
+              <CheckCircle2 className="w-4 h-4" /> Finish Module
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : (
     <div className="prose prose-invert prose-cyan max-w-none 
       prose-p:text-[15px] prose-p:leading-relaxed prose-p:text-gray-300
       prose-headings:text-white prose-headings:font-semibold

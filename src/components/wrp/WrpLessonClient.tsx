@@ -293,7 +293,7 @@ function BreathingTimer() {
 
 // ── Custom Markdown Renderer ──────────────────────────────────────────────────
 
-function WrpContent({ content, video }: { content: string; video?: string | null }) {
+export function WrpContent({ content, video }: { content: string; video?: string | null }) {
   // Split content on custom tags and render each segment
   const segments = content.split(/(<video-embed[^>]*\/?>|<mock-interview-bot\s*\/>|<email-practice[^>]*\/>|<cv-builder\s*\/>|<img-block[^>]*\/>|<spot-the-mistake\s*\/>|<spin-the-wheel\s*\/>|<buzzword-bingo\s*\/>|<live-quiz\s*\/>|<quiz-leaderboard\s*\/>)/g);
 

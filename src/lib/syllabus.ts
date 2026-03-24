@@ -47,7 +47,7 @@ export function getSyllabus(): PartData[] {
     .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('part') && dirent.name !== 'part_wrp')
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return partsDir.map((partDirent, partIndex) => {
+  const parts: PartData[] = partsDir.map((partDirent, partIndex) => {
     const partPath = path.join(bookDirectory, partDirent.name);
     const chaptersDir = fs.readdirSync(partPath, { withFileTypes: true })
       .filter(dirent => dirent.isDirectory() && dirent.name.startsWith('chapter'))
@@ -58,22 +58,22 @@ export function getSyllabus(): PartData[] {
       const pagesFiles = fs.readdirSync(chapterPath)
         .filter(file => file.endsWith('.md'))
         .sort((a, b) => {
-          // Extract page number if present (e.g. page1_... vs page2_...)
-          const aMatch = a.match(/^page(\d+)/);
-          const bMatch = b.match(/^page(\d+)/);
-          if (aMatch && bMatch) return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+          const aMatch = a.match(/^page(\d+)(b?)/);
+          const bMatch = b.match(/^page(\d+)(b?)/);
+          if (aMatch && bMatch) {
+            const aNum = parseInt(aMatch[1]) * 10 + (aMatch[2] === 'b' ? 5 : 0);
+            const bNum = parseInt(bMatch[1]) * 10 + (bMatch[2] === 'b' ? 5 : 0);
+            return aNum - bNum;
+          }
           return a.localeCompare(b);
         });
 
       const pages: PageData[] = pagesFiles.map((file, pageIndex) => {
         const filePath = path.join(chapterPath, file);
         const fileContents = fs.readFileSync(filePath, 'utf8');
-        // We can parse frontmatter if it exists, otherwise fallback to guessing
         const { data } = matter(fileContents);
-        
         const isPractice = file.includes('practice');
-        const pageId = file.replace('.md', ''); // e.g. "page1_..."
-
+        const pageId = file.replace('.md', '');
         return {
           id: pageId,
           title: data.title || formatTitle(file),
@@ -85,7 +85,7 @@ export function getSyllabus(): PartData[] {
 
       return {
         id: chapterDirent.name,
-        title: "Chapter " + (chapterIndex + 1) + ": " + formatTitle(chapterDirent.name),
+        title: 'Chapter ' + (chapterIndex + 1) + ': ' + formatTitle(chapterDirent.name),
         order: chapterIndex + 1,
         pages
       };
@@ -93,11 +93,53 @@ export function getSyllabus(): PartData[] {
 
     return {
       id: partDirent.name,
-      title: "Part " + (partIndex + 1) + ": " + formatTitle(partDirent.name),
+      title: 'Part ' + (partIndex + 1) + ': ' + formatTitle(partDirent.name),
       order: partIndex + 1,
       chapters
     };
   });
+
+  // Append part_wrp as Part 7
+  const wrpPath = path.join(bookDirectory, 'part_wrp', 'chapter1_work_readiness');
+  if (fs.existsSync(wrpPath)) {
+    const wrpFiles = fs.readdirSync(wrpPath)
+      .filter(f => f.endsWith('.md'))
+      .sort((a, b) => {
+        const aMatch = a.match(/^page(\d+)(b?)/);
+        const bMatch = b.match(/^page(\d+)(b?)/);
+        if (aMatch && bMatch) {
+          const aNum = parseInt(aMatch[1]) * 10 + (aMatch[2] === 'b' ? 5 : 0);
+          const bNum = parseInt(bMatch[1]) * 10 + (bMatch[2] === 'b' ? 5 : 0);
+          return aNum - bNum;
+        }
+        return a.localeCompare(b);
+      });
+
+    const wrpPages: PageData[] = wrpFiles.map((file, i) => {
+      const { data } = matter(fs.readFileSync(path.join(wrpPath, file), 'utf8'));
+      return {
+        id: file.replace('.md', ''),
+        title: data.title || formatTitle(file),
+        type: (data.type || 'read') as 'read' | 'practice' | 'lab',
+        order: i + 1,
+        completed: false,
+      };
+    });
+
+    parts.push({
+      id: 'part_wrp',
+      title: 'Part 7: Work Readiness Program',
+      order: 7,
+      chapters: [{
+        id: 'chapter1_work_readiness',
+        title: 'Chapter 1: Work Readiness',
+        order: 1,
+        pages: wrpPages,
+      }],
+    });
+  }
+
+  return parts;
 }
 
 export function getPageContent(pageId: string) {
