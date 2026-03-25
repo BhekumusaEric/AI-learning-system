@@ -77,6 +77,7 @@ export async function POST(request: Request) {
 </body>
 </html>`;
 
+  let emailSent = false;
   try {
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
@@ -84,9 +85,11 @@ export async function POST(request: Request) {
       subject: `${otp} is your verification code — ${platformName}`,
       html,
     });
+    emailSent = true;
   } catch (e: any) {
-    return NextResponse.json({ error: 'Failed to send verification email. Check the address and try again.' }, { status: 500 });
+    console.error('Failed to send OTP email:', e);
+    // Don't block the student — email is saved, they can verify later
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, emailSent });
 }

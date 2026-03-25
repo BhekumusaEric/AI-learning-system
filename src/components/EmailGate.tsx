@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -15,6 +15,15 @@ export default function EmailGate({ loginId, platform, onVerified }: Props) {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [emailSent, setEmailSent] = useState(true);
+  const [countdown, setCountdown] = useState(0);
+
+  // Countdown timer — starts when OTP step begins
+  useEffect(() => {
+    if (step !== 'otp' || countdown <= 0) return;
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [step, countdown]);
 
   const submitEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +37,8 @@ export default function EmailGate({ loginId, platform, onVerified }: Props) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Something went wrong.'); return; }
+      setEmailSent(data.emailSent !== false);
+      setCountdown(60);
       setStep('otp');
     } catch {
       setError('Network error. Please try again.');
@@ -110,9 +121,18 @@ export default function EmailGate({ loginId, platform, onVerified }: Props) {
             </>
           ) : (
             <>
-              <p className="text-secondary-text text-sm leading-relaxed mb-5">
-                Enter the 6-digit code from your email. It expires in 15 minutes.
-              </p>
+              {!emailSent ? (
+                <div className="bg-warning/10 border border-warning/30 rounded-lg px-4 py-3 mb-5">
+                  <p className="text-warning text-sm font-semibold mb-1">Email could not be sent</p>
+                  <p className="text-secondary-text text-xs leading-relaxed">
+                    We saved your email address but couldn't send the verification code right now. You can continue and verify your email later from your profile.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-secondary-text text-sm leading-relaxed mb-5">
+                  Enter the 6-digit code from your email. It expires in 15 minutes.
+                </p>
+              )}
               <form onSubmit={submitOtp} className="flex flex-col gap-4">
                 <div>
                   <label className="block text-xs font-medium text-secondary-text mb-1.5">Verification code</label>
@@ -122,19 +142,37 @@ export default function EmailGate({ loginId, platform, onVerified }: Props) {
                     onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="000000"
                     maxLength={6}
+                    disabled={!emailSent}
                     required
-                    className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent transition-all text-center text-2xl font-mono tracking-[0.5em]"
+                    className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent transition-all text-center text-2xl font-mono tracking-[0.5em] disabled:opacity-40"
                   />
                 </div>
                 {error && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={isLoading || otp.length !== 6}
-                  className="w-full bg-accent text-black font-bold py-3 rounded-lg hover:bg-accent/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                  {isLoading ? 'Verifying...' : 'Verify & Continue'}
-                </button>
+                {emailSent && (
+                  <button
+                    type="submit"
+                    disabled={isLoading || otp.length !== 6}
+                    className="w-full bg-accent text-black font-bold py-3 rounded-lg hover:bg-accent/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                    {isLoading ? 'Verifying...' : 'Verify & Continue'}
+                  </button>
+                )}
+                {/* Skip option — shown immediately if email failed, or after 60s if email was sent */}
+                {(!emailSent || countdown === 0) && (
+                  <button
+                    type="button"
+                    onClick={onVerified}
+                    className="w-full py-3 border border-border-subtle rounded-lg text-secondary-text hover:text-foreground hover:border-accent/40 text-sm transition-all"
+                  >
+                    {emailSent ? "Didn't receive a code? Continue and verify later" : 'Continue without verifying'}
+                  </button>
+                )}
+                {emailSent && countdown > 0 && (
+                  <p className="text-center text-xs text-secondary-text">
+                    Didn't receive it? Skip option available in <span className="text-accent font-mono">{countdown}s</span>
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => { setStep('email'); setOtp(''); setError(''); }}
