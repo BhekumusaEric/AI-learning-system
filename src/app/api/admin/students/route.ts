@@ -93,7 +93,7 @@ export async function GET(request: Request) {
 // POST: register a new student
 export async function POST(request: Request) {
   if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { full_name, email, platform } = await request.json();
+  const { full_name, email, platform, cohort_id } = await request.json();
   if (!full_name || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
@@ -101,9 +101,12 @@ export async function POST(request: Request) {
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 
+  const insertData: any = { login_id, password_hash, full_name, email: email || null };
+  if (cohort_id) insertData.cohort_id = cohort_id;
+
   const { data, error } = await supabase
     .from(table)
-    .insert({ login_id, password_hash, full_name, email: email || null })
+    .insert(insertData)
     .select('id, login_id, full_name, email, created_at')
     .single();
 

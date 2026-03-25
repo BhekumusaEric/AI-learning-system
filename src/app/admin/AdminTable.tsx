@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export interface AdminUser {
@@ -638,8 +638,189 @@ function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp';
   );
 }
 
+interface Supervisor {
+  id: string; login_id: string; full_name: string; email: string | null;
+  platform: string; created_at: string; cohort_count: number;
+}
+
+function SupervisorsPanel() {
+  const [supervisors, setSupervisors] = useState<Supervisor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [platform, setPlatform] = useState<'dip' | 'wrp' | 'both'>('dip');
+  const [adding, setAdding] = useState(false);
+  const [newCred, setNewCred] = useState<{ login_id: string; full_name: string; plainPassword: string } | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch('/api/admin/supervisors');
+    const data = await res.json();
+    setSupervisors(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName.trim()) return;
+    setAdding(true);
+    const res = await fetch('/api/admin/supervisors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ full_name: fullName.trim(), email: email.trim() || undefined, platform }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setNewCred({ login_id: data.login_id, full_name: data.full_name, plainPassword: data.plainPassword });
+      setFullName(''); setEmail('');
+      load();
+    }
+    setAdding(false);
+  };
+
+  const handleReset = async (sup: Supervisor) => {
+    if (!confirm(`Reset password for ${sup.full_name}?`)) return;
+    setResettingId(sup.id);
+    const res = await fetch('/api/admin/supervisors', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_id: sup.login_id }),
+    });
+    const data = await res.json();
+    if (res.ok) setNewCred({ login_id: sup.login_id, full_name: sup.full_name, plainPassword: data.plainPassword });
+    setResettingId(null);
+  };
+
+  const handleDelete = async (sup: Supervisor) => {
+    if (!confirm(`Delete supervisor ${sup.full_name}? Their cohorts will remain but become unassigned.`)) return;
+    setDeletingId(sup.id);
+    await fetch(`/api/admin/supervisors?id=${sup.id}`, { method: 'DELETE' });
+    setSupervisors(prev => prev.filter(s => s.id !== sup.id));
+    setDeletingId(null);
+  };
+
+  const portalUrl = typeof window !== 'undefined' ? `${window.location.origin}/supervisor/login` : '/supervisor/login';
+
+  return (
+    <div className="flex flex-col gap-0">
+      {newCred && <CredentialModal cred={newCred} onClose={() => setNewCred(null)} />}
+
+      {/* Portal link */}
+      <div className="px-5 py-3 bg-background/50 border-b border-border-subtle flex items-center gap-3">
+        <ShieldCheck className="w-4 h-4 text-accent shrink-0" />
+        <span className="text-xs text-secondary-text">Supervisor portal:</span>
+        <a href={portalUrl} target="_blank" rel="noreferrer" className="text-xs text-accent font-mono hover:underline">{portalUrl}</a>
+        <CopyButton text={portalUrl} />
+      </div>
+
+      {/* Add supervisor form */}
+      <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
+        <p className="text-xs font-bold uppercase tracking-wider text-secondary-text">Add Supervisor</p>
+        <div className="flex flex-col sm:flex-row gap-3 items-end">
+          <div className="flex-1">
+            <label className="block text-xs text-secondary-text mb-1">Full Name *</label>
+            <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} required
+              placeholder="e.g. Nomsa Dlamini"
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs text-secondary-text mb-1">Email (optional)</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="nomsa@wethinkcode.co.za"
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+          </div>
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Platform Access</label>
+            <select value={platform} onChange={e => setPlatform(e.target.value as any)}
+              className="bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-accent">
+              <option value="dip">DIP only</option>
+              <option value="wrp">WRP only</option>
+              <option value="both">Both DIP + WRP</option>
+            </select>
+          </div>
+          <button type="submit" disabled={adding || !fullName.trim()}
+            className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 whitespace-nowrap">
+            {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+            Add Supervisor
+          </button>
+        </div>
+      </form>
+
+      {/* Supervisors table */}
+      <div className="overflow-x-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-10 gap-2 text-secondary-text">
+            <Loader2 className="w-5 h-5 animate-spin" />Loading...
+          </div>
+        ) : supervisors.length === 0 ? (
+          <p className="text-center py-10 text-secondary-text text-sm">No supervisors yet. Add one above.</p>
+        ) : (
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-background/30 border-b border-border-subtle">
+                <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Login ID</th>
+                <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
+                <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Platform</th>
+                <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Cohorts</th>
+                <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Added</th>
+                <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle">
+              {supervisors.map(sup => (
+                <tr key={sup.id} className="hover:bg-background/30 transition-colors">
+                  <td className="py-3 px-5 font-mono text-accent font-semibold text-sm">{sup.login_id}</td>
+                  <td className="py-3 px-5">
+                    <div className="font-semibold text-foreground text-sm">{sup.full_name}</div>
+                    {sup.email && <div className="text-xs text-secondary-text">{sup.email}</div>}
+                  </td>
+                  <td className="py-3 px-5">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                      sup.platform === 'both' ? 'bg-accent/10 text-accent' :
+                      sup.platform === 'dip' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'
+                    }`}>{sup.platform.toUpperCase()}</span>
+                  </td>
+                  <td className="py-3 px-5 text-sm text-foreground font-semibold">{sup.cohort_count}</td>
+                  <td className="py-3 px-5 text-xs text-secondary-text">{new Date(sup.created_at).toLocaleDateString()}</td>
+                  <td className="py-3 px-5 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => handleReset(sup)} disabled={resettingId === sup.id} title="Reset password"
+                        className="text-secondary-text hover:text-warning p-1.5 rounded-lg hover:bg-warning/10 transition-all disabled:opacity-50">
+                        {resettingId === sup.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                      </button>
+                      <button onClick={() => handleDelete(sup)} disabled={deletingId === sup.id} title="Delete supervisor"
+                        className="text-secondary-text hover:text-error p-1.5 rounded-lg hover:bg-error/10 transition-all disabled:opacity-50">
+                        {deletingId === sup.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+      className="flex items-center gap-1 text-xs text-secondary-text hover:text-accent transition-colors">
+      {copied ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  );
+}
+
 export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPages }: { totalSaaioPages: number; totalDipPages: number; totalWrpPages: number }) {
-  const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp'>('saaio');
+  const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp' | 'supervisors'>('saaio');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -766,38 +947,44 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
 
       <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
         {/* Platform Tabs */}
-        <div className="flex border-b border-border-subtle">
-          {(['saaio', 'dip', 'wrp'] as const).map(p => (
+        <div className="flex border-b border-border-subtle overflow-x-auto">
+          {(['saaio', 'dip', 'wrp', 'supervisors'] as const).map(p => (
             <button
               key={p}
               onClick={() => setPlatform(p)}
-              className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider transition-all ${platform === p ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'}`}
+              className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider transition-all whitespace-nowrap px-3 ${
+                platform === p ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'
+              }`}
             >
-              {p === 'saaio' ? 'SAAIO Training Grounds' : p === 'dip' ? 'IDC SEF / DIP' : 'WRP'}
+              {p === 'saaio' ? 'SAAIO' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : '🛡 Supervisors'}
             </button>
           ))}
         </div>
 
+        {/* Supervisors panel */}
+        {platform === 'supervisors' && <SupervisorsPanel />}
+
         {/* Bulk Import */}
-        {showBulk && <BulkImport platform={platform} onDone={fetchStudents} />}
+        {platform !== 'supervisors' && showBulk && <BulkImport platform={platform as 'saaio'|'dip'|'wrp'} onDone={fetchStudents} />}
 
         {/* Cohort Manager */}
-        <CohortManager
-          platform={platform}
+        {platform !== 'supervisors' && <CohortManager
+          platform={platform as 'saaio'|'dip'|'wrp'}
           cohorts={cohorts}
           selectedCohortId={selectedCohortId}
           onSelect={setSelectedCohortId}
           onRefresh={fetchCohorts}
-        />
+        />}
 
         {/* Notify Panel — all platforms */}
-        {showNotify && <NotifyPanel platform={platform} onClose={() => setShowNotify(false)} />}
+        {platform !== 'supervisors' && showNotify && <NotifyPanel platform={platform as 'saaio'|'dip'|'wrp'} onClose={() => setShowNotify(false)} />}
 
         {/* Congratulate Panel — DIP and WRP only */}
-        {showCongratulate && (platform === 'dip' || platform === 'wrp') && (
-          <CongratulatePanel platform={platform} onClose={() => setShowCongratulate(false)} />
+        {platform !== 'supervisors' && showCongratulate && (platform === 'dip' || platform === 'wrp') && (
+          <CongratulatePanel platform={platform as 'dip'|'wrp'} onClose={() => setShowCongratulate(false)} />
         )}
 
+        {platform !== 'supervisors' && <>
         {/* Register Form */}
         <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
           {addError && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2">{addError}</p>}
@@ -997,7 +1184,12 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
             </table>
           )}
         </div>
+      </>
+      }
       </div>
+    </>
+  );
+}
     </>
   );
 }
