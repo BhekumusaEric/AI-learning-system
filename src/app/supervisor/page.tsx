@@ -4,8 +4,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   ShieldCheck, Plus, Users, Copy, Check, ExternalLink,
   RotateCcw, ChevronDown, ChevronUp, Archive, Clock,
-  TrendingUp, Award, KeyRound, LogOut, X, Loader2, RefreshCw
+  TrendingUp, Award, KeyRound, LogOut, X, Loader2, RefreshCw, Download
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useRouter } from 'next/navigation';
 
 interface Cohort {
@@ -162,6 +163,55 @@ function CohortCard({
 
   const passedExam = students.filter(s => s.examPassed).length;
 
+  const downloadReport = () => {
+    const rows = students.map((s, i) => {
+      const pct = totalPages > 0 ? Math.min(100, Math.round((s.completedCount / totalPages) * 100)) : 0;
+      const row: Record<string, any> = {
+        '#': i + 1,
+        'Full Name': s.full_name,
+        'Login ID': s.login_id,
+        'Email': s.email || '—',
+        'Registered': new Date(s.created_at).toLocaleDateString('en-ZA'),
+        'Topics Completed': s.completedCount,
+        'Total Topics': totalPages,
+        'Progress %': `${pct}%`,
+        'Last Active': s.lastActive ? new Date(s.lastActive).toLocaleDateString('en-ZA') : '—',
+      };
+      if (platform === 'dip') {
+        row['Exam Score'] = s.examScore !== null ? `${s.examScore}%` : '—';
+        row['Exam Result'] = s.examPassed === true ? 'Pass' : s.examPassed === false ? 'Fail' : '—';
+      }
+      return row;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{ wch: 4 }, { wch: 24 }, { wch: 14 }, { wch: 28 }, { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 14 },
+      ...(platform === 'dip' ? [{ wch: 12 }, { wch: 12 }] : []),
+    ];
+
+    // Summary sheet
+    const summary = [
+      ['Report Generated', new Date().toLocaleString('en-ZA')],
+      ['Cohort', cohort.name],
+      ['Platform', platform.toUpperCase()],
+      ...(cohort.location ? [['Location', cohort.location]] : []),
+      ...(cohort.start_date ? [['Start Date', new Date(cohort.start_date).toLocaleDateString('en-ZA')]] : []),
+      ['Total Students', students.length],
+      ['Avg Progress', `${avgProgress}%`],
+      ...(platform === 'dip' ? [['Exam Pass Rate', students.length > 0 ? `${Math.round((passedExam / students.length) * 100)}%` : '—']] : []),
+    ];
+    const wsSummary = XLSX.utils.aoa_to_sheet(summary);
+    wsSummary['!cols'] = [{ wch: 20 }, { wch: 30 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Attendance & Progress');
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+    const date = new Date().toISOString().slice(0, 10);
+    const safeName = cohort.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    XLSX.writeFile(wb, `${safeName}_report_${date}.xlsx`);
+  };
+
   return (
     <div className={`border rounded-xl overflow-hidden transition-all ${cohort.archived ? 'border-border-subtle opacity-60' : 'border-border-subtle hover:border-accent/30'} bg-secondary`}>
       {/* Cohort header */}
@@ -183,6 +233,12 @@ function CohortCard({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {students.length > 0 && (
+              <button onClick={downloadReport} title="Download Excel report"
+                className="flex items-center gap-1.5 px-3 py-2 bg-background border border-border-subtle rounded-lg text-sm text-secondary-text hover:text-accent hover:border-accent transition-all">
+                <Download className="w-4 h-4" />Export
+              </button>
+            )}
             {!cohort.archived && (
               <button onClick={() => onArchive(cohort.id)} title="Archive cohort"
                 className="p-2 text-secondary-text hover:text-warning hover:bg-warning/10 rounded-lg transition-all">
@@ -308,7 +364,11 @@ function CohortCard({
             </div>
           )}
 
-          <div className="px-4 py-3 border-t border-border-subtle flex justify-end">
+          <div className="px-4 py-3 border-t border-border-subtle flex items-center justify-between">
+            <button onClick={downloadReport} disabled={students.length === 0}
+              className="flex items-center gap-1.5 px-3 py-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black rounded-lg text-xs font-semibold transition-all disabled:opacity-40">
+              <Download className="w-3.5 h-3.5" />Download Report (.xlsx)
+            </button>
             <button onClick={loadStudents} className="flex items-center gap-1.5 text-xs text-secondary-text hover:text-accent transition-colors">
               <RotateCcw className="w-3.5 h-3.5" />Refresh
             </button>
