@@ -1082,11 +1082,13 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
   const [examInput, setExamInput] = useState({ score: '', passed: '' });
 
   const fetchCohorts = useCallback(async () => {
+    if (platform === 'supervisors' || platform === 'invite-links') return;
     const res = await fetch(`/api/admin/cohorts?platform=${platform}`);
     if (res.ok) setCohorts(await res.json());
   }, [platform]);
 
   const fetchStudents = useCallback(async () => {
+    if (platform === 'supervisors' || platform === 'invite-links') return;
     setIsLoading(true);
     setFetchError(null);
     try {
