@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export interface AdminUser {
@@ -638,6 +638,248 @@ function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp';
   );
 }
 
+interface InviteLink {
+  id: string; token: string; type: 'supervisor' | 'student';
+  platform: string | null; label: string | null;
+  expires_at: string | null; max_uses: number | null;
+  use_count: number; revoked: boolean; created_at: string;
+}
+
+function InviteLinksPanel() {
+  const [links, setLinks] = useState<InviteLink[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [type, setType] = useState<'supervisor' | 'student'>('supervisor');
+  const [platform, setPlatform] = useState('');
+  const [label, setLabel] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
+  const [maxUses, setMaxUses] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch('/api/admin/invite-links');
+    const data = await res.json();
+    setLinks(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreating(true);
+    const res = await fetch('/api/admin/invite-links', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type, platform: platform || null, label: label.trim() || null,
+        expires_at: expiresAt || null, max_uses: maxUses ? parseInt(maxUses) : null,
+      }),
+    });
+    const data = await res.json();
+    if (res.ok) { setLinks(prev => [data, ...prev]); setLabel(''); setExpiresAt(''); setMaxUses(''); }
+    setCreating(false);
+  };
+
+  const copyLink = (link: InviteLink) => {
+    const url = `${window.location.origin}/register/${link.token}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(link.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const refresh = async (link: InviteLink) => {
+    if (!confirm('Refresh this link? The old URL will stop working immediately.')) return;
+    const res = await fetch('/api/admin/invite-links', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: link.id, refresh: true }),
+    });
+    const data = await res.json();
+    if (res.ok) setLinks(prev => prev.map(l => l.id === link.id ? data : l));
+  };
+
+  const revoke = async (link: InviteLink) => {
+    if (!confirm(link.revoked ? 'Re-activate this link?' : 'Revoke this link? It will stop working immediately.')) return;
+    const res = await fetch('/api/admin/invite-links', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: link.id, revoked: !link.revoked }),
+    });
+    const data = await res.json();
+    if (res.ok) setLinks(prev => prev.map(l => l.id === link.id ? data : l));
+  };
+
+  const hardDelete = async (link: InviteLink) => {
+    if (!confirm('Permanently delete this link and its history?')) return;
+    await fetch(`/api/admin/invite-links?id=${link.id}&hard=true`, { method: 'DELETE' });
+    setLinks(prev => prev.filter(l => l.id !== link.id));
+  };
+
+  const isExpired = (link: InviteLink) => !!(link.expires_at && new Date(link.expires_at) < new Date());
+  const isMaxed = (link: InviteLink) => !!(link.max_uses !== null && link.use_count >= link.max_uses);
+  const isActive = (link: InviteLink) => !link.revoked && !isExpired(link) && !isMaxed(link);
+
+  const active = links.filter(l => isActive(l));
+  const inactive = links.filter(l => !isActive(l));
+
+  return (
+    <div className="flex flex-col gap-0">
+      {/* Create form */}
+      <form onSubmit={handleCreate} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
+        <p className="text-xs font-bold uppercase tracking-wider text-secondary-text">Generate Invite Link</p>
+        <div className="flex flex-wrap gap-3 items-end">
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Type *</label>
+            <select value={type} onChange={e => setType(e.target.value as any)}
+              className="bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-accent">
+              <option value="supervisor">Supervisor</option>
+              <option value="student">Student</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Platform restriction</label>
+            <select value={platform} onChange={e => setPlatform(e.target.value)}
+              className="bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-accent">
+              <option value="">Any platform</option>
+              {type === 'supervisor'
+                ? <>
+                    <option value="dip">DIP only</option>
+                    <option value="wrp">WRP only</option>
+                    <option value="both">Both DIP + WRP</option>
+                  </>
+                : <>
+                    <option value="dip">DIP only</option>
+                    <option value="wrp">WRP only</option>
+                    <option value="saaio">SAAIO only</option>
+                  </>
+              }
+            </select>
+          </div>
+          <div className="flex-1 min-w-40">
+            <label className="block text-xs text-secondary-text mb-1">Label (optional)</label>
+            <input value={label} onChange={e => setLabel(e.target.value)}
+              placeholder="e.g. Soweto supervisors batch 1"
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+          </div>
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Expires</label>
+            <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)}
+              className="bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-accent" />
+          </div>
+          <div className="w-24">
+            <label className="block text-xs text-secondary-text mb-1">Max uses</label>
+            <input type="number" min={1} value={maxUses} onChange={e => setMaxUses(e.target.value)}
+              placeholder="∞"
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+          </div>
+          <button type="submit" disabled={creating}
+            className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 whitespace-nowrap">
+            {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            Generate Link
+          </button>
+        </div>
+      </form>
+
+      {/* Links table */}
+      <div className="overflow-x-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-10 gap-2 text-secondary-text">
+            <Loader2 className="w-5 h-5 animate-spin" />Loading...
+          </div>
+        ) : links.length === 0 ? (
+          <p className="text-center py-10 text-secondary-text text-sm">No invite links yet. Generate one above.</p>
+        ) : (
+          <>
+            {[{ title: 'Active', items: active }, { title: 'Inactive', items: inactive }].map(group =>
+              group.items.length === 0 ? null : (
+                <div key={group.title}>
+                  <p className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-secondary-text bg-background/30 border-b border-border-subtle">{group.title}</p>
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-background/20 border-b border-border-subtle">
+                        <th className="py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-secondary-text">Link</th>
+                        <th className="py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-secondary-text">Type</th>
+                        <th className="py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-secondary-text">Platform</th>
+                        <th className="py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-secondary-text">Uses</th>
+                        <th className="py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-secondary-text">Expires</th>
+                        <th className="py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-secondary-text">Status</th>
+                        <th className="py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-secondary-text text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-subtle">
+                      {group.items.map(link => {
+                        const url = typeof window !== 'undefined' ? `${window.location.origin}/register/${link.token}` : `/register/${link.token}`;
+                        const active = isActive(link);
+                        return (
+                          <tr key={link.id} className={`hover:bg-background/30 transition-colors ${!active ? 'opacity-50' : ''}`}>
+                            <td className="py-3 px-4">
+                              <div className="flex flex-col gap-0.5">
+                                {link.label && <span className="text-xs font-semibold text-foreground">{link.label}</span>}
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs text-accent truncate max-w-48">{url}</span>
+                                  <button onClick={() => copyLink(link)} className="text-secondary-text hover:text-accent transition-colors shrink-0">
+                                    {copiedId === link.id ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
+                                  </button>
+                                  <a href={url} target="_blank" rel="noreferrer" className="text-secondary-text hover:text-accent transition-colors shrink-0">
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                                link.type === 'supervisor' ? 'bg-accent/10 text-accent' : 'bg-blue-500/10 text-blue-400'
+                              }`}>{link.type}</span>
+                            </td>
+                            <td className="py-3 px-4 text-xs text-secondary-text">{link.platform || 'any'}</td>
+                            <td className="py-3 px-4 text-sm font-semibold text-foreground">
+                              {link.use_count}{link.max_uses !== null ? ` / ${link.max_uses}` : ''}
+                            </td>
+                            <td className="py-3 px-4 text-xs text-secondary-text">
+                              {link.expires_at ? new Date(link.expires_at).toLocaleDateString('en-ZA') : '—'}
+                            </td>
+                            <td className="py-3 px-4">
+                              {link.revoked
+                                ? <span className="text-xs text-error font-semibold">Revoked</span>
+                                : isExpired(link) ? <span className="text-xs text-warning font-semibold">Expired</span>
+                                : isMaxed(link) ? <span className="text-xs text-warning font-semibold">Maxed out</span>
+                                : <span className="text-xs text-accent font-semibold">Active</span>}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button onClick={() => refresh(link)} title="Refresh token (old URL stops working)"
+                                  className="p-1.5 text-secondary-text hover:text-accent hover:bg-accent/10 rounded-lg transition-all">
+                                  <RotateCcw className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => revoke(link)} title={link.revoked ? 'Re-activate' : 'Revoke'}
+                                  className={`p-1.5 rounded-lg transition-all ${
+                                    link.revoked ? 'text-accent hover:bg-accent/10' : 'text-secondary-text hover:text-warning hover:bg-warning/10'
+                                  }`}>
+                                  <Ban className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => hardDelete(link)} title="Delete permanently"
+                                  className="p-1.5 text-secondary-text hover:text-error hover:bg-error/10 rounded-lg transition-all">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface Supervisor {
   id: string; login_id: string; full_name: string; email: string | null;
   platform: string; created_at: string; cohort_count: number;
@@ -820,7 +1062,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPages }: { totalSaaioPages: number; totalDipPages: number; totalWrpPages: number }) {
-  const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp' | 'supervisors'>('saaio');
+  const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp' | 'supervisors' | 'invite-links'>('saaio');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -948,7 +1190,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
       <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
         {/* Platform Tabs */}
         <div className="flex border-b border-border-subtle overflow-x-auto">
-          {(['saaio', 'dip', 'wrp', 'supervisors'] as const).map(p => (
+          {(['saaio', 'dip', 'wrp', 'supervisors', 'invite-links'] as const).map(p => (
             <button
               key={p}
               onClick={() => setPlatform(p)}
@@ -956,7 +1198,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                 platform === p ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'
               }`}
             >
-              {p === 'saaio' ? 'SAAIO' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : '🛡 Supervisors'}
+              {p === 'saaio' ? 'SAAIO' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'supervisors' ? '🛡 Supervisors' : '🔗 Invite Links'}
             </button>
           ))}
         </div>
@@ -964,11 +1206,14 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
         {/* Supervisors panel */}
         {platform === 'supervisors' && <SupervisorsPanel />}
 
+        {/* Invite Links panel */}
+        {platform === 'invite-links' && <InviteLinksPanel />}
+
         {/* Bulk Import */}
-        {platform !== 'supervisors' && showBulk && <BulkImport platform={platform as 'saaio'|'dip'|'wrp'} onDone={fetchStudents} />}
+        {platform !== 'supervisors' && platform !== 'invite-links' && showBulk && <BulkImport platform={platform as 'saaio'|'dip'|'wrp'} onDone={fetchStudents} />}
 
         {/* Cohort Manager */}
-        {platform !== 'supervisors' && <CohortManager
+        {platform !== 'supervisors' && platform !== 'invite-links' && <CohortManager
           platform={platform as 'saaio'|'dip'|'wrp'}
           cohorts={cohorts}
           selectedCohortId={selectedCohortId}
@@ -977,14 +1222,14 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
         />}
 
         {/* Notify Panel — all platforms */}
-        {platform !== 'supervisors' && showNotify && <NotifyPanel platform={platform as 'saaio'|'dip'|'wrp'} onClose={() => setShowNotify(false)} />}
+        {platform !== 'supervisors' && platform !== 'invite-links' && showNotify && <NotifyPanel platform={platform as 'saaio'|'dip'|'wrp'} onClose={() => setShowNotify(false)} />}
 
         {/* Congratulate Panel — DIP and WRP only */}
-        {platform !== 'supervisors' && showCongratulate && (platform === 'dip' || platform === 'wrp') && (
+        {platform !== 'supervisors' && platform !== 'invite-links' && showCongratulate && (platform === 'dip' || platform === 'wrp') && (
           <CongratulatePanel platform={platform as 'dip'|'wrp'} onClose={() => setShowCongratulate(false)} />
         )}
 
-        {platform !== 'supervisors' && <>
+        {platform !== 'supervisors' && platform !== 'invite-links' && <>
         {/* Register Form */}
         <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
           {addError && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2">{addError}</p>}
