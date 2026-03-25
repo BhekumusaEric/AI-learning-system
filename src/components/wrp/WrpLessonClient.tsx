@@ -410,7 +410,7 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
           onVerified={() => setEmailGate(null)}
         />
       )}
-      <div className="max-w-3xl mx-auto w-full px-6 py-8">
+      <div className="max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
         {/* Header */}
         <div className="mb-8">
           <p className="text-xs text-accent font-bold uppercase tracking-widest mb-2">Work Readiness Program</p>
@@ -426,11 +426,11 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
         <WrpContent content={content} video={video} />
 
         {/* Navigation */}
-        <div className="mt-16 pt-8 border-t border-border-subtle flex items-center justify-between">
+        <div className="mt-12 pt-8 border-t border-border-subtle flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {prev ? (
             <button onClick={handlePrev}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary border border-border-subtle text-secondary-text hover:text-white hover:border-accent transition-all">
-              <ChevronLeft className="w-4 h-4" />
+              className="flex items-center gap-2 px-4 py-3 rounded-lg bg-secondary border border-border-subtle text-secondary-text hover:text-white hover:border-accent transition-all">
+              <ChevronLeft className="w-4 h-4 shrink-0" />
               <div className="flex flex-col items-start px-2">
                 <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Previous</span>
                 <span className="text-sm font-medium">{prev.title}</span>
@@ -440,7 +440,7 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
 
           <button
             onClick={handleNext}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
+            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
               isLast
                 ? 'bg-accent text-black hover:bg-accent/90'
                 : 'bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent'
@@ -448,14 +448,14 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
           >
             {isCompleted && !isLast ? <CheckCircle2 className="w-4 h-4" /> : null}
             {isLast ? <><Award className="w-5 h-5" /> Get Certificate</> : (
-              <div className="flex flex-col items-end px-2">
+              <div className="flex flex-col items-center sm:items-end px-2">
                 <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">
                   {isCompleted ? 'Completed ·' : 'Mark Complete &'} Next
                 </span>
                 <span className="text-sm font-medium">{next?.title}</span>
               </div>
             )}
-            {!isLast && <ChevronRight className="w-4 h-4" />}
+            {!isLast && <ChevronRight className="w-4 h-4 shrink-0" />}
           </button>
         </div>
       </div>

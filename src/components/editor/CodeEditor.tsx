@@ -17,8 +17,16 @@ interface CodeEditorProps {
 export default function CodeEditor({ code, onChange, onRun, onReset, isRunning = false, isLoading = false, onInputRequest }: CodeEditorProps) {
   const [inputPrompt, setInputPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const resolverRef = useRef<((val: string) => void) | null>(null);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     if (onInputRequest) {
@@ -42,32 +50,34 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
   }
 
   const busy = isRunning || isLoading;
+
   return (
     <div className="flex flex-col h-1/2 min-h-[300px] border-b border-border-subtle bg-[#1e1e1e]">
       <div className="flex items-center justify-between p-3 shrink-0 bg-[#252526] border-b border-border-subtle">
         <span className="text-sm font-semibold text-[#cccccc]">main.py</span>
         <div className="flex items-center gap-2">
           {isLoading && (
-            <span className="text-xs text-secondary-text animate-pulse">⏳ Loading environment...</span>
+            <span className="text-xs text-secondary-text animate-pulse hidden sm:inline">⏳ Loading...</span>
           )}
           <button
             onClick={onReset}
             disabled={busy}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-transparent hover:bg-white/10 text-secondary-text transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded bg-transparent hover:bg-white/10 text-secondary-text transition-colors disabled:opacity-50"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset
+            <span className="hidden sm:inline">Reset</span>
           </button>
           <button
             onClick={onRun}
             disabled={busy}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50"
           >
             <Play className="w-3.5 h-3.5" fill="currentColor" />
-            {isLoading ? 'Loading...' : isRunning ? 'Running...' : 'Run Code'}
+            {isLoading ? 'Loading...' : isRunning ? 'Running...' : 'Run'}
           </button>
         </div>
       </div>
+
       {inputPrompt !== null && (
         <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a2e] border-b border-accent/40">
           <span className="text-accent text-xs font-mono shrink-0">{inputPrompt}</span>
@@ -82,26 +92,40 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
           <button onClick={submitInput} className="text-xs px-2 py-0.5 bg-accent text-black font-bold rounded">Enter</button>
         </div>
       )}
+
       <div className="flex-1 overflow-hidden">
-        <Editor
-          height="100%"
-          defaultLanguage="python"
-          theme="vs-dark"
-          value={code}
-          onChange={onChange}
-          options={{
-            minimap: { enabled: false },
-            fontSize: 14,
-            fontFamily: 'var(--font-jetbrains-mono)',
-            fontLigatures: true,
-            lineHeight: 24,
-            padding: { top: 16, bottom: 16 },
-            scrollBeyondLastLine: false,
-            smoothScrolling: true,
-            cursorBlinking: 'smooth',
-            cursorSmoothCaretAnimation: 'on',
-          }}
-        />
+        {isMobile ? (
+          // Mobile: plain textarea — Monaco doesn't work well on touch
+          <textarea
+            value={code}
+            onChange={e => onChange(e.target.value)}
+            spellCheck={false}
+            autoCapitalize="none"
+            autoCorrect="off"
+            className="w-full h-full bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm p-4 resize-none outline-none leading-6"
+            style={{ fontFamily: 'var(--font-jetbrains-mono), monospace' }}
+          />
+        ) : (
+          <Editor
+            height="100%"
+            defaultLanguage="python"
+            theme="vs-dark"
+            value={code}
+            onChange={onChange}
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              fontFamily: 'var(--font-jetbrains-mono)',
+              fontLigatures: true,
+              lineHeight: 24,
+              padding: { top: 16, bottom: 16 },
+              scrollBeyondLastLine: false,
+              smoothScrolling: true,
+              cursorBlinking: 'smooth',
+              cursorSmoothCaretAnimation: 'on',
+            }}
+          />
+        )}
       </div>
     </div>
   );

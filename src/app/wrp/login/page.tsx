@@ -41,7 +41,7 @@ export default function WrpLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-foreground">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 text-foreground">
       {emailGate && (
         <EmailGate
           loginId={emailGate.loginId}

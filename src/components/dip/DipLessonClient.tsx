@@ -162,11 +162,11 @@ export default function DipLessonClient({
       )}
 
       {/* Navigation Footer */}
-      <div className="mt-16 pt-8 border-t border-border-subtle flex items-center justify-between not-prose">
+      <div className="mt-16 pt-8 border-t border-border-subtle flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 not-prose">
         {prevPageId ? (
           <button onClick={() => navigate(prevPageId)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary border border-border-subtle text-secondary-text hover:text-white hover:border-accent transition-all">
-            <ChevronLeft className="w-4 h-4" />
+            className="flex items-center gap-2 px-4 py-3 rounded-lg bg-secondary border border-border-subtle text-secondary-text hover:text-white hover:border-accent transition-all">
+            <ChevronLeft className="w-4 h-4 shrink-0" />
             <div className="flex flex-col items-start px-2">
               <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Previous</span>
               <span className="text-sm font-medium">{prevPageTitle}</span>
@@ -176,22 +176,22 @@ export default function DipLessonClient({
 
         {isLastPage ? (
           <button onClick={() => { markCompleted(pageId); router.push('/dip/exam'); }}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all">
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all">
             <Award className="w-5 h-5" />
             Go to Final Exam
           </button>
         ) : nextPageId ? (
           <button onClick={() => { markCompleted(pageId); navigate(nextPageId); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group">
-            <div className="flex flex-col items-end px-2">
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group">
+            <div className="flex flex-col items-center sm:items-end px-2">
               <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Mark Complete & Next</span>
               <span className="text-sm font-medium">{nextPageTitle}</span>
             </div>
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <ChevronRight className="w-4 h-4 shrink-0 group-hover:translate-x-1 transition-transform" />
           </button>
         ) : (
           <button onClick={() => markCompleted(pageId)}
-            className="flex items-center gap-2 px-6 py-2 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all">
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all">
             <CheckCircle2 className="w-4 h-4" />
             Finish Module
           </button>
