@@ -1190,6 +1190,3 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
     </>
   );
 }
-    </>
-  );
-}
