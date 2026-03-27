@@ -12,6 +12,7 @@ export interface ExecutionResult {
 let pyodideWorker: Worker | null = null;
 let msgId = 0;
 let isReady = false;
+let loadError: string | null = null;
 const resolvers: Record<number, { resolve: (val: any) => void; reject: (err: any) => void }> = {};
 
 let inputCallback: ((prompt: string) => Promise<string>) | null = null;
@@ -20,10 +21,8 @@ export function setInputCallback(cb: (prompt: string) => Promise<string>) {
   inputCallback = cb;
 }
 
-/** True once all packages have finished loading in the worker */
-export function isPyodideReady() {
-  return isReady;
-}
+export function isPyodideReady() { return isReady; }
+export function getPyodideError() { return loadError; }
 
 export async function getPyodide(): Promise<void> {
   if (typeof window === 'undefined') return;
@@ -49,6 +48,12 @@ export async function getPyodide(): Promise<void> {
 
       if (type === 'ready') {
         isReady = true;
+        return;
+      }
+
+      if (type === 'load_error') {
+        loadError = error || 'Failed to load Python environment';
+        isReady = false;
         return;
       }
 

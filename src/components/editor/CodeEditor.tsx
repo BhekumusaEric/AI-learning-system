@@ -57,7 +57,7 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
         <span className="text-sm font-semibold text-[#cccccc]">main.py</span>
         <div className="flex items-center gap-2">
           {isLoading && (
-            <span className="text-xs text-secondary-text animate-pulse hidden sm:inline">⏳ Loading...</span>
+            <span className="text-xs text-secondary-text animate-pulse hidden sm:inline">Loading Python environment...</span>
           )}
           <button
             onClick={onReset}

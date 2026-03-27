@@ -62,6 +62,8 @@ import io, sys, json, math, random, collections, itertools, functools
 pyodideReadyPromise = load().then(() => {
   // Tell the main thread all packages are loaded and the IDE is ready
   self.postMessage({ type: 'ready' });
+}).catch((err) => {
+  self.postMessage({ type: 'load_error', error: err?.message || String(err) });
 });
 
 // Transforms test code so each assert shows got vs expected on failure.
