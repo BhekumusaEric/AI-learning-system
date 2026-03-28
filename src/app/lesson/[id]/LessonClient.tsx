@@ -6,7 +6,7 @@ import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
 import ColabPanel from '@/components/editor/ColabPanel';
 import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
-import { runPythonCode, getPyodide, isPyodideReady, setInputCallback, getPyodideError } from '@/lib/pyodide';
+import { runPythonCode, getPyodide, isPyodideReady, setInputCallback } from '@/lib/pyodide';
 import { usePersistedCode } from '@/lib/usePersistedCode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -45,7 +45,6 @@ export default function LessonPageClient({
   const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
   const [isRunning, setIsRunning] = useState(false);
   const [isEnvLoading, setIsEnvLoading] = useState(true);
-  const [envError, setEnvError] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const { markCompleted, completedPages } = useProgress();
   const router = useRouter();
@@ -69,30 +68,14 @@ export default function LessonPageClient({
   useEffect(() => {
     if (!isPractice) return;
     setIsEnvLoading(true);
-    setEnvError(null);
     getPyodide();
     const interval = setInterval(() => {
-      const err = getPyodideError();
-      if (err) {
-        setEnvError(err);
-        setIsEnvLoading(false);
-        clearInterval(interval);
-        return;
-      }
       if (isPyodideReady()) {
         setIsEnvLoading(false);
         clearInterval(interval);
       }
     }, 300);
-    // Timeout after 90s — CDN can be slow but not forever
-    const timeout = setTimeout(() => {
-      clearInterval(interval);
-      if (!isPyodideReady()) {
-        setEnvError('Python environment took too long to load. Check your internet connection and try refreshing.');
-        setIsEnvLoading(false);
-      }
-    }, 90_000);
-    return () => { clearInterval(interval); clearTimeout(timeout); };
+    return () => clearInterval(interval);
   }, [isPractice]);
 
   useEffect(() => { setResults(null); }, [pageId]);
@@ -334,26 +317,14 @@ export default function LessonPageClient({
           isLoading={isEnvLoading}
           onInputRequest={cb => setInputCallback(cb)}
         />
-        {envError ? (
-          <div className="flex flex-col items-center justify-center gap-3 p-6 text-center">
-            <p className="text-error text-sm">{envError}</p>
-            <button
-              onClick={() => { setEnvError(null); setIsEnvLoading(true); window.location.reload(); }}
-              className="px-4 py-2 bg-accent/10 border border-accent/20 text-accent rounded-lg text-sm font-semibold hover:bg-accent hover:text-black transition-all"
-            >
-              Retry
-            </button>
-          </div>
-        ) : (
-          <FeedbackPanel
-            results={results}
-            isRunning={isRunning}
-            onNext={nextPage
-              ? () => { markCompleted(pageId); router.push(`/lesson/${nextPage.id}`); }
-              : undefined
-            }
-          />
-        )}
+        <FeedbackPanel
+          results={results}
+          isRunning={isRunning}
+          onNext={nextPage
+            ? () => { markCompleted(pageId); router.push(`/lesson/${nextPage.id}`); }
+            : undefined
+          }
+        />
       </>
     )
   ) : null;
