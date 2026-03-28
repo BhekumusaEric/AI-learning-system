@@ -1,49 +1,35 @@
 // pyodide-worker.js
-// Runs in a Web Worker outside of the Next.js Turbopack bundled environment
 
-let pyodideReadyPromise = null;
+let pyodideInstance = null;
+let coreReadyResolve = null;
+const coreReady = new Promise(resolve => { coreReadyResolve = resolve; });
 
 async function load() {
-  // Use fetch + eval instead of importScripts so we can catch errors
-  // importScripts is synchronous and silently stalls on slow/failed CDN
-  const response = await fetch('https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js');
-  if (!response.ok) throw new Error(`Failed to fetch pyodide.js: ${response.status}`);
-  const code = await response.text();
-  // eslint-disable-next-line no-eval
-  eval(code);
-
-  self.pyodide = await loadPyodide({
-    indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/',
-  });
-
-  // Signal ready immediately — editor unlocks, basic Python works now
-  self.postMessage({ type: 'ready' });
-
-  // Load packages in the background after ready signal
   try {
-    await self.pyodide.loadPackage('micropip');
-    await self.pyodide.loadPackage([
-      'numpy',
-      'pandas',
-      'matplotlib',
-      'scipy',
-      'scikit-learn',
-    ]);
+    const response = await fetch('https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js');
+    if (!response.ok) throw new Error(`Failed to fetch pyodide.js: ${response.status}`);
+    eval(await response.text());
 
-    const micropip = self.pyodide.pyimport('micropip');
+    pyodideInstance = await loadPyodide({
+      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/',
+    });
+
+    // Core is ready — unlock the editor
+    coreReadyResolve();
+    self.postMessage({ type: 'ready' });
+
+    // Load ML packages in background — doesn't block code execution
     try {
-      await micropip.install(['seaborn']);
-    } catch (e) {
-      console.warn('micropip install warning:', e);
-    }
-
-    await self.pyodide.runPythonAsync(`
+      await pyodideInstance.loadPackage('micropip');
+      await pyodideInstance.loadPackage(['numpy', 'pandas', 'matplotlib', 'scipy', 'scikit-learn']);
+      const micropip = pyodideInstance.pyimport('micropip');
+      try { await micropip.install(['seaborn']); } catch (e) { console.warn('seaborn:', e); }
+      await pyodideInstance.runPythonAsync(`
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
+import numpy as np, pandas as pd
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.neighbors import KNeighborsClassifier
@@ -51,17 +37,18 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import cross_val_score
 import io, sys, json, math, random, collections, itertools, functools
-    `);
-  } catch (e) {
-    console.warn('Background package load warning:', e);
+      `);
+    } catch (e) {
+      console.warn('Background packages:', e);
+    }
+  } catch (err) {
+    coreReadyResolve(); // unblock onmessage even on failure
+    self.postMessage({ type: 'load_error', error: err?.message || String(err) });
   }
 }
 
-pyodideReadyPromise = load().catch((err) => {
-  self.postMessage({ type: 'load_error', error: err?.message || String(err) });
-});
+load();
 
 function buildTestRunner(tests) {
   function stripMessage(body) {
@@ -76,7 +63,6 @@ function buildTestRunner(tests) {
     }
     return lastMsgIdx !== -1 ? body.slice(0, lastMsgIdx).trim() : body;
   }
-
   const lines = tests.split('\n');
   const out = [];
   for (const line of lines) {
@@ -98,30 +84,27 @@ function buildTestRunner(tests) {
   return out.join('\n');
 }
 
-let inputBuffer = null;
-
 self.onmessage = async (event) => {
-  await pyodideReadyPromise;
+  // Wait only for core Pyodide — not for package downloads
+  await coreReady;
 
   const { id, code, tests } = event.data;
-
   let stdout = '';
   let stderr = '';
 
-  self.pyodide.setStdout({ batched: (str) => { stdout += str + '\n'; } });
-  self.pyodide.setStderr({ batched: (str) => { stderr += str + '\n'; } });
+  pyodideInstance.setStdout({ batched: (str) => { stdout += str + '\n'; } });
+  pyodideInstance.setStderr({ batched: (str) => { stderr += str + '\n'; } });
 
   try {
-    await self.pyodide.runPythonAsync(`
+    await pyodideInstance.runPythonAsync(`
 import matplotlib.pyplot as plt
 plt.close('all')
     `);
 
-    inputBuffer = new SharedArrayBuffer(4 + 1024);
+    const inputBuffer = new SharedArrayBuffer(4 + 1024);
     new Int32Array(inputBuffer)[0] = 0;
 
-    self.pyodide.globals.set('__input_sab__', inputBuffer);
-    self.pyodide.globals.set('__input_request_fn__', (prompt) => {
+    pyodideInstance.globals.set('__input_request_fn__', (prompt) => {
       new Int32Array(inputBuffer)[0] = 0;
       self.postMessage({ type: 'input_request', id, prompt: prompt || '', buffer: inputBuffer });
       Atomics.wait(new Int32Array(inputBuffer), 0, 0);
@@ -131,7 +114,7 @@ plt.close('all')
       return new TextDecoder().decode(bytes);
     });
 
-    await self.pyodide.runPythonAsync(`
+    await pyodideInstance.runPythonAsync(`
 import builtins, js
 def _browser_input(prompt=''):
     if prompt:
@@ -139,21 +122,22 @@ def _browser_input(prompt=''):
     return js.globalThis.__input_request_fn__(prompt)
 builtins.input = _browser_input
     `);
-    await self.pyodide.runPythonAsync(code);
+
+    await pyodideInstance.runPythonAsync(code);
 
     let testResult = null;
     if (tests) {
-      self.pyodide.globals.set('__captured_stdout__', stdout);
-      await self.pyodide.runPythonAsync(`
+      pyodideInstance.globals.set('__captured_stdout__', stdout);
+      await pyodideInstance.runPythonAsync(`
 import sys, io
 if not hasattr(sys, '__original_stdout__'):
     sys.__original_stdout__ = sys.stdout
 sys.stdout = io.StringIO(__captured_stdout__)
       `);
       try {
-        testResult = await self.pyodide.runPythonAsync(buildTestRunner(tests));
+        testResult = await pyodideInstance.runPythonAsync(buildTestRunner(tests));
       } finally {
-        await self.pyodide.runPythonAsync(`
+        await pyodideInstance.runPythonAsync(`
 import sys
 sys.stdout = sys.__original_stdout__
         `);
