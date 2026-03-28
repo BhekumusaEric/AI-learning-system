@@ -1,35 +1,40 @@
 // pyodide-worker.js
 // Runs in a Web Worker outside of the Next.js Turbopack bundled environment
 
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js");
-
 let pyodideReadyPromise = null;
 
 async function load() {
+  // Use fetch + eval instead of importScripts so we can catch errors
+  // importScripts is synchronous and silently stalls on slow/failed CDN
+  const response = await fetch('https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js');
+  if (!response.ok) throw new Error(`Failed to fetch pyodide.js: ${response.status}`);
+  const code = await response.text();
+  // eslint-disable-next-line no-eval
+  eval(code);
+
   self.pyodide = await loadPyodide({
-    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/",
+    indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/',
   });
 
   // Signal ready immediately — editor unlocks, basic Python works now
   self.postMessage({ type: 'ready' });
 
   // Load packages in the background after ready signal
-  // so the user isn't blocked waiting for heavy CDN downloads
   try {
-    await self.pyodide.loadPackage("micropip");
+    await self.pyodide.loadPackage('micropip');
     await self.pyodide.loadPackage([
-      "numpy",
-      "pandas",
-      "matplotlib",
-      "scipy",
-      "scikit-learn",
+      'numpy',
+      'pandas',
+      'matplotlib',
+      'scipy',
+      'scikit-learn',
     ]);
 
-    const micropip = self.pyodide.pyimport("micropip");
+    const micropip = self.pyodide.pyimport('micropip');
     try {
-      await micropip.install(["seaborn"]);
+      await micropip.install(['seaborn']);
     } catch (e) {
-      console.warn("micropip install warning:", e);
+      console.warn('micropip install warning:', e);
     }
 
     await self.pyodide.runPythonAsync(`
@@ -50,19 +55,14 @@ from sklearn.model_selection import cross_val_score
 import io, sys, json, math, random, collections, itertools, functools
     `);
   } catch (e) {
-    console.warn("Background package load warning:", e);
+    console.warn('Background package load warning:', e);
   }
-
-  return self.pyodide;
 }
 
 pyodideReadyPromise = load().catch((err) => {
   self.postMessage({ type: 'load_error', error: err?.message || String(err) });
 });
 
-// Transforms test code so each assert shows got vs expected on failure.
-// Converts:  assert expr == expected, "msg"
-// Into a try/except that evaluates both sides and raises a clear error.
 function buildTestRunner(tests) {
   function stripMessage(body) {
     let depth = 0, lastMsgIdx = -1;
@@ -97,7 +97,7 @@ function buildTestRunner(tests) {
   }
   return out.join('\n');
 }
-// SharedArrayBuffer for blocking input(): index 0 = status (0=waiting,1=ready), rest = UTF-8 bytes
+
 let inputBuffer = null;
 
 self.onmessage = async (event) => {
@@ -112,26 +112,19 @@ self.onmessage = async (event) => {
   self.pyodide.setStderr({ batched: (str) => { stderr += str + '\n'; } });
 
   try {
-    // Reset matplotlib state between runs so figures don't bleed across submissions
     await self.pyodide.runPythonAsync(`
 import matplotlib.pyplot as plt
 plt.close('all')
     `);
 
-    // Run user code — override input() to request from main thread via Atomics.wait
     inputBuffer = new SharedArrayBuffer(4 + 1024);
     new Int32Array(inputBuffer)[0] = 0;
 
-    // Expose a JS-level input function that blocks the worker via Atomics.wait
     self.pyodide.globals.set('__input_sab__', inputBuffer);
     self.pyodide.globals.set('__input_request_fn__', (prompt) => {
-      // Reset status
       new Int32Array(inputBuffer)[0] = 0;
-      // Ask main thread for input — send the SAB so main thread can write directly
       self.postMessage({ type: 'input_request', id, prompt: prompt || '', buffer: inputBuffer });
-      // Block worker thread until main thread writes the response
       Atomics.wait(new Int32Array(inputBuffer), 0, 0);
-      // Read the response bytes
       const n = new Int32Array(inputBuffer)[0];
       const bytes = new Uint8Array(inputBuffer, 4, n - 1);
       new Int32Array(inputBuffer)[0] = 0;
@@ -148,21 +141,15 @@ builtins.input = _browser_input
     `);
     await self.pyodide.runPythonAsync(code);
 
-    // Optionally run tests
     let testResult = null;
     if (tests) {
-      // Expose the javascript captured stdout into Python globals
-      self.pyodide.globals.set("__captured_stdout__", stdout);
-
-      // Inject a shim for sys.stdout.getvalue() so existing testing scripts
-      // in .md files can seamlessly read the intercepted terminal output
+      self.pyodide.globals.set('__captured_stdout__', stdout);
       await self.pyodide.runPythonAsync(`
 import sys, io
 if not hasattr(sys, '__original_stdout__'):
     sys.__original_stdout__ = sys.stdout
 sys.stdout = io.StringIO(__captured_stdout__)
       `);
-
       try {
         testResult = await self.pyodide.runPythonAsync(buildTestRunner(tests));
       } finally {

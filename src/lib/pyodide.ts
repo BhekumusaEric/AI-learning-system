@@ -28,12 +28,31 @@ export function onPyodideReady(cb: () => void) {
   readyCallbacks.push(cb);
 }
 
+function fireReady() {
+  isReady = true;
+  readyCallbacks.splice(0).forEach(cb => cb());
+}
+
 export async function getPyodide(): Promise<void> {
   if (typeof window === 'undefined') return;
   if (pyodideWorker) return;
 
   isReady = false;
   pyodideWorker = new Worker('/pyodide-worker.js');
+
+  // Hard fallback — if worker never sends ready after 60s, unlock anyway
+  const fallback = setTimeout(() => {
+    if (!isReady) {
+      console.warn('[Pyodide] Ready signal not received after 60s — unlocking editor anyway');
+      fireReady();
+    }
+  }, 60000);
+
+  pyodideWorker.onerror = (e) => {
+    console.error('[Pyodide] Worker error:', e.message, e);
+    clearTimeout(fallback);
+    if (!isReady) fireReady();
+  };
 
   pyodideWorker.onmessage = async (event) => {
     const { id, success, result, error, stdout, stderr, type } = event.data;
@@ -51,9 +70,8 @@ export async function getPyodide(): Promise<void> {
     }
 
     if (type === 'ready') {
-      isReady = true;
-      // Fire all waiting callbacks
-      readyCallbacks.splice(0).forEach(cb => cb());
+      clearTimeout(fallback);
+      fireReady();
       return;
     }
 
