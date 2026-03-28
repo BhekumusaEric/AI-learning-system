@@ -29,9 +29,11 @@ export default function LessonPageClient({
   initialCodeProp: string | null; 
   testCodeProp: string | null;
   isPractice: boolean;
+  pageType: string | null;
   resources: ResourceData[];
   prevPage: PageData | null;
   nextPage: PageData | null;
+  colabNotebook: string | null;
 }) {
   const [code, setCode] = useState(initialCodeProp || "# Write your python code here\\n\\n");
   const [isRunning, setIsRunning] = useState(false);
