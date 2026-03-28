@@ -1,8 +1,18 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import Editor from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
 import { Play, RotateCcw } from 'lucide-react';
+
+// Load Monaco only on client, never during SSR
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-[#1e1e1e] flex items-center justify-center">
+      <span className="text-xs text-secondary-text animate-pulse">Loading editor...</span>
+    </div>
+  ),
+});
 
 interface CodeEditorProps {
   code: string;
@@ -17,7 +27,8 @@ interface CodeEditorProps {
 export default function CodeEditor({ code, onChange, onRun, onReset, isRunning = false, isLoading = false, onInputRequest }: CodeEditorProps) {
   const [inputPrompt, setInputPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
-  const [isMobile, setIsMobile] = useState(false);
+  // Start as null — unknown until client hydrates
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const resolverRef = useRef<((val: string) => void) | null>(null);
 
@@ -94,8 +105,10 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
       )}
 
       <div className="flex-1 overflow-hidden">
-        {isMobile ? (
-          // Mobile: plain textarea — Monaco doesn't work well on touch
+        {/* isMobile is null until client hydrates — show nothing to avoid flash */}
+        {isMobile === null ? (
+          <div className="w-full h-full bg-[#1e1e1e]" />
+        ) : isMobile ? (
           <textarea
             value={code}
             onChange={e => onChange(e.target.value)}
@@ -106,7 +119,7 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
             style={{ fontFamily: 'var(--font-jetbrains-mono), monospace' }}
           />
         ) : (
-          <Editor
+          <MonacoEditor
             height="100%"
             defaultLanguage="python"
             theme="vs-dark"
