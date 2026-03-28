@@ -27,8 +27,9 @@ interface CodeEditorProps {
 export default function CodeEditor({ code, onChange, onRun, onReset, isRunning = false, isLoading = false, onInputRequest }: CodeEditorProps) {
   const [inputPrompt, setInputPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
-  // Start as null — unknown until client hydrates
-  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+  // Start as false — safe because MonacoEditor has ssr:false so it never
+  // renders on the server regardless of this value
+  const [isMobile, setIsMobile] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const resolverRef = useRef<((val: string) => void) | null>(null);
 
@@ -105,10 +106,7 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
       )}
 
       <div className="flex-1 overflow-hidden">
-        {/* isMobile is null until client hydrates — show nothing to avoid flash */}
-        {isMobile === null ? (
-          <div className="w-full h-full bg-[#1e1e1e]" />
-        ) : isMobile ? (
+        {isMobile ? (
           <textarea
             value={code}
             onChange={e => onChange(e.target.value)}
