@@ -1,35 +1,50 @@
 // pyodide-worker.js
+// Runs in a Web Worker outside of the Next.js Turbopack bundled environment
 
-let pyodideInstance = null;
-let packagesLoaded = false;
-let coreReadyResolve = null;
-const coreReady = new Promise(resolve => { coreReadyResolve = resolve; });
+importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js");
+
+let pyodideReadyPromise = null;
 
 async function load() {
+  self.pyodide = await loadPyodide({
+    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/",
+  });
+
+  // Load micropip first so we can install any extra packages
+  await self.pyodide.loadPackage("micropip");
+
+  // Pre-load all packages used across the full curriculum:
+  // Part 1 – Python fundamentals, NumPy, Pandas, Matplotlib, Sklearn
+  // Part 2 – Neural networks (numpy-based perceptron exercises)
+  // Part 3 – Computer vision helpers
+  // Part 4 – NLP helpers
+  await self.pyodide.loadPackage([
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "scipy",
+    "scikit-learn",
+  ]);
+
+  // Packages not bundled in Pyodide — install via micropip
+  const micropip = self.pyodide.pyimport("micropip");
   try {
-    const response = await fetch('https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js');
-    if (!response.ok) throw new Error(`Failed to fetch pyodide.js: ${response.status}`);
-    eval(await response.text());
+    await micropip.install([
+      "seaborn",
+    ]);
+  } catch (e) {
+    // Non-fatal: seaborn is optional (only used in visualisation pages)
+    console.warn("micropip install warning:", e);
+  }
 
-    pyodideInstance = await loadPyodide({
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/',
-    });
-
-    coreReadyResolve();
-    self.postMessage({ type: 'ready' });
-
-    // Background package loading
-    try {
-      await pyodideInstance.loadPackage('micropip');
-      await pyodideInstance.loadPackage(['numpy', 'pandas', 'matplotlib', 'scipy', 'scikit-learn']);
-      const micropip = pyodideInstance.pyimport('micropip');
-      try { await micropip.install(['seaborn']); } catch (e) { console.warn('seaborn:', e); }
-      await pyodideInstance.runPythonAsync(`
+  // Matplotlib backend must be set to non-interactive before any import
+  await self.pyodide.runPythonAsync(`
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np, pandas as pd
-from sklearn.model_selection import train_test_split, cross_val_score
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.neighbors import KNeighborsClassifier
@@ -37,83 +52,58 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import cross_val_score
 import io, sys, json, math, random, collections, itertools, functools
-      `);
-      packagesLoaded = true;
-    } catch (e) {
-      console.warn('Background packages:', e);
-      packagesLoaded = true;
-    }
-  } catch (err) {
-    coreReadyResolve();
-    self.postMessage({ type: 'load_error', error: err?.message || String(err) });
-  }
+  `);
+
+  return self.pyodide;
 }
 
-load();
-
-function buildTestRunner(tests) {
-  function stripMessage(body) {
-    let depth = 0, lastMsgIdx = -1;
-    for (let i = 0; i < body.length; i++) {
-      const c = body[i];
-      if (c === '(' || c === '[') depth++;
-      else if (c === ')' || c === ']') depth--;
-      else if (depth === 0 && c === ',' && i + 1 < body.length) {
-        if (/^\s*f?["']/.test(body.slice(i + 1))) lastMsgIdx = i;
-      }
-    }
-    return lastMsgIdx !== -1 ? body.slice(0, lastMsgIdx).trim() : body;
-  }
-  const lines = tests.split('\n');
-  const out = [];
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith('assert ')) { out.push(line); continue; }
-    const body = stripMessage(trimmed.slice(7));
-    const eqIdx = body.indexOf(' == ');
-    if (eqIdx === -1) { out.push(line); continue; }
-    const lhs = body.slice(0, eqIdx).trim();
-    const rhs = body.slice(eqIdx + 4).trim();
-    const indent = line.match(/^(\s*)/)[1];
-    out.push(indent + 'try:');
-    out.push(indent + '  __got = ' + lhs);
-    out.push(indent + '  __exp = ' + rhs);
-    out.push(indent + '  assert __got == __exp');
-    out.push(indent + 'except AssertionError:');
-    out.push(indent + "  raise AssertionError(f'\\nYour output:  {repr(__got)}\\nExpected:     {repr(__exp)}')");
-  }
-  return out.join('\n');
-}
+pyodideReadyPromise = load().then(() => {
+  // Tell the main thread all packages are loaded and the IDE is ready
+  self.postMessage({ type: 'ready' });
+});
 
 self.onmessage = async (event) => {
-  await coreReady;
+  await pyodideReadyPromise;
 
   const { id, code, tests } = event.data;
+
   let stdout = '';
   let stderr = '';
 
-  pyodideInstance.setStdout({ batched: (str) => { stdout += str + '\n'; } });
-  pyodideInstance.setStderr({ batched: (str) => { stderr += str + '\n'; } });
+  self.pyodide.setStdout({ batched: (str) => { stdout += str + '\n'; } });
+  self.pyodide.setStderr({ batched: (str) => { stderr += str + '\n'; } });
 
   try {
-    // Run user code
-    await pyodideInstance.runPythonAsync(code);
+    // Reset matplotlib state between runs so figures don't bleed across submissions
+    await self.pyodide.runPythonAsync(`
+import matplotlib.pyplot as plt
+plt.close('all')
+    `);
 
-    // Run tests if present
+    // Run user code
+    await self.pyodide.runPythonAsync(code);
+
+    // Optionally run tests
     let testResult = null;
     if (tests) {
-      pyodideInstance.globals.set('__captured_stdout__', stdout);
-      await pyodideInstance.runPythonAsync(`
+      // Expose the javascript captured stdout into Python globals
+      self.pyodide.globals.set("__captured_stdout__", stdout);
+
+      // Inject a shim for sys.stdout.getvalue() so existing testing scripts
+      // in .md files can seamlessly read the intercepted terminal output
+      await self.pyodide.runPythonAsync(`
 import sys, io
 if not hasattr(sys, '__original_stdout__'):
     sys.__original_stdout__ = sys.stdout
 sys.stdout = io.StringIO(__captured_stdout__)
       `);
+
       try {
-        testResult = await pyodideInstance.runPythonAsync(buildTestRunner(tests));
+        testResult = await self.pyodide.runPythonAsync(tests);
       } finally {
-        await pyodideInstance.runPythonAsync(`
+        await self.pyodide.runPythonAsync(`
 import sys
 sys.stdout = sys.__original_stdout__
         `);

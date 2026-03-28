@@ -4,10 +4,7 @@ import React, { useState, useEffect } from 'react';
 import TwoPanelLayout from '@/components/layout/TwoPanelLayout';
 import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
-import ColabPanel from '@/components/editor/ColabPanel';
-import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
-import { runPythonCode, getPyodide, onPyodideReady, setInputCallback } from '@/lib/pyodide';
-import { usePersistedCode } from '@/lib/usePersistedCode';
+import { runPythonCode, getPyodide, isPyodideReady } from '@/lib/pyodide';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -16,8 +13,6 @@ import { useProgress } from '@/components/providers/ProgressProvider';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { PageData, ResourceData } from '@/lib/syllabus';
-import EmailGate from '@/components/EmailGate';
-import { WrpContent } from '@/components/wrp/WrpLessonClient';
 
 export default function LessonPageClient({ 
   pageId,
@@ -25,54 +20,46 @@ export default function LessonPageClient({
   initialCodeProp, 
   testCodeProp,
   isPractice,
-  pageType,
   resources,
   prevPage,
-  nextPage,
-  colabNotebook
+  nextPage
 }: { 
   pageId: string;
   content: string; 
   initialCodeProp: string | null; 
   testCodeProp: string | null;
   isPractice: boolean;
-  pageType: string | null;
   resources: ResourceData[];
   prevPage: PageData | null;
   nextPage: PageData | null;
-  colabNotebook: string | null;
 }) {
-  const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
+  const [code, setCode] = useState(initialCodeProp || "# Write your python code here\\n\\n");
   const [isRunning, setIsRunning] = useState(false);
   const [isEnvLoading, setIsEnvLoading] = useState(true);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const { markCompleted, completedPages } = useProgress();
   const router = useRouter();
   const isCompleted = completedPages[pageId];
-  const [emailGate, setEmailGate] = useState<{ loginId: string; fullName: string } | null>(null);
-
-  useEffect(() => {
-    const loginId = localStorage.getItem('ioai_user');
-    const fullName = localStorage.getItem('ioai_name') || '';
-    if (!loginId) { router.replace('/saaio/login'); return; }
-    fetch('/api/auth/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login_id: loginId, platform: 'saaio' }),
-    })
-      .then(r => r.json())
-      .then(data => { if (!data.has_email) setEmailGate({ loginId, fullName }); })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!isPractice) return;
     setIsEnvLoading(true);
     getPyodide();
-    onPyodideReady(() => setIsEnvLoading(false));
+    // Poll until the worker signals ready
+    const interval = setInterval(() => {
+      if (isPyodideReady()) {
+        setIsEnvLoading(false);
+        clearInterval(interval);
+      }
+    }, 300);
+    return () => clearInterval(interval);
   }, [isPractice]);
 
-  useEffect(() => { setResults(null); }, [pageId]);
+  // Update editor code safely when navigating
+  useEffect(() => {
+    setCode(initialCodeProp || "# Write your python code here\\n\\n");
+    setResults(null);
+  }, [initialCodeProp]);
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -116,84 +103,36 @@ export default function LessonPageClient({
         else generatedHint = "Look at the error message for clues about what went wrong.";
       }
 
-      if (isAssertionError) {
-        const raw = error.split('AssertionError:').slice(1).join('AssertionError:').trim();
-        const labelPart = raw.split('\nYour output:')[0].replace(/\s*—\s*$/, '').trim();
-        const gotVal  = raw.includes('Your output:') ? raw.split('Your output:')[1].split('\n')[0].trim() : '';
-        const expVal  = raw.includes('Expected:')    ? raw.split('Expected:')[1].split('\n')[0].trim()    : '';
-        let displayError = '';
-        if (labelPart) displayError += `${labelPart}\n`;
-        if (gotVal)    displayError += `Your output:  ${gotVal}\n`;
-        if (expVal)    displayError += `Expected:     ${expVal}`;
-        if (!displayError) displayError = 'A test assertion failed. Check your logic.';
-        setResults([
-          { id: 0, name: "Output Console", passed: true, error: stdout || "No output" },
-          { id: 1, name: "Test Failed", passed: false, errorType, lineNumber,
-            hint: 'Compare your output to the expected value above and trace through your logic.',
-            error: displayError }
-        ]);
-      } else {
-        setResults([
-          { id: 0, name: "Output Console", passed: true, error: stdout || "Program exited with error before generating output" },
-          { id: 1, name: "Code Error", passed: false, errorType, lineNumber, hint: generatedHint,
-            error: error.split('\n').slice(-4).join('\n') }
-        ]);
-      }
+      setResults([
+        { id: 0, name: "Output Console", passed: true, error: stdout || "Program exited with error before generating output" },
+        {
+          id: 1,
+          name: isAssertionError ? "Hidden Test Failed" : "Code Syntax/Runtime Error",
+          passed: false,
+          errorType: errorType,
+          lineNumber: lineNumber,
+          hint: generatedHint,
+          error: isAssertionError 
+            ? error.split('AssertionError:')[1]?.split('\n')[0]?.trim() || "Assertion failed"
+            : error.split('\n').slice(-4).join('\n') // Show last few lines of traceback
+        }
+      ]);
       return;
     }
     
+    // Simplistic success if code ran without Python tracebacks stdout
     setResults([
       { id: 1, name: "Output Console", passed: true, error: stdout || "Program exited normally with no output" },
-      ...(testCodeProp ? [{ id: 2, name: "All Tests Passed", passed: true, error: "All hidden tests passed successfully!" }] : [])
+      ...(testCodeProp ? [{ id: 2, name: "Hidden Tests Evaluation", passed: true, error: "All tests passed successfully!" }] : [])
     ]);
   };
 
   const handleReset = () => {
-    resetCode();
+    setCode(initialCodeProp || "");
     setResults(null);
   };
 
-  const isWrp = pageId.startsWith('page') && [
-    'page1_welcome_and_mindfulness','page2_verbal_communication','page2b_spin_the_wheel',
-    'page3_mock_interview','page4_written_communication','page5_email_practice',
-    'page6_linkedin_personal_brand','page6b_buzzword_bingo','page7_resume_building',
-    'page7b_cv_builder','page8_interview_readiness','page8b_spot_the_mistake','page9_live_quiz',
-  ].includes(pageId);
-
-  const leftPanel = isWrp ? (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto w-full px-6 py-8">
-        <WrpContent content={content} />
-        <div className="mt-16 pt-8 border-t border-border-subtle flex items-center justify-between">
-          {prevPage ? (
-            <button onClick={() => router.push(`/lesson/${prevPage.id}`)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary border border-border-subtle text-secondary-text hover:text-white hover:border-accent transition-all">
-              <ChevronLeft className="w-4 h-4" />
-              <div className="flex flex-col items-start px-2">
-                <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Previous</span>
-                <span className="text-sm font-medium">{prevPage.title}</span>
-              </div>
-            </button>
-          ) : <div />}
-          {nextPage ? (
-            <button onClick={() => { markCompleted(pageId); router.push(`/lesson/${nextPage.id}`); }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group">
-              <div className="flex flex-col items-end px-2">
-                <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Mark Complete & Next</span>
-                <span className="text-sm font-medium whitespace-nowrap">{nextPage.title}</span>
-              </div>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button onClick={() => markCompleted(pageId)}
-              className="flex items-center gap-2 px-6 py-2 rounded-lg bg-accent text-background hover:bg-accent/90 font-semibold">
-              <CheckCircle2 className="w-4 h-4" /> Finish Module
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  ) : (
+  const leftPanel = (
     <div className="prose prose-invert prose-cyan max-w-none 
       prose-p:text-[15px] prose-p:leading-relaxed prose-p:text-gray-300
       prose-headings:text-white prose-headings:font-semibold
@@ -287,52 +226,22 @@ export default function LessonPageClient({
     </div>
   );
 
-  const isLab = pageType === 'lab';
-
-  const rightPanel = isPractice || isLab ? (
-    isLab && colabNotebook ? (
-      <EmbeddedColabPanel
-        notebookPath={colabNotebook}
-        onMarkComplete={() => { markCompleted(pageId); if (nextPage) router.push(`/lesson/${nextPage.id}`); }}
+  const rightPanel = isPractice ? (
+    <>
+      <CodeEditor
+        code={code}
+        onChange={(val) => setCode(val || '')}
+        onRun={handleRun}
+        onReset={handleReset}
+        isRunning={isRunning}
+        isLoading={isEnvLoading}
       />
-    ) : colabNotebook ? (
-      <ColabPanel
-        notebookPath={colabNotebook}
-        onMarkComplete={() => { markCompleted(pageId); if (nextPage) router.push(`/lesson/${nextPage.id}`); }}
+      <FeedbackPanel 
+        results={results} 
+        isRunning={isRunning} 
       />
-    ) : (
-      <>
-        <CodeEditor
-          code={code}
-          onChange={(val) => setCode(val || '')}
-          onRun={handleRun}
-          onReset={handleReset}
-          isRunning={isRunning}
-          isLoading={isEnvLoading}
-          onInputRequest={cb => setInputCallback(cb)}
-        />
-        <FeedbackPanel
-          results={results}
-          isRunning={isRunning}
-          onNext={nextPage
-            ? () => { markCompleted(pageId); router.push(`/lesson/${nextPage.id}`); }
-            : undefined
-          }
-        />
-      </>
-    )
+    </>
   ) : null;
 
-  return (
-    <>
-      {emailGate && (
-        <EmailGate
-          loginId={emailGate.loginId}
-          platform="saaio"
-          onVerified={() => setEmailGate(null)}
-        />
-      )}
-      <TwoPanelLayout leftPanel={leftPanel} rightPanel={rightPanel} />
-    </>
-  );
+  return <TwoPanelLayout leftPanel={leftPanel} rightPanel={rightPanel} />;
 }
