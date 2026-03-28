@@ -20,12 +20,14 @@ interface DipLessonClientProps {
   initialCodeProp: string | null;
   testCodeProp: string | null;
   isPractice: boolean;
+  pageType: string | null;
   resources: ResourceData[];
   prevPageId: string | null;
   prevPageTitle: string | null;
   nextPageId: string | null;
   nextPageTitle: string | null;
   isLastPage: boolean;
+  colabNotebook: string | null;
 }
 
 export default function DipLessonClient({
