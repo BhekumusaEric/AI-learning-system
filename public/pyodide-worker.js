@@ -15,11 +15,10 @@ async function load() {
       indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/',
     });
 
-    // Core ready — unlock editor immediately
     coreReadyResolve();
     self.postMessage({ type: 'ready' });
 
-    // Load ML packages in background
+    // Background package loading
     try {
       await pyodideInstance.loadPackage('micropip');
       await pyodideInstance.loadPackage(['numpy', 'pandas', 'matplotlib', 'scipy', 'scikit-learn']);
@@ -98,38 +97,10 @@ self.onmessage = async (event) => {
   pyodideInstance.setStderr({ batched: (str) => { stderr += str + '\n'; } });
 
   try {
-    // Only reset matplotlib if packages are already loaded
-    if (packagesLoaded) {
-      await pyodideInstance.runPythonAsync(`
-import matplotlib.pyplot as plt
-plt.close('all')
-      `);
-    }
-
-    const inputBuffer = new SharedArrayBuffer(4 + 1024);
-    new Int32Array(inputBuffer)[0] = 0;
-
-    pyodideInstance.globals.set('__input_request_fn__', (prompt) => {
-      new Int32Array(inputBuffer)[0] = 0;
-      self.postMessage({ type: 'input_request', id, prompt: prompt || '', buffer: inputBuffer });
-      Atomics.wait(new Int32Array(inputBuffer), 0, 0);
-      const n = new Int32Array(inputBuffer)[0];
-      const bytes = new Uint8Array(inputBuffer, 4, n - 1);
-      new Int32Array(inputBuffer)[0] = 0;
-      return new TextDecoder().decode(bytes);
-    });
-
-    await pyodideInstance.runPythonAsync(`
-import builtins, js
-def _browser_input(prompt=''):
-    if prompt:
-        print(prompt, end='', flush=True)
-    return js.globalThis.__input_request_fn__(prompt)
-builtins.input = _browser_input
-    `);
-
+    // Run user code
     await pyodideInstance.runPythonAsync(code);
 
+    // Run tests if present
     let testResult = null;
     if (tests) {
       pyodideInstance.globals.set('__captured_stdout__', stdout);
