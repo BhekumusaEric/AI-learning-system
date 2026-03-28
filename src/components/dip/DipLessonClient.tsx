@@ -6,7 +6,7 @@ import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
 import ColabPanel from '@/components/editor/ColabPanel';
 import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
-import { runPythonCode, getPyodide, isPyodideReady, setInputCallback } from '@/lib/pyodide';
+import { runPythonCode, getPyodide, onPyodideReady, setInputCallback } from '@/lib/pyodide';
 import { usePersistedCode } from '@/lib/usePersistedCode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -48,10 +48,7 @@ export default function DipLessonClient({
     if (!isPractice) return;
     setIsEnvLoading(true);
     getPyodide();
-    const interval = setInterval(() => {
-      if (isPyodideReady()) { setIsEnvLoading(false); clearInterval(interval); }
-    }, 300);
-    return () => clearInterval(interval);
+    onPyodideReady(() => setIsEnvLoading(false));
   }, [isPractice]);
   useEffect(() => { setResults(null); }, [pageId]);
 
