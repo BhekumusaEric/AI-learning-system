@@ -1,6 +1,7 @@
 // pyodide-worker.js
 
 let pyodideInstance = null;
+let packagesLoaded = false;
 let coreReadyResolve = null;
 const coreReady = new Promise(resolve => { coreReadyResolve = resolve; });
 
@@ -14,11 +15,11 @@ async function load() {
       indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/',
     });
 
-    // Core is ready — unlock the editor
+    // Core ready — unlock editor immediately
     coreReadyResolve();
     self.postMessage({ type: 'ready' });
 
-    // Load ML packages in background — doesn't block code execution
+    // Load ML packages in background
     try {
       await pyodideInstance.loadPackage('micropip');
       await pyodideInstance.loadPackage(['numpy', 'pandas', 'matplotlib', 'scipy', 'scikit-learn']);
@@ -39,11 +40,13 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import io, sys, json, math, random, collections, itertools, functools
       `);
+      packagesLoaded = true;
     } catch (e) {
       console.warn('Background packages:', e);
+      packagesLoaded = true;
     }
   } catch (err) {
-    coreReadyResolve(); // unblock onmessage even on failure
+    coreReadyResolve();
     self.postMessage({ type: 'load_error', error: err?.message || String(err) });
   }
 }
@@ -85,7 +88,6 @@ function buildTestRunner(tests) {
 }
 
 self.onmessage = async (event) => {
-  // Wait only for core Pyodide — not for package downloads
   await coreReady;
 
   const { id, code, tests } = event.data;
@@ -96,10 +98,13 @@ self.onmessage = async (event) => {
   pyodideInstance.setStderr({ batched: (str) => { stderr += str + '\n'; } });
 
   try {
-    await pyodideInstance.runPythonAsync(`
+    // Only reset matplotlib if packages are already loaded
+    if (packagesLoaded) {
+      await pyodideInstance.runPythonAsync(`
 import matplotlib.pyplot as plt
 plt.close('all')
-    `);
+      `);
+    }
 
     const inputBuffer = new SharedArrayBuffer(4 + 1024);
     new Int32Array(inputBuffer)[0] = 0;
