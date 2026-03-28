@@ -1,18 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import Editor from '@monaco-editor/react';
 import { Play, RotateCcw } from 'lucide-react';
-
-// Load Monaco only on client, never during SSR
-const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full bg-[#1e1e1e] flex items-center justify-center">
-      <span className="text-xs text-secondary-text animate-pulse">Loading editor...</span>
-    </div>
-  ),
-});
 
 interface CodeEditorProps {
   code: string;
@@ -27,8 +17,6 @@ interface CodeEditorProps {
 export default function CodeEditor({ code, onChange, onRun, onReset, isRunning = false, isLoading = false, onInputRequest }: CodeEditorProps) {
   const [inputPrompt, setInputPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
-  // Start as false — safe because MonacoEditor has ssr:false so it never
-  // renders on the server regardless of this value
   const [isMobile, setIsMobile] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const resolverRef = useRef<((val: string) => void) | null>(null);
@@ -69,27 +57,26 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
         <span className="text-sm font-semibold text-[#cccccc]">main.py</span>
         <div className="flex items-center gap-2">
           {isLoading && (
-            <span className="text-xs text-secondary-text animate-pulse hidden sm:inline">Loading Python environment...</span>
+            <span className="text-xs text-secondary-text animate-pulse hidden sm:inline">⏳ Loading environment...</span>
           )}
           <button
             onClick={onReset}
             disabled={busy}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded bg-transparent hover:bg-white/10 text-secondary-text transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-transparent hover:bg-white/10 text-secondary-text transition-colors disabled:opacity-50"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Reset</span>
+            Reset
           </button>
           <button
             onClick={onRun}
             disabled={busy}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50"
           >
             <Play className="w-3.5 h-3.5" fill="currentColor" />
-            {isLoading ? 'Loading...' : isRunning ? 'Running...' : 'Run'}
+            {isLoading ? 'Loading...' : isRunning ? 'Running...' : 'Run Code'}
           </button>
         </div>
       </div>
-
       {inputPrompt !== null && (
         <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a2e] border-b border-accent/40">
           <span className="text-accent text-xs font-mono shrink-0">{inputPrompt}</span>
@@ -104,7 +91,6 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
           <button onClick={submitInput} className="text-xs px-2 py-0.5 bg-accent text-black font-bold rounded">Enter</button>
         </div>
       )}
-
       <div className="flex-1 overflow-hidden">
         {isMobile ? (
           <textarea
@@ -117,7 +103,7 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
             style={{ fontFamily: 'var(--font-jetbrains-mono), monospace' }}
           />
         ) : (
-          <MonacoEditor
+          <Editor
             height="100%"
             defaultLanguage="python"
             theme="vs-dark"

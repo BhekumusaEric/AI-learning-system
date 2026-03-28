@@ -48,17 +48,8 @@ export default function DipLessonClient({
     if (!isPractice) return;
     setIsEnvLoading(true);
     getPyodide();
-    let elapsed = 0;
     const interval = setInterval(() => {
-      elapsed += 300;
-      if (isPyodideReady()) {
-        setIsEnvLoading(false);
-        clearInterval(interval);
-      } else if (elapsed >= 30000) {
-        // Give up after 30s — don't hang forever
-        setIsEnvLoading(false);
-        clearInterval(interval);
-      }
+      if (isPyodideReady()) { setIsEnvLoading(false); clearInterval(interval); }
     }, 300);
     return () => clearInterval(interval);
   }, [isPractice]);
