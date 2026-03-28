@@ -10,35 +10,29 @@ async function load() {
     indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/",
   });
 
-  // Load micropip first so we can install any extra packages
-  await self.pyodide.loadPackage("micropip");
+  // Signal ready immediately — editor unlocks, basic Python works now
+  self.postMessage({ type: 'ready' });
 
-  // Pre-load all packages used across the full curriculum:
-  // Part 1 – Python fundamentals, NumPy, Pandas, Matplotlib, Sklearn
-  // Part 2 – Neural networks (numpy-based perceptron exercises)
-  // Part 3 – Computer vision helpers
-  // Part 4 – NLP helpers
-  await self.pyodide.loadPackage([
-    "numpy",
-    "pandas",
-    "matplotlib",
-    "scipy",
-    "scikit-learn",
-  ]);
-
-  // Packages not bundled in Pyodide — install via micropip
-  const micropip = self.pyodide.pyimport("micropip");
+  // Load packages in the background after ready signal
+  // so the user isn't blocked waiting for heavy CDN downloads
   try {
-    await micropip.install([
-      "seaborn",
+    await self.pyodide.loadPackage("micropip");
+    await self.pyodide.loadPackage([
+      "numpy",
+      "pandas",
+      "matplotlib",
+      "scipy",
+      "scikit-learn",
     ]);
-  } catch (e) {
-    // Non-fatal: seaborn is optional (only used in visualisation pages)
-    console.warn("micropip install warning:", e);
-  }
 
-  // Matplotlib backend must be set to non-interactive before any import
-  await self.pyodide.runPythonAsync(`
+    const micropip = self.pyodide.pyimport("micropip");
+    try {
+      await micropip.install(["seaborn"]);
+    } catch (e) {
+      console.warn("micropip install warning:", e);
+    }
+
+    await self.pyodide.runPythonAsync(`
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -54,15 +48,15 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
 import io, sys, json, math, random, collections, itertools, functools
-  `);
+    `);
+  } catch (e) {
+    console.warn("Background package load warning:", e);
+  }
 
   return self.pyodide;
 }
 
-pyodideReadyPromise = load().then(() => {
-  // Tell the main thread all packages are loaded and the IDE is ready
-  self.postMessage({ type: 'ready' });
-}).catch((err) => {
+pyodideReadyPromise = load().catch((err) => {
   self.postMessage({ type: 'load_error', error: err?.message || String(err) });
 });
 
