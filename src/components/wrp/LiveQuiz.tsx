@@ -119,8 +119,12 @@ export default function LiveQuiz() {
   const isHost = useRef(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const inactivityRef = useRef<NodeJS.Timeout | null>(null);
+  const INACTIVITY_MS = 30 * 60 * 1000; // 30 minutes
 
   const [connected, setConnected] = useState(false);
+  const [onlinePlayers, setOnlinePlayers] = useState<Record<string, { name: string; joinedAt: number }>>({});
   const [gameState, setGameState] = useState<GameState>({
     phase: 'lobby', questionIdx: 0,
     questions: shuffle(ALL_QUESTIONS).slice(0, 10),
@@ -135,20 +139,56 @@ export default function LiveQuiz() {
     myName.current = localStorage.getItem('ioai_name') || 'Guest';
   }, []);
 
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityRef.current) clearTimeout(inactivityRef.current);
+    inactivityRef.current = setTimeout(() => {
+      // Remove self from presence after inactivity
+      channelRef.current?.untrack();
+      setConnected(false);
+    }, INACTIVITY_MS);
+  }, []);
+
   const broadcast = useCallback((state: GameState) => {
     channelRef.current?.send({ type: 'broadcast', event: 'quiz', payload: state });
   }, []);
 
   useEffect(() => {
-    const ch = supabase.channel('live-quiz', { config: { broadcast: { self: true } } });
+    const ch = supabase.channel('live-quiz', { config: { broadcast: { self: true }, presence: { key: myLoginId.current || 'guest' } } });
     channelRef.current = ch;
+
     ch.on('broadcast', { event: 'quiz' }, ({ payload }: any) => {
       setGameState(payload as GameState);
       setMyAnswer(null);
+      resetInactivityTimer();
     })
-      .subscribe(status => setConnected(status === 'SUBSCRIBED'));
-    return () => { supabase.removeChannel(ch); };
-  }, []);
+    .on('presence', { event: 'sync' }, () => {
+      const state = ch.presenceState<{ name: string; joinedAt: number }>();
+      const players: Record<string, { name: string; joinedAt: number }> = {};
+      Object.entries(state).forEach(([key, presences]) => {
+        const p = (presences as any[])[0];
+        if (p) players[key] = { name: p.name, joinedAt: p.joinedAt };
+      });
+      setOnlinePlayers(players);
+    })
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        setConnected(true);
+        // Track presence
+        await ch.track({ name: myName.current || 'Guest', joinedAt: Date.now() });
+        // Heartbeat every 60s to stay alive
+        heartbeatRef.current = setInterval(async () => {
+          await ch.track({ name: myName.current || 'Guest', joinedAt: Date.now() });
+        }, 60_000);
+        resetInactivityTimer();
+      }
+    });
+
+    return () => {
+      clearInterval(heartbeatRef.current!);
+      clearTimeout(inactivityRef.current!);
+      supabase.removeChannel(ch);
+    };
+  }, [resetInactivityTimer]);
 
   // Host timer
   const advanceQuestion = useCallback((prev: GameState) => {
@@ -204,6 +244,7 @@ export default function LiveQuiz() {
 
   const startGame = () => {
     isHost.current = true;
+    resetInactivityTimer();
     const next: GameState = {
       phase: 'question', questionIdx: 0,
       questions: shuffle(ALL_QUESTIONS).slice(0, 10),
@@ -217,6 +258,7 @@ export default function LiveQuiz() {
 
   const submitAnswer = (answerIdx: number) => {
     if (myAnswer !== null || gameState.phase !== 'question') return;
+    resetInactivityTimer();
     setMyAnswer(answerIdx);
     const q = gameState.questions[gameState.questionIdx];
     const isCorrect = answerIdx === q.correct;
@@ -267,6 +309,22 @@ export default function LiveQuiz() {
         </div>
         <ConnectedBadge connected={connected} />
       </div>
+
+      {/* Online now */}
+      {Object.keys(onlinePlayers).length > 0 && (
+        <div className="bg-secondary border border-border-subtle rounded-xl p-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-secondary-text mb-2">Online Now ({Object.keys(onlinePlayers).length})</p>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(onlinePlayers).map(([key, p]) => (
+              <span key={key} className={`text-xs px-2 py-1 rounded-full border ${
+                key === myLoginId.current ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-background border-border-subtle text-secondary-text'
+              }`}>
+                {p.name.split(' ')[0]}{key === myLoginId.current ? ' (you)' : ''}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {['Verbal Communication', 'Written Communication', 'Interview Skills', 'LinkedIn & Personal Brand', 'CV & Resume', 'Workplace Readiness'].map(t => (
           <div key={t} className="px-3 py-2 bg-secondary border border-border-subtle rounded-lg text-xs text-secondary-text text-center">{t}</div>
