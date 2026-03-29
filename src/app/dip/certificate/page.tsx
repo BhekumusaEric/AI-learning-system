@@ -165,7 +165,8 @@ export default function DipCertificatePage() {
             <input
               type="text"
               value={studentName}
-              onChange={e => setStudentName(toTitleCase(e.target.value))}
+              onChange={e => setStudentName(e.target.value)}
+              onBlur={e => setStudentName(toTitleCase(e.target.value))}
               placeholder="e.g. Thabo Nkosi"
               className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent transition-all"
             />
