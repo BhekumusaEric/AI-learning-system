@@ -1,10 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Inter } from "next/font/google";
 import { ProgressProvider } from "@/components/providers/ProgressProvider";
 import "./globals.css";
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
@@ -40,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${jetbrainsMono.variable} font-mono antialiased`}
+        className={`${jetbrainsMono.variable} ${inter.variable} font-sans antialiased`}
       >
         <ProgressProvider>
           {children}

@@ -150,15 +150,15 @@ export default function DipLessonClient({
 
   const leftPanel = (
     <div className="prose prose-invert prose-cyan max-w-none
-      prose-p:text-[15px] prose-p:leading-relaxed prose-p:text-gray-300
+      prose-p:text-[16px] prose-p:leading-relaxed prose-p:text-gray-300
       prose-headings:text-white prose-headings:font-semibold
       prose-h1:text-3xl prose-h1:mb-6
-      prose-h2:text-2xl prose-h2:mt-10 prose-h2:border-b prose-h2:border-[#333] prose-h2:pb-2 prose-h2:mb-4
+      prose-h2:text-2xl prose-h2:mt-10 prose-h2:pb-2 prose-h2:mb-4
       prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4
       prose-strong:text-accent prose-strong:font-bold
       prose-a:text-accent prose-a:underline
-      prose-pre:bg-[#161616] prose-pre:border prose-pre:border-[#333] prose-pre:rounded-xl prose-pre:p-4 prose-pre:my-6
-      prose-code:text-[#00B0F0] prose-code:bg-[#00B0F0]/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none
+      prose-pre:bg-secondary prose-pre:border prose-pre:border-border-subtle prose-pre:rounded-xl prose-pre:p-4 prose-pre:my-6
+      prose-code:text-[#00B0F0] prose-code:bg-[#00B0F0]/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-code:text-[13px]
       prose-ul:text-gray-300 prose-li:marker:text-accent
       prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:bg-accent/5 prose-blockquote:py-2 prose-blockquote:px-5 prose-blockquote:rounded-r-lg
     ">
