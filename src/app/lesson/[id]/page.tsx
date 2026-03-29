@@ -29,6 +29,7 @@ export default async function LessonServerPage({ params }: { params: Promise<{ i
       prevPage={adjacent.prev}
       nextPage={adjacent.next}
       colabNotebook={pageData.colabNotebook || null}
+      video={pageData.video || null}
     />
   );
 }

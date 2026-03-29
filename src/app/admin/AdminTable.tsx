@@ -1061,6 +1061,103 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
+  const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_unlocked: boolean }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [unlocking, setUnlocking] = useState<string | null>(null);
+  const [results, setResults] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetch(`/api/admin/unlock-certificate?platform=${platform}`)
+      .then(r => r.json())
+      .then(data => { setRequests(Array.isArray(data) ? data : []); setIsLoading(false); })
+      .catch(() => setIsLoading(false));
+  }, [platform]);
+
+  const unlock = async (login_id: string) => {
+    setUnlocking(login_id);
+    try {
+      const res = await fetch('/api/admin/unlock-certificate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login_id, platform }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResults(prev => ({ ...prev, [login_id]: data.emailSent ? 'Unlocked & email sent' : 'Unlocked (no email)' }));
+        setRequests(prev => prev.map(r => r.login_id === login_id ? { ...r, certificate_unlocked: true } : r));
+      } else {
+        setResults(prev => ({ ...prev, [login_id]: data.error || 'Failed' }));
+      }
+    } finally {
+      setUnlocking(null);
+    }
+  };
+
+  const pending = requests.filter(r => !r.certificate_unlocked);
+  const done = requests.filter(r => r.certificate_unlocked);
+
+  return (
+    <div className="p-4 border-b border-border-subtle bg-background/50">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Award className="w-4 h-4 text-[#d4af37]" />
+          <span className="text-sm font-bold text-foreground">Certificate Requests</span>
+          {pending.length > 0 && (
+            <span className="bg-[#d4af37] text-black text-xs font-bold px-2 py-0.5 rounded-full">{pending.length} pending</span>
+          )}
+        </div>
+        <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-secondary-text text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Loading requests...</div>
+      ) : requests.length === 0 ? (
+        <p className="text-secondary-text text-sm">No certificate requests yet.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {pending.length > 0 && (
+            <>
+              <p className="text-xs font-bold text-secondary-text uppercase tracking-wider mb-1">Pending</p>
+              {pending.map(r => (
+                <div key={r.login_id} className="flex items-center justify-between p-3 bg-[#0d0d0d] border border-[#d4af37]/20 rounded-lg">
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">{r.full_name}</div>
+                    <div className="text-xs text-secondary-text font-mono">{r.login_id} {r.email ? `· ${r.email}` : '· no email'}</div>
+                    {results[r.login_id] && <div className="text-xs text-accent mt-0.5">{results[r.login_id]}</div>}
+                  </div>
+                  <button
+                    onClick={() => unlock(r.login_id)}
+                    disabled={unlocking === r.login_id}
+                    className="flex items-center gap-1.5 bg-[#d4af37] text-black font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-[#d4af37]/90 transition-all disabled:opacity-50"
+                  >
+                    {unlocking === r.login_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
+                    Unlock & Notify
+                  </button>
+                </div>
+              ))}
+            </>
+          )}
+          {done.length > 0 && (
+            <>
+              <p className="text-xs font-bold text-secondary-text uppercase tracking-wider mt-2 mb-1">Already Unlocked</p>
+              {done.map(r => (
+                <div key={r.login_id} className="flex items-center justify-between p-3 bg-background border border-border-subtle rounded-lg opacity-60">
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">{r.full_name}</div>
+                    <div className="text-xs text-secondary-text font-mono">{r.login_id}</div>
+                  </div>
+                  <span className="text-xs text-accent font-semibold">Unlocked</span>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPages }: { totalSaaioPages: number; totalDipPages: number; totalWrpPages: number }) {
   const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp' | 'supervisors' | 'invite-links'>('saaio');
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -1076,6 +1173,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
   const [showBulk, setShowBulk] = useState(false);
   const [showNotify, setShowNotify] = useState(false);
   const [showCongratulate, setShowCongratulate] = useState(false);
+  const [showCertRequests, setShowCertRequests] = useState(false);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [selectedCohortId, setSelectedCohortId] = useState<string | null>(null);
   const [examEditing, setExamEditing] = useState<string | null>(null);
@@ -1231,6 +1329,10 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
           <CongratulatePanel platform={platform as 'dip'|'wrp'} onClose={() => setShowCongratulate(false)} />
         )}
 
+        {showCertRequests && (platform === 'dip' || platform === 'wrp') && (
+          <CertificateRequests platform={platform as 'dip'|'wrp'} onClose={() => setShowCertRequests(false)} />
+        )}
+
         {platform !== 'supervisors' && platform !== 'invite-links' && <>
         {/* Register Form */}
         <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
@@ -1289,6 +1391,16 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
               >
                 <Award className="w-4 h-4" />
                 Send Certificates
+              </button>
+            )}
+            {(platform === 'dip' || platform === 'wrp') && (
+              <button
+                type="button"
+                onClick={() => setShowCertRequests(v => !v)}
+                className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+              >
+                <Award className="w-4 h-4" />
+                Certificate Requests
               </button>
             )}
             <button

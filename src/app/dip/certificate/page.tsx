@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 export default function DipCertificatePage() {
   const [studentName, setStudentName] = useState('');
   const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [requested, setRequested] = useState(false);
+  const [requesting, setRequesting] = useState(false);
   const [ready, setReady] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const certRef = useRef<HTMLDivElement>(null);
@@ -15,12 +17,31 @@ export default function DipCertificatePage() {
   const date = new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
 
   useEffect(() => {
-    const passed = localStorage.getItem('dip_exam_passed');
-    if (passed !== 'true') { setAllowed(false); return; }
-    setAllowed(true);
-    const stored = localStorage.getItem('ioai_name') || localStorage.getItem('ioai_user') || '';
+    const loginId = localStorage.getItem('ioai_user');
+    if (!loginId) { router.replace('/dip/login'); return; }
+    const stored = localStorage.getItem('ioai_name') || loginId;
     setStudentName(stored.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase()));
+    fetch(`/api/student/request-certificate?login_id=${loginId}&platform=dip`)
+      .then(r => r.json())
+      .then(data => {
+        setAllowed(data.certificate_unlocked ?? false);
+        setRequested(data.certificate_requested ?? false);
+      })
+      .catch(() => setAllowed(false));
   }, []);
+
+  const handleRequest = async () => {
+    const loginId = localStorage.getItem('ioai_user');
+    if (!loginId) return;
+    setRequesting(true);
+    await fetch('/api/student/request-certificate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_id: loginId, platform: 'dip' }),
+    });
+    setRequested(true);
+    setRequesting(false);
+  };
 
   const handleDownload = async () => {
     if (!certRef.current) return;
@@ -51,16 +72,38 @@ export default function DipCertificatePage() {
 
   if (!allowed) return (
     <div className="flex h-full items-center justify-center p-8">
-      <div className="max-w-md text-center bg-secondary border border-error/30 rounded-2xl p-8">
-        <XCircle className="w-12 h-12 text-error mx-auto mb-4" />
-        <h2 className="text-xl font-bold mb-2">Certificate Not Yet Available</h2>
-        <p className="text-secondary-text text-sm mb-6">
-          You need to pass the Final Exam with at least 70% to earn your certificate.
-        </p>
-        <button onClick={() => router.push('/dip/exam')}
-          className="px-6 py-3 bg-accent text-black font-bold rounded-xl hover:bg-accent/90 transition-all">
-          Go to Exam
-        </button>
+      <div className="max-w-md text-center bg-secondary border border-border-subtle rounded-2xl p-8">
+        {requested ? (
+          <>
+            <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center mx-auto mb-4">
+              <Download className="w-7 h-7 text-accent" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">Request Submitted</h2>
+            <p className="text-secondary-text text-sm leading-relaxed">
+              Your certificate request has been received. Once your completion is verified by the program team, you will receive an email with your certificate link.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="w-16 h-16 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center mx-auto mb-4">
+              <Download className="w-7 h-7 text-[#d4af37]" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">Request Your Certificate</h2>
+            <p className="text-secondary-text text-sm leading-relaxed mb-6">
+              Once you submit your request, the program team will verify your completion and unlock your certificate. You will receive an email notification when it is ready.
+            </p>
+            <button
+              onClick={handleRequest}
+              disabled={requesting}
+              className="w-full py-3 bg-[#d4af37] text-black font-bold rounded-xl hover:bg-[#d4af37]/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {requesting
+                ? <><div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />Submitting...</>
+                : 'Request Certificate'
+              }
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

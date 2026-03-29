@@ -8,6 +8,7 @@ import ColabPanel from '@/components/editor/ColabPanel';
 import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
 import { runPythonCode, getPyodide, isPyodideReady, getPyodideError, getPyodideStatus, clearPyodideWorker, setInputCallback } from '@/lib/pyodide';
 import { usePersistedCode } from '@/lib/usePersistedCode';
+import VideoEmbed from '@/components/VideoEmbed';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -31,11 +32,13 @@ interface DipLessonClientProps {
   nextPageTitle: string | null;
   isLastPage: boolean;
   colabNotebook: string | null;
+  video: string | null;
 }
 
 export default function DipLessonClient({
   pageId, content, initialCodeProp, testCodeProp, isPractice, pageType, resources,
   prevPageId, prevPageTitle, nextPageId, nextPageTitle, isLastPage, colabNotebook,
+  video
 }: DipLessonClientProps) {
   const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
   const [isRunning, setIsRunning] = useState(false);
@@ -76,6 +79,7 @@ export default function DipLessonClient({
     clearPyodideWorker();
     initPyodide();
   };
+
   useEffect(() => { setResults(null); }, [pageId]);
 
   const handleRun = async () => {
@@ -106,12 +110,9 @@ export default function DipLessonClient({
       };
 
       if (isAssertion) {
-        // Error message is now structured: "label — \nYour output: ...\nExpected: ..."
         const raw = error.split('AssertionError:').slice(1).join('AssertionError:').trim();
-        // raw may have a label line then \nYour output: ...\nExpected: ...
         const yourMatch = raw.includes("Your output:") ? raw.split("Your output:")[1] : null;
         const expMatch  = raw.includes("Expected:")    ? raw.split("Expected:")[1]    : null;
-        // label is everything before the first \nYour output
         const labelPart = raw.split('\nYour output:')[0].replace(/\s*—\s*$/, '').trim();
 
         const gotVal  = yourMatch ? yourMatch.split("\n")[0].trim() : "";
@@ -149,76 +150,78 @@ export default function DipLessonClient({
   const navigate = (id: string) => router.push(`/dip/lesson/${id}`);
 
   const leftPanel = (
-    <div className="prose prose-invert prose-cyan max-w-none
-      prose-p:text-[16px] prose-p:leading-relaxed prose-p:text-gray-300
-      prose-headings:text-white prose-headings:font-semibold
-      prose-h1:text-3xl prose-h1:mb-6
-      prose-h2:text-2xl prose-h2:mt-10 prose-h2:pb-2 prose-h2:mb-4
-      prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4
-      prose-strong:text-accent prose-strong:font-bold
-      prose-a:text-accent prose-a:underline
-      prose-pre:bg-secondary prose-pre:border prose-pre:border-border-subtle prose-pre:rounded-xl prose-pre:p-4 prose-pre:my-6
-      prose-code:text-[#00B0F0] prose-code:bg-[#00B0F0]/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-code:text-[13px]
-      prose-ul:text-gray-300 prose-li:marker:text-accent
-      prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:bg-accent/5 prose-blockquote:py-2 prose-blockquote:px-5 prose-blockquote:rounded-r-lg
-    ">
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-        {content}
-      </ReactMarkdown>
+    <div className="flex flex-col h-full overflow-y-auto">
+      {video && <VideoEmbed src={video} />}
+      <div className="prose prose-invert prose-cyan max-w-none p-6
+        prose-p:text-[16px] prose-p:leading-relaxed prose-p:text-gray-300
+        prose-headings:text-white prose-headings:font-semibold
+        prose-h1:text-3xl prose-h1:mb-6
+        prose-h2:text-2xl prose-h2:mt-10 prose-h2:pb-2 prose-h2:mb-4
+        prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4
+        prose-strong:text-accent prose-strong:font-bold
+        prose-a:text-accent prose-a:underline
+        prose-pre:bg-secondary prose-pre:border prose-pre:border-border-subtle prose-pre:rounded-xl prose-pre:p-4 prose-pre:my-6
+        prose-code:text-[#00B0F0] prose-code:bg-[#00B0F0]/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-code:text-[13px]
+        prose-ul:text-gray-300 prose-li:marker:text-accent
+        prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:bg-accent/5 prose-blockquote:py-2 prose-blockquote:px-5 prose-blockquote:rounded-r-lg
+      ">
+        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+          {content}
+        </ReactMarkdown>
 
-      {resources?.length > 0 && (
-        <div className="mt-12 not-prose">
-          <h3 className="text-xl font-semibold text-white mb-4">◆ Further Reading</h3>
-          <div className="flex flex-col gap-3">
-            {resources.map((res, i) => (
-              <a key={i} href={res.url} target="_blank" rel="noopener noreferrer"
-                className="group flex items-center justify-between p-4 rounded-xl border border-border-subtle bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-200 group-hover:text-accent transition-colors">{res.title}</span>
-                  <span className="text-[11px] text-gray-500 mt-1 truncate max-w-md">{res.url}</span>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-black transition-all">↗</div>
-              </a>
-            ))}
+        {resources?.length > 0 && (
+          <div className="mt-12 not-prose">
+            <h3 className="text-xl font-semibold text-white mb-4">◆ Further Reading</h3>
+            <div className="flex flex-col gap-3">
+              {resources.map((res, i) => (
+                <a key={i} href={res.url} target="_blank" rel="noopener noreferrer"
+                  className="group flex items-center justify-between p-4 rounded-xl border border-border-subtle bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-200 group-hover:text-accent transition-colors">{res.title}</span>
+                    <span className="text-[11px] text-gray-500 mt-1 truncate max-w-md">{res.url}</span>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-black transition-all">↗</div>
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* Navigation Footer */}
-      <div className="mt-16 pt-8 border-t border-border-subtle flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 not-prose">
-        {prevPageId ? (
-          <button onClick={() => navigate(prevPageId)}
-            className="flex items-center gap-2 px-4 py-3 rounded-lg bg-secondary border border-border-subtle text-secondary-text hover:text-white hover:border-accent transition-all">
-            <ChevronLeft className="w-4 h-4 shrink-0" />
-            <div className="flex flex-col items-start px-2">
-              <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Previous</span>
-              <span className="text-sm font-medium">{prevPageTitle}</span>
-            </div>
-          </button>
-        ) : <div />}
-
-        {isLastPage ? (
-          <button onClick={() => { markCompleted(pageId); router.push('/dip/exam'); }}
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all">
-            <Award className="w-5 h-5" />
-            Go to Final Exam
-          </button>
-        ) : nextPageId ? (
-          <button onClick={() => { markCompleted(pageId); navigate(nextPageId); }}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group">
-            <div className="flex flex-col items-center sm:items-end px-2">
-              <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Mark Complete & Next</span>
-              <span className="text-sm font-medium">{nextPageTitle}</span>
-            </div>
-            <ChevronRight className="w-4 h-4 shrink-0 group-hover:translate-x-1 transition-transform" />
-          </button>
-        ) : (
-          <button onClick={() => markCompleted(pageId)}
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all">
-            <CheckCircle2 className="w-4 h-4" />
-            Finish Module
-          </button>
         )}
+
+        <div className="mt-16 pt-8 border-t border-border-subtle flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 not-prose">
+          {prevPageId ? (
+            <button onClick={() => navigate(prevPageId)}
+              className="flex items-center gap-2 px-4 py-3 rounded-lg bg-secondary border border-border-subtle text-secondary-text hover:text-white hover:border-accent transition-all">
+              <ChevronLeft className="w-4 h-4 shrink-0" />
+              <div className="flex flex-col items-start px-2">
+                <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Previous</span>
+                <span className="text-sm font-medium">{prevPageTitle}</span>
+              </div>
+            </button>
+          ) : <div />}
+
+          {isLastPage ? (
+            <button onClick={() => { markCompleted(pageId); router.push('/dip/exam'); }}
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all">
+              <Award className="w-5 h-5" />
+              Go to Final Exam
+            </button>
+          ) : nextPageId ? (
+            <button onClick={() => { markCompleted(pageId); navigate(nextPageId); }}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group">
+              <div className="flex flex-col items-center sm:items-end px-2">
+                <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Mark Complete & Next</span>
+                <span className="text-sm font-medium">{nextPageTitle}</span>
+              </div>
+              <ChevronRight className="w-4 h-4 shrink-0 group-hover:translate-x-1 transition-transform" />
+            </button>
+          ) : (
+            <button onClick={() => markCompleted(pageId)}
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all">
+              <CheckCircle2 className="w-4 h-4" />
+              Finish Module
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -228,12 +231,12 @@ export default function DipLessonClient({
   const rightPanel = isPractice || isLab ? (
     isLab && colabNotebook ? (
       <EmbeddedColabPanel
-        notebookPath={colabNotebook}
+        notebookPath={colabNotebook as string}
         onMarkComplete={() => { markCompleted(pageId); if (nextPageId) navigate(nextPageId); }}
       />
     ) : colabNotebook ? (
       <ColabPanel
-        notebookPath={colabNotebook}
+        notebookPath={colabNotebook as string}
         onMarkComplete={() => { markCompleted(pageId); if (nextPageId) navigate(nextPageId); }}
       />
     ) : (

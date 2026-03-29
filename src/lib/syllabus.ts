@@ -10,6 +10,7 @@ export interface PageData {
   type: 'read' | 'practice' | 'lab';
   order: number;
   completed: boolean; // Mocked for now
+  video: string | null;
 }
 
 export interface ChapterData {
@@ -79,7 +80,8 @@ export function getSyllabus(): PartData[] {
           title: data.title || formatTitle(file),
           type: data.type || (isPractice ? 'practice' : 'read') as 'read' | 'practice' | 'lab',
           order: pageIndex + 1,
-          completed: false
+          completed: false,
+          video: data.video || null
         };
       });
 
@@ -123,6 +125,7 @@ export function getSyllabus(): PartData[] {
         type: (data.type || 'read') as 'read' | 'practice' | 'lab',
         order: i + 1,
         completed: false,
+        video: data.video || null,
       };
     });
 
@@ -183,7 +186,8 @@ function findAndReadFile(dir: string, filename: string): any {
         initialCode: extractInitialCode(content),
         testCode: extractTestCode(content),
         resources: data.resources || [],
-        colabNotebook: data.colab_notebook || null
+        colabNotebook: data.colab_notebook || null,
+        video: data.video || null
       };
     }
   }

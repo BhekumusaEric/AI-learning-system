@@ -1,6 +1,7 @@
 ---
 title: "Your First Python Program"
 type: "read"
+video: "https://www.youtube.com/watch?v=kqtD5dpn9C8"
 resources:
   - title: "Python print() function"
     url: "https://docs.python.org/3/library/functions.html#print"
