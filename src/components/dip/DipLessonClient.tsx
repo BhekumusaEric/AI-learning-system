@@ -4,7 +4,10 @@ import React, { useState, useEffect } from 'react';
 import TwoPanelLayout from '@/components/layout/TwoPanelLayout';
 import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
-import { runPythonCode, getPyodide, isPyodideReady } from '@/lib/pyodide';
+import ColabPanel from '@/components/editor/ColabPanel';
+import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
+import { runPythonCode, getPyodide, isPyodideReady, setInputCallback } from '@/lib/pyodide';
+import { usePersistedCode } from '@/lib/usePersistedCode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -31,10 +34,10 @@ interface DipLessonClientProps {
 }
 
 export default function DipLessonClient({
-  pageId, content, initialCodeProp, testCodeProp, isPractice, resources,
-  prevPageId, prevPageTitle, nextPageId, nextPageTitle, isLastPage,
+  pageId, content, initialCodeProp, testCodeProp, isPractice, pageType, resources,
+  prevPageId, prevPageTitle, nextPageId, nextPageTitle, isLastPage, colabNotebook,
 }: DipLessonClientProps) {
-  const [code, setCode] = useState(initialCodeProp || '# Write your python code here\n\n');
+  const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
   const [isRunning, setIsRunning] = useState(false);
   const [isEnvLoading, setIsEnvLoading] = useState(true);
   const [results, setResults] = useState<TestResult[] | null>(null);
@@ -50,7 +53,7 @@ export default function DipLessonClient({
     }, 300);
     return () => clearInterval(interval);
   }, [isPractice]);
-  useEffect(() => { setCode(initialCodeProp || '# Write your python code here\n\n'); setResults(null); }, [initialCodeProp]);
+  useEffect(() => { setResults(null); }, [pageId]);
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -79,19 +82,44 @@ export default function DipLessonClient({
         IndentationError: 'Check your indentation — no mixing tabs and spaces.',
       };
 
-      setResults([
-        { id: 0, name: 'Output Console', passed: true, error: stdout || 'Program exited with error' },
-        { id: 1, name: isAssertion ? 'Hidden Test Failed' : 'Code Error', passed: false, errorType, lineNumber,
-          hint: hints[errorType] || 'Check the error message for clues.',
-          error: isAssertion ? error.split('AssertionError:')[1]?.split('\n')[0]?.trim() || 'Assertion failed'
-            : error.split('\n').slice(-4).join('\n') },
-      ]);
+      if (isAssertion) {
+        // Error message is now structured: "label — \nYour output: ...\nExpected: ..."
+        const raw = error.split('AssertionError:').slice(1).join('AssertionError:').trim();
+        // raw may have a label line then \nYour output: ...\nExpected: ...
+        const yourMatch = raw.includes("Your output:") ? raw.split("Your output:")[1] : null;
+        const expMatch  = raw.includes("Expected:")    ? raw.split("Expected:")[1]    : null;
+        // label is everything before the first \nYour output
+        const labelPart = raw.split('\nYour output:')[0].replace(/\s*—\s*$/, '').trim();
+
+        const gotVal  = yourMatch ? yourMatch.split("\n")[0].trim() : "";
+        const expVal  = expMatch  ? expMatch.split("\n")[0].trim()  : "";
+
+        let displayError = '';
+        if (labelPart) displayError += `${labelPart}\n`;
+        if (gotVal)    displayError += `Your output:  ${gotVal}\n`;
+        if (expVal)    displayError += `Expected:     ${expVal}`;
+        if (!displayError) displayError = 'A test assertion failed. Check your logic.';
+
+        setResults([
+          { id: 0, name: 'Output Console', passed: true, error: stdout || 'No output' },
+          { id: 1, name: 'Test Failed', passed: false, errorType: 'AssertionError', lineNumber,
+            hint: 'Compare your output to the expected value above and trace through your logic.',
+            error: displayError },
+        ]);
+      } else {
+        setResults([
+          { id: 0, name: 'Output Console', passed: true, error: stdout || 'Program exited with error' },
+          { id: 1, name: 'Code Error', passed: false, errorType, lineNumber,
+            hint: hints[errorType] || 'Check the error message for clues.',
+            error: error.split('\n').slice(-4).join('\n') },
+        ]);
+      }
       return;
     }
 
     setResults([
       { id: 1, name: 'Output Console', passed: true, error: stdout || 'Program exited normally' },
-      ...(testCodeProp ? [{ id: 2, name: 'Hidden Tests', passed: true, error: 'All tests passed!' }] : []),
+      ...(testCodeProp ? [{ id: 2, name: 'All Tests Passed', passed: true, error: 'All hidden tests passed!' }] : []),
     ]);
   };
 
@@ -134,11 +162,11 @@ export default function DipLessonClient({
       )}
 
       {/* Navigation Footer */}
-      <div className="mt-16 pt-8 border-t border-border-subtle flex items-center justify-between not-prose">
+      <div className="mt-16 pt-8 border-t border-border-subtle flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 not-prose">
         {prevPageId ? (
           <button onClick={() => navigate(prevPageId)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary border border-border-subtle text-secondary-text hover:text-white hover:border-accent transition-all">
-            <ChevronLeft className="w-4 h-4" />
+            className="flex items-center gap-2 px-4 py-3 rounded-lg bg-secondary border border-border-subtle text-secondary-text hover:text-white hover:border-accent transition-all">
+            <ChevronLeft className="w-4 h-4 shrink-0" />
             <div className="flex flex-col items-start px-2">
               <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Previous</span>
               <span className="text-sm font-medium">{prevPageTitle}</span>
@@ -148,22 +176,22 @@ export default function DipLessonClient({
 
         {isLastPage ? (
           <button onClick={() => { markCompleted(pageId); router.push('/dip/exam'); }}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all">
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all">
             <Award className="w-5 h-5" />
             Go to Final Exam
           </button>
         ) : nextPageId ? (
           <button onClick={() => { markCompleted(pageId); navigate(nextPageId); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group">
-            <div className="flex flex-col items-end px-2">
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group">
+            <div className="flex flex-col items-center sm:items-end px-2">
               <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Mark Complete & Next</span>
               <span className="text-sm font-medium">{nextPageTitle}</span>
             </div>
-            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <ChevronRight className="w-4 h-4 shrink-0 group-hover:translate-x-1 transition-transform" />
           </button>
         ) : (
           <button onClick={() => markCompleted(pageId)}
-            className="flex items-center gap-2 px-6 py-2 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all">
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all">
             <CheckCircle2 className="w-4 h-4" />
             Finish Module
           </button>
@@ -172,11 +200,35 @@ export default function DipLessonClient({
     </div>
   );
 
-  const rightPanel = isPractice ? (
-    <>
-      <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { setCode(initialCodeProp || ''); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} />
-      <FeedbackPanel results={results} isRunning={isRunning} />
-    </>
+  const isLab = pageType === 'lab';
+
+  const rightPanel = isPractice || isLab ? (
+    isLab && colabNotebook ? (
+      <EmbeddedColabPanel
+        notebookPath={colabNotebook}
+        onMarkComplete={() => { markCompleted(pageId); if (nextPageId) navigate(nextPageId); }}
+      />
+    ) : colabNotebook ? (
+      <ColabPanel
+        notebookPath={colabNotebook}
+        onMarkComplete={() => { markCompleted(pageId); if (nextPageId) navigate(nextPageId); }}
+      />
+    ) : (
+      <>
+        <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { resetCode(); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} onInputRequest={cb => setInputCallback(cb)} />
+        <FeedbackPanel
+          results={results}
+          isRunning={isRunning}
+          onNext={isLastPage
+            ? () => { markCompleted(pageId); router.push('/dip/exam'); }
+            : nextPageId
+              ? () => { markCompleted(pageId); navigate(nextPageId); }
+              : undefined
+          }
+          nextLabel={isLastPage ? 'Go to Final Exam' : 'Next Lesson'}
+        />
+      </>
+    )
   ) : null;
 
   return <TwoPanelLayout leftPanel={leftPanel} rightPanel={rightPanel} />;

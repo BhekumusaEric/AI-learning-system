@@ -57,26 +57,27 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
         <span className="text-sm font-semibold text-[#cccccc]">main.py</span>
         <div className="flex items-center gap-2">
           {isLoading && (
-            <span className="text-xs text-secondary-text animate-pulse">⏳ Loading environment...</span>
+            <span className="text-xs text-secondary-text animate-pulse hidden sm:inline">Loading Python environment...</span>
           )}
           <button
             onClick={onReset}
             disabled={busy}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded bg-transparent hover:bg-white/10 text-secondary-text transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded bg-transparent hover:bg-white/10 text-secondary-text transition-colors disabled:opacity-50"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset
+            <span className="hidden sm:inline">Reset</span>
           </button>
           <button
             onClick={onRun}
             disabled={busy}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded bg-accent text-black hover:bg-accent/90 transition-colors disabled:opacity-50"
           >
             <Play className="w-3.5 h-3.5" fill="currentColor" />
-            {isLoading ? 'Loading...' : isRunning ? 'Running...' : 'Run Code'}
+            {isLoading ? 'Loading...' : isRunning ? 'Running...' : 'Run'}
           </button>
         </div>
       </div>
+
       {inputPrompt !== null && (
         <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a2e] border-b border-accent/40">
           <span className="text-accent text-xs font-mono shrink-0">{inputPrompt}</span>
@@ -91,8 +92,10 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
           <button onClick={submitInput} className="text-xs px-2 py-0.5 bg-accent text-black font-bold rounded">Enter</button>
         </div>
       )}
+
       <div className="flex-1 overflow-hidden">
         {isMobile ? (
+          // Mobile: plain textarea — Monaco doesn't work well on touch
           <textarea
             value={code}
             onChange={e => onChange(e.target.value)}
