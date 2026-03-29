@@ -6,7 +6,7 @@ import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
 import ColabPanel from '@/components/editor/ColabPanel';
 import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
-import { runPythonCode, getPyodide, isPyodideReady, setInputCallback, getPyodideError } from '@/lib/pyodide';
+import { runPythonCode, getPyodide, isPyodideReady, setInputCallback, getPyodideError, clearPyodideWorker } from '@/lib/pyodide';
 import { usePersistedCode } from '@/lib/usePersistedCode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -66,7 +66,7 @@ export default function LessonPageClient({
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
+  const initPyodide = () => {
     if (!isPractice) return;
     setIsEnvLoading(true);
     setEnvError(null);
@@ -77,23 +77,24 @@ export default function LessonPageClient({
         setEnvError(err);
         setIsEnvLoading(false);
         clearInterval(interval);
-        return;
-      }
-      if (isPyodideReady()) {
+      } else if (isPyodideReady()) {
         setIsEnvLoading(false);
+        setEnvError(null);
         clearInterval(interval);
       }
     }, 300);
-    // Timeout after 90s — CDN can be slow but not forever
-    const timeout = setTimeout(() => {
-      clearInterval(interval);
-      if (!isPyodideReady()) {
-        setEnvError('Python environment took too long to load. Check your internet connection and try refreshing.');
-        setIsEnvLoading(false);
-      }
-    }, 90_000);
-    return () => { clearInterval(interval); clearTimeout(timeout); };
-  }, [isPractice]);
+    return interval;
+  };
+
+  useEffect(() => {
+    const interval = initPyodide();
+    return () => { if (interval) clearInterval(interval); };
+  }, [isPractice, pageId]);
+
+  const handleRetryEnv = () => {
+    clearPyodideWorker();
+    initPyodide();
+  };
 
   useEffect(() => { setResults(null); }, [pageId]);
 
@@ -335,13 +336,16 @@ export default function LessonPageClient({
           onInputRequest={cb => setInputCallback(cb)}
         />
         {envError ? (
-          <div className="flex flex-col items-center justify-center gap-3 p-6 text-center">
-            <p className="text-error text-sm">{envError}</p>
+          <div className="p-6 m-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-200">
+            <h4 className="font-bold flex items-center gap-2 mb-2">
+              <span className="text-lg">⚠️</span> Python Environment Failed to Load
+            </h4>
+            <p className="text-sm mb-4 opacity-90">{envError}</p>
             <button
-              onClick={() => { setEnvError(null); setIsEnvLoading(true); window.location.reload(); }}
-              className="px-4 py-2 bg-accent/10 border border-accent/20 text-accent rounded-lg text-sm font-semibold hover:bg-accent hover:text-black transition-all"
+              onClick={handleRetryEnv}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded transition-colors"
             >
-              Retry
+              Retry Loading Environment
             </button>
           </div>
         ) : (

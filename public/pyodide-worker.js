@@ -1,30 +1,27 @@
 // pyodide-worker.js
 // Runs in a Web Worker outside of the Next.js Turbopack bundled environment
 
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js");
+importScripts("https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js");
 
 let pyodideReadyPromise = null;
 
 async function load() {
   self.pyodide = await loadPyodide({
-    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.2/full/",
+    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/",
   });
 
   // Load micropip first so we can install any extra packages
   await self.pyodide.loadPackage("micropip");
 
-  // Pre-load core packages — if these fail, the environment is broken
-  try {
-    await self.pyodide.loadPackage([
-      "numpy",
-      "pandas",
-      "matplotlib",
-      "scipy",
-      "scikit-learn",
-    ]);
-  } catch (e) {
-    console.error("Critical package load failure:", e);
-    throw new Error(`Critical package load failure: ${e.message || e}`);
+  // Pre-load core packages — load sequentially to avoid massive concurrent downloads
+  const corePackages = ["numpy", "pandas", "matplotlib", "scipy", "scikit-learn"];
+  for (const pkg of corePackages) {
+    try {
+      await self.pyodide.loadPackage(pkg);
+    } catch (e) {
+      console.error(`Failed to load package ${pkg}:`, e);
+      throw new Error(`Critical package load failure (${pkg}): ${e.message || e}`);
+    }
   }
 
   // Packages not bundled in Pyodide — install via micropip
