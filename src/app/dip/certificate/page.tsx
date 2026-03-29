@@ -50,7 +50,7 @@ export default function DipCertificatePage() {
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
       const canvas = await html2canvas(certRef.current, {
-        scale: 3, useCORS: true, backgroundColor: '#ffffff',
+        scale: 2, useCORS: true, backgroundColor: '#ffffff',
         width: certRef.current.scrollWidth,
         height: certRef.current.scrollHeight,
       });
@@ -164,16 +164,16 @@ export default function DipCertificatePage() {
           crossOrigin="anonymous"
         />
 
-        {/* Student name — sits above the underline at 55.9% */}
+        {/* Student name — baseline anchored just above underline at 55.90% */}
         <div style={{
           position: 'absolute',
-          bottom: '44.1%',
+          top: '55.50%',
           left: '28.23%',
           width: '43.76%',
+          transform: 'translateY(-100%)',
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
-          paddingBottom: '0.5%',
         }}>
           <div style={{
             fontFamily: "'Georgia', 'Times New Roman', serif",
