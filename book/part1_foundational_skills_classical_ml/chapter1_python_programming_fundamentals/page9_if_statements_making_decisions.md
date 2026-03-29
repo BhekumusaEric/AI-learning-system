@@ -1,7 +1,7 @@
 ---
 title: "If Statements: Making Decisions"
 type: "practice"
-video: "https://www.youtube.com/watch?v=DZwmZ8OtEms"
+video: "https://www.youtube.com/watch?v=FvMPfrgGeKs"
 resources:
   - title: "Python Control Flow: if statements"
     url: "https://docs.python.org/3/tutorial/controlflow.html#if-statements"

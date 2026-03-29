@@ -1,7 +1,7 @@
 ---
 title: "For Loops: Doing Things Repeatedly"
 type: "read"
-video: "https://www.youtube.com/watch?v=6iF8Xb7Z3wI"
+video: "https://www.youtube.com/watch?v=KWgYha0clzw"
 resources:
   - title: "Python Control Flow: for statements"
     url: "https://docs.python.org/3/tutorial/controlflow.html#for-statements"

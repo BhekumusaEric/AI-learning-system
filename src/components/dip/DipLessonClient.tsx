@@ -227,8 +227,9 @@ export default function DipLessonClient({
   );
 
   const isLab = pageType === 'lab';
+  const hasCodeAlong = !!video;
 
-  const rightPanel = isPractice || isLab ? (
+  const rightPanel = isPractice || isLab || hasCodeAlong ? (
     isLab && colabNotebook ? (
       <EmbeddedColabPanel
         notebookPath={colabNotebook as string}

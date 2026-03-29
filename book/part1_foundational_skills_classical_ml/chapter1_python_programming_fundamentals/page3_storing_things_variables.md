@@ -1,7 +1,7 @@
 ---
 title: "Storing Things: Variables"
 type: "read"
-video: "https://www.youtube.com/watch?v=0W94k1J1K-4"
+video: "https://www.youtube.com/watch?v=cQT33yu9pY8"
 resources:
   - title: "W3Schools: Python Variables"
     url: "https://www.w3schools.com/python/python_variables.asp"

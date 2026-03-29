@@ -1,7 +1,7 @@
 ---
 title: "Lists: Shopping for Data"
 type: "read"
-video: "https://www.youtube.com/watch?v=9OeznAkyQz4"
+video: "https://www.youtube.com/watch?v=c3FRTlncSWM"
 resources:
   - title: "Python Data Structures: Lists"
     url: "https://docs.python.org/3/tutorial/datastructures.html"
