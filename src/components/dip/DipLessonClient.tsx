@@ -6,7 +6,7 @@ import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
 import ColabPanel from '@/components/editor/ColabPanel';
 import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
-import { runPythonCode, getPyodide, isPyodideReady, getPyodideError, clearPyodideWorker, setInputCallback } from '@/lib/pyodide';
+import { runPythonCode, getPyodide, isPyodideReady, getPyodideError, getPyodideStatus, clearPyodideWorker, setInputCallback } from '@/lib/pyodide';
 import { usePersistedCode } from '@/lib/usePersistedCode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -40,6 +40,7 @@ export default function DipLessonClient({
   const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
   const [isRunning, setIsRunning] = useState(false);
   const [isEnvLoading, setIsEnvLoading] = useState(true);
+  const [loadingStatus, setLoadingStatus] = useState('Initializing...');
   const [envError, setEnvError] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const { markCompleted, completedPages } = useProgress();
@@ -51,6 +52,7 @@ export default function DipLessonClient({
     setEnvError(null);
     getPyodide();
     const interval = setInterval(() => {
+      setLoadingStatus(getPyodideStatus());
       const error = getPyodideError();
       if (error) {
         setEnvError(error);
@@ -236,7 +238,7 @@ export default function DipLessonClient({
       />
     ) : (
       <>
-        <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { resetCode(); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} onInputRequest={cb => setInputCallback(cb)} />
+        <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { resetCode(); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} loadingStatus={loadingStatus} onInputRequest={cb => setInputCallback(cb)} />
         {envError ? (
           <div className="p-6 m-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-200">
             <h4 className="font-bold flex items-center gap-2 mb-2">

@@ -13,6 +13,7 @@ let pyodideWorker: Worker | null = null;
 let msgId = 0;
 let isReady = false;
 let loadError: string | null = null;
+let loadingStatus: string = 'Initializing...';
 const resolvers: Record<number, { resolve: (val: any) => void; reject: (err: any) => void }> = {};
 
 let inputCallback: ((prompt: string) => Promise<string>) | null = null;
@@ -23,6 +24,7 @@ export function setInputCallback(cb: (prompt: string) => Promise<string>) {
 
 export function isPyodideReady() { return isReady; }
 export function getPyodideError() { return loadError; }
+export function getPyodideStatus() { return loadingStatus; }
 
 export async function getPyodide(): Promise<void> {
   if (typeof window === 'undefined') return;
@@ -46,14 +48,21 @@ export async function getPyodide(): Promise<void> {
         return;
       }
 
+      if (type === 'status') {
+        loadingStatus = result || 'Loading...';
+        return;
+      }
+
       if (type === 'ready') {
         isReady = true;
+        loadingStatus = 'Ready';
         return;
       }
 
       if (type === 'load_error') {
         loadError = error || 'Failed to load Python environment';
         isReady = false;
+        loadingStatus = 'Error';
         console.error('Pyodide load error:', loadError);
         return;
       }
@@ -66,6 +75,13 @@ export async function getPyodide(): Promise<void> {
         }
         delete resolvers[id];
       }
+    };
+
+    pyodideWorker.onerror = (err) => {
+      console.error('Pyodide worker error:', err);
+      loadError = 'The Python worker failed to start. This can happen if the browser blocks the script or if the network is disconnected.';
+      isReady = false;
+      loadingStatus = 'Error';
     };
   }
 }

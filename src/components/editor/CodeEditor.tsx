@@ -11,10 +11,11 @@ interface CodeEditorProps {
   onReset: () => void;
   isRunning?: boolean;
   isLoading?: boolean;
+  loadingStatus?: string;
   onInputRequest?: (cb: (prompt: string) => Promise<string>) => void;
 }
 
-export default function CodeEditor({ code, onChange, onRun, onReset, isRunning = false, isLoading = false, onInputRequest }: CodeEditorProps) {
+export default function CodeEditor({ code, onChange, onRun, onReset, isRunning = false, isLoading = false, loadingStatus = 'Loading Python environment...', onInputRequest }: CodeEditorProps) {
   const [inputPrompt, setInputPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isMobile, setIsMobile] = useState(false);
@@ -57,7 +58,7 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
         <span className="text-sm font-semibold text-[#cccccc]">main.py</span>
         <div className="flex items-center gap-2">
           {isLoading && (
-            <span className="text-xs text-secondary-text animate-pulse hidden sm:inline">Loading Python environment...</span>
+            <span className="text-xs text-secondary-text animate-pulse hidden sm:inline">{loadingStatus}</span>
           )}
           <button
             onClick={onReset}

@@ -6,7 +6,7 @@ import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
 import ColabPanel from '@/components/editor/ColabPanel';
 import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
-import { runPythonCode, getPyodide, isPyodideReady, setInputCallback, getPyodideError, clearPyodideWorker } from '@/lib/pyodide';
+import { runPythonCode, getPyodide, isPyodideReady, setInputCallback, getPyodideError, getPyodideStatus, clearPyodideWorker } from '@/lib/pyodide';
 import { usePersistedCode } from '@/lib/usePersistedCode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -45,6 +45,7 @@ export default function LessonPageClient({
   const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
   const [isRunning, setIsRunning] = useState(false);
   const [isEnvLoading, setIsEnvLoading] = useState(true);
+  const [loadingStatus, setLoadingStatus] = useState('Initializing...');
   const [envError, setEnvError] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const { markCompleted, completedPages } = useProgress();
@@ -72,6 +73,7 @@ export default function LessonPageClient({
     setEnvError(null);
     getPyodide();
     const interval = setInterval(() => {
+      setLoadingStatus(getPyodideStatus());
       const err = getPyodideError();
       if (err) {
         setEnvError(err);
@@ -333,6 +335,7 @@ export default function LessonPageClient({
           onReset={handleReset}
           isRunning={isRunning}
           isLoading={isEnvLoading}
+          loadingStatus={loadingStatus}
           onInputRequest={cb => setInputCallback(cb)}
         />
         {envError ? (

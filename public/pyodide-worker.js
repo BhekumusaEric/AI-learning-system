@@ -1,42 +1,42 @@
-// pyodide-worker.js
-// Runs in a Web Worker outside of the Next.js Turbopack bundled environment
-
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js");
+try {
+  importScripts("https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js");
+} catch (e) {
+  self.postMessage({ type: 'load_error', error: "Failed to import Pyodide script from CDN. Please check your internet connection." });
+}
 
 let pyodideReadyPromise = null;
 
 async function load() {
+  self.postMessage({ type: 'status', result: 'Initializing Pyodide...' });
   self.pyodide = await loadPyodide({
     indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/",
   });
 
-  // Load micropip first so we can install any extra packages
+  self.postMessage({ type: 'status', result: 'Loading micropip...' });
   await self.pyodide.loadPackage("micropip");
 
-  // Pre-load core packages — load sequentially to avoid massive concurrent downloads
   const corePackages = ["numpy", "pandas", "matplotlib", "scipy", "scikit-learn"];
   for (const pkg of corePackages) {
+    self.postMessage({ type: 'status', result: `Loading ${pkg}...` });
     try {
       await self.pyodide.loadPackage(pkg);
     } catch (e) {
       console.error(`Failed to load package ${pkg}:`, e);
-      throw new Error(`Critical package load failure (${pkg}): ${e.message || e}`);
+      // If it's the first package (numpy), it's critical. Others might be okay to fail but we should report.
+      if (pkg === "numpy") throw new Error(`Critical package load failure (${pkg}): ${e.message || e}`);
+      else console.warn(`Non-critical package ${pkg} failed to load.`);
     }
   }
 
-  // Packages not bundled in Pyodide — install via micropip
+  self.postMessage({ type: 'status', result: 'Installing extra visualization tools...' });
   const micropip = self.pyodide.pyimport("micropip");
   try {
-    // Install seaborn and any other extras
-    await micropip.install([
-      "seaborn",
-    ]);
+    await micropip.install(["seaborn"]);
   } catch (e) {
-    // Non-fatal: seaborn is optional (only used in visualisation pages)
     console.warn("micropip install warning:", e);
   }
 
-  // Matplotlib backend must be set to non-interactive before any import
+  self.postMessage({ type: 'status', result: 'Finalizing environment...' });
   await self.pyodide.runPythonAsync(`
 import matplotlib
 matplotlib.use("Agg")
