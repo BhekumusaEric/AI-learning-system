@@ -151,11 +151,7 @@ export default function DipLessonClient({
 
   const leftPanel = (
     <div className="flex flex-col h-full overflow-y-auto">
-      {video ? (
-        <VideoEmbed src={video} />
-      ) : (
-        <div className="block bg-orange-500 text-white text-[10px] p-1 font-mono">DEBUG: video prop is NULL for id: "{pageId}" (DIP)</div>
-      )}
+      {video && <VideoEmbed src={video} />}
       <div className="prose prose-invert prose-cyan max-w-none p-6
         prose-p:text-[16px] prose-p:leading-relaxed prose-p:text-gray-300
         prose-headings:text-white prose-headings:font-semibold

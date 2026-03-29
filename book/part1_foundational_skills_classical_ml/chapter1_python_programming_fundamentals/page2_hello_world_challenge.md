@@ -1,6 +1,7 @@
 ---
 title: "Hello, World! Challenge"
 type: "practice"
+video: "https://www.youtube.com/watch?v=kqtD5dpn9C8"
 resources:
   - title: "W3Schools: Python Syntax"
     url: "https://www.w3schools.com/python/python_syntax.asp"

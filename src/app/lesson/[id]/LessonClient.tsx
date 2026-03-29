@@ -186,11 +186,7 @@ export default function LessonPageClient({
 
   const leftPanel = isWrp ? (
     <div className="flex flex-col h-full overflow-y-auto">
-      {video ? (
-        <VideoEmbed src={video} />
-      ) : (
-        <div className="block bg-red-500 text-white text-[10px] p-1">DEBUG: VIDEO PROP IS NULL</div>
-      )}
+      {video && <VideoEmbed src={video} />}
       <div className="max-w-3xl mx-auto w-full px-6 py-8">
         <WrpContent content={content} video={video} />
         <div className="mt-16 pt-8 border-t border-border-subtle flex items-center justify-between">
@@ -224,11 +220,7 @@ export default function LessonPageClient({
     </div>
   ) : (
     <div className="flex flex-col h-full overflow-y-auto">
-      {video ? (
-        <VideoEmbed src={video} />
-      ) : (
-        <div className="block bg-red-500 text-white text-[10px] p-1 font-mono">DEBUG: video prop is NULL</div>
-      )}
+      {video && <VideoEmbed src={video} />}
       <div className="prose prose-invert prose-cyan max-w-none p-6
         prose-p:text-[16px] prose-p:leading-relaxed prose-p:text-gray-300
         prose-headings:text-white prose-headings:font-semibold
