@@ -45,7 +45,7 @@ export default async function DipLessonPage({ params }: { params: Promise<{ id: 
       nextPageTitle={next?.title ?? null}
       isLastPage={isLastPage}
       colabNotebook={pageData.colabNotebook || null}
-      video={pageData.video || null}
+      video={id === 'page1_your_first_python_program' ? "https://www.youtube.com/watch?v=kqtD5dpn9C8" : (pageData.video || null)}
     />
   );
 }

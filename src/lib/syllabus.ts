@@ -175,8 +175,10 @@ function findAndReadFile(dir: string, filename: string): any {
       const found = findAndReadFile(fullPath, filename);
       if (found) return found;
     } else if (file.name === filename) {
+      console.log(`[SYLLABUS] Reading file: ${fullPath}`);
       const fileContents = fs.readFileSync(fullPath, 'utf8');
       const { data, content } = matter(fileContents);
+      console.log(`[SYLLABUS] Parsed metadata:`, data);
       return {
         id: filename.replace('.md', ''),
         content: content,
