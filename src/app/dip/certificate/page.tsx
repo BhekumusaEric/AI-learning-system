@@ -1,8 +1,18 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from 'react';
-import { Download, XCircle, ChevronLeft } from 'lucide-react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { Download, ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+const IMG_W = 1414;
+const IMG_H = 2000;
+const UNDERLINE_Y = 1118;
+const NAME_BASELINE_Y = UNDERLINE_Y - 6;
+const NAME_CENTER_X = 2134825 / 7562100 * IMG_W + (3309000 / 7562100 * IMG_W) / 2;
+
+function toTitleCase(str: string) {
+  return str.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
 
 export default function DipCertificatePage() {
   const [studentName, setStudentName] = useState('');
@@ -11,7 +21,7 @@ export default function DipCertificatePage() {
   const [requesting, setRequesting] = useState(false);
   const [ready, setReady] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const certRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const router = useRouter();
 
   const date = new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -20,7 +30,7 @@ export default function DipCertificatePage() {
     const loginId = localStorage.getItem('ioai_user');
     if (!loginId) { router.replace('/dip/login'); return; }
     const stored = localStorage.getItem('ioai_name') || loginId;
-    setStudentName(stored.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase()));
+    setStudentName(toTitleCase(stored));
     fetch(`/api/student/request-certificate?login_id=${loginId}&platform=dip`)
       .then(r => r.json())
       .then(data => {
@@ -29,6 +39,63 @@ export default function DipCertificatePage() {
       })
       .catch(() => setAllowed(false));
   }, []);
+
+  const drawCertificate = useCallback((canvas: HTMLCanvasElement, name: string) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = IMG_W;
+    canvas.height = IMG_H;
+
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, IMG_W, IMG_H);
+
+      const maxWidth = 580;
+      let fontSize = 72;
+      ctx.font = `bold ${fontSize}px Georgia, "Times New Roman", serif`;
+      while (ctx.measureText(name).width > maxWidth && fontSize > 24) {
+        fontSize -= 2;
+        ctx.font = `bold ${fontSize}px Georgia, "Times New Roman", serif`;
+      }
+
+      ctx.fillStyle = '#1a1a1a';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(name, NAME_CENTER_X, NAME_BASELINE_Y);
+
+      // Date — bottom right
+      ctx.font = '28px Georgia, serif';
+      ctx.fillStyle = '#444444';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(date, IMG_W - 110, IMG_H - 88);
+    };
+    img.src = '/dip-cert-bg.png';
+  }, [date]);
+
+  useEffect(() => {
+    if (ready && canvasRef.current) {
+      drawCertificate(canvasRef.current, studentName);
+    }
+  }, [ready, studentName, drawCertificate]);
+
+  const handleDownload = async () => {
+    if (!canvasRef.current) return;
+    setDownloading(true);
+    try {
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = pdf.internal.pageSize.getHeight();
+      const imgData = canvasRef.current.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
+      pdf.save(`IDC-DIP-Certificate-${(studentName || 'student').replace(/\s+/g, '-')}.pdf`);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const handleRequest = async () => {
     const loginId = localStorage.getItem('ioai_user');
@@ -41,27 +108,6 @@ export default function DipCertificatePage() {
     });
     setRequested(true);
     setRequesting(false);
-  };
-
-  const handleDownload = async () => {
-    if (!certRef.current) return;
-    setDownloading(true);
-    try {
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-      const canvas = await html2canvas(certRef.current, {
-        scale: 2, useCORS: true, backgroundColor: '#ffffff',
-        width: certRef.current.scrollWidth,
-        height: certRef.current.scrollHeight,
-      });
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = pdf.internal.pageSize.getHeight();
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
-      pdf.save(`IDC-DIP-Certificate-${(studentName || 'student').replace(/\s+/g, '-')}.pdf`);
-    } finally {
-      setDownloading(false);
-    }
   };
 
   if (allowed === null) return (
@@ -116,9 +162,13 @@ export default function DipCertificatePage() {
         <div className="flex flex-col gap-4">
           <div>
             <label className="block text-sm font-medium text-secondary-text mb-1">Full Name *</label>
-            <input type="text" value={studentName} onChange={e => setStudentName(e.target.value.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()))}
+            <input
+              type="text"
+              value={studentName}
+              onChange={e => setStudentName(toTitleCase(e.target.value))}
               placeholder="e.g. Thabo Nkosi"
-              className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent transition-all" />
+              className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent transition-all"
+            />
           </div>
           <button onClick={() => setReady(true)} disabled={!studentName.trim()}
             className="w-full py-3 bg-accent text-black font-bold rounded-xl hover:bg-accent/90 transition-all disabled:opacity-40 mt-2">
@@ -131,7 +181,6 @@ export default function DipCertificatePage() {
 
   return (
     <div className="flex flex-col items-center justify-start min-h-full overflow-y-auto p-6 bg-[#0a0a0a]">
-      {/* Action bar */}
       <div className="mb-6 flex gap-3 print:hidden w-full max-w-2xl justify-between items-center">
         <button onClick={() => setReady(false)}
           className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border-subtle text-secondary-text font-semibold rounded-xl hover:border-accent hover:text-accent transition-all text-sm">
@@ -144,67 +193,16 @@ export default function DipCertificatePage() {
         </button>
       </div>
 
-      {/* Certificate — portrait A4 ratio */}
-      <div
-        ref={certRef}
+      <canvas
+        ref={canvasRef}
         style={{
-          position: 'relative',
           width: '100%',
           maxWidth: 600,
-          aspectRatio: '1 / 1.414',
-          overflow: 'hidden',
+          height: 'auto',
+          display: 'block',
           boxShadow: '0 25px 80px rgba(0,0,0,0.6)',
         }}
-      >
-        {/* Background template image */}
-        <img
-          src="/dip-cert-bg.png"
-          alt=""
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          crossOrigin="anonymous"
-        />
-
-        {/* Student name — baseline anchored just above underline at 55.90% */}
-        <div style={{
-          position: 'absolute',
-          top: '55.50%',
-          left: '28.23%',
-          width: '43.76%',
-          transform: 'translateY(-100%)',
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'center',
-        }}>
-          <div style={{
-            fontFamily: "'Georgia', 'Times New Roman', serif",
-            fontWeight: 700,
-            color: '#1a1a1a',
-            letterSpacing: 1,
-            lineHeight: 1,
-            whiteSpace: 'nowrap',
-            fontSize: 'clamp(10px, 2.8vw, 28px)',
-            maxWidth: '100%',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}>
-            {studentName}
-          </div>
-        </div>
-
-        {/* Date — bottom-right footer */}
-        <div style={{
-          position: 'absolute',
-          bottom: '4.5%',
-          right: '8%',
-          textAlign: 'right',
-          fontFamily: "'Georgia', serif",
-          fontSize: 'clamp(8px, 1vw, 11px)',
-          color: '#444',
-          letterSpacing: 0.5,
-        }}>
-          {date}
-        </div>
-      </div>
+      />
 
       <p className="text-secondary-text text-xs mt-4 print:hidden">
         Download as PDF to share with employers or add to your LinkedIn profile.
