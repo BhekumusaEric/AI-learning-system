@@ -1062,7 +1062,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
-  const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_unlocked: boolean; name_change_requested: boolean; certificate_name: string | null }[]>([]);
+  const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_requested: boolean; certificate_unlocked: boolean; name_change_requested: boolean; certificate_name: string | null }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unlocking, setUnlocking] = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
