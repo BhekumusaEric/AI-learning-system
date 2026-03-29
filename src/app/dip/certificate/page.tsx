@@ -164,17 +164,16 @@ export default function DipCertificatePage() {
           crossOrigin="anonymous"
         />
 
-        {/* Student name — left=28.2% top=51.1% width=43.8% from pptx */}
+        {/* Student name — sits above the underline at 55.9% */}
         <div style={{
           position: 'absolute',
-          top: '51.1%',
-          left: '28.2%',
-          width: '43.8%',
-          height: '4.2%',
+          bottom: '44.1%',
+          left: '28.23%',
+          width: '43.76%',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           justifyContent: 'center',
-          overflow: 'hidden',
+          paddingBottom: '0.5%',
         }}>
           <div style={{
             fontFamily: "'Georgia', 'Times New Roman', serif",
