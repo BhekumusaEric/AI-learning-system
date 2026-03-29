@@ -185,9 +185,9 @@ export default function LessonPageClient({
   ].includes(pageId);
 
   const leftPanel = isWrp ? (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="w-full">
       {video && <VideoEmbed src={video} />}
-      <div className="max-w-3xl mx-auto w-full px-6 py-8">
+      <div className="max-w-3xl mx-auto w-full py-8">
         <WrpContent content={content} video={video} />
         <div className="mt-16 pt-8 border-t border-border-subtle flex items-center justify-between">
           {prevPage ? (
@@ -219,9 +219,9 @@ export default function LessonPageClient({
       </div>
     </div>
   ) : (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="w-full">
       {video && <VideoEmbed src={video} />}
-      <div className="prose prose-invert prose-cyan max-w-none p-6
+      <div className="prose prose-invert prose-cyan max-w-none
         prose-p:text-[16px] prose-p:leading-relaxed prose-p:text-gray-300
         prose-headings:text-white prose-headings:font-semibold
         prose-h1:text-3xl prose-h1:mb-6

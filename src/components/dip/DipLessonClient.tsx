@@ -150,9 +150,9 @@ export default function DipLessonClient({
   const navigate = (id: string) => router.push(`/dip/lesson/${id}`);
 
   const leftPanel = (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="w-full">
       {video && <VideoEmbed src={video} />}
-      <div className="prose prose-invert prose-cyan max-w-none p-6
+      <div className="prose prose-invert prose-cyan max-w-none
         prose-p:text-[16px] prose-p:leading-relaxed prose-p:text-gray-300
         prose-headings:text-white prose-headings:font-semibold
         prose-h1:text-3xl prose-h1:mb-6
