@@ -175,26 +175,77 @@ export default function CvBuilder() {
   const removeVol = (id: string) => setCv(p => ({ ...p, volunteer: p.volunteer.filter(v => v.id !== id) }));
   const updateVol = (id: string, patch: Partial<VolunteerEntry>) => setCv(p => ({ ...p, volunteer: p.volunteer.map(v => v.id === id ? { ...v, ...patch } : v) }));
 
-  const handleDownload = async () => {
-    if (!previewRef.current) return;
+  const generatePdfBase64 = async (): Promise<string | null> => {
+    // Temporarily make the preview visible for capture
+    const el = previewRef.current;
+    if (!el) return null;
     try {
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
-      const el = previewRef.current;
+      // Force visible for capture
+      el.style.display = 'block';
+      el.style.position = 'fixed';
+      el.style.top = '-9999px';
+      el.style.left = '0';
+      el.style.width = '794px'; // A4 at 96dpi
+      el.style.zIndex = '-1';
+      await new Promise(r => setTimeout(r, 100)); // let layout settle
       const canvas = await html2canvas(el, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        width: el.scrollWidth,
-        height: el.scrollHeight,
-        windowWidth: el.scrollWidth,
-        windowHeight: el.scrollHeight,
+        scale: 2, useCORS: true, backgroundColor: '#ffffff',
+        width: el.scrollWidth, height: el.scrollHeight,
+        windowWidth: el.scrollWidth, windowHeight: el.scrollHeight,
       });
+      el.style.display = '';
+      el.style.position = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.zIndex = '';
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pdfW = pdf.internal.pageSize.getWidth();
       const pdfH = pdf.internal.pageSize.getHeight();
       const imgH = (canvas.height * pdfW) / canvas.width;
-      // Multi-page support
+      let y = 0;
+      while (y < imgH) {
+        if (y > 0) pdf.addPage();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, -y, pdfW, imgH);
+        y += pdfH;
+      }
+      return pdf.output('datauristring').split(',')[1]; // base64
+    } catch (e) {
+      console.error('PDF generation failed:', e);
+      return null;
+    }
+  };
+
+  const handleDownload = async () => {
+    const el = previewRef.current;
+    if (!el) return;
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      el.style.display = 'block';
+      el.style.position = 'fixed';
+      el.style.top = '-9999px';
+      el.style.left = '0';
+      el.style.width = '794px';
+      el.style.zIndex = '-1';
+      await new Promise(r => setTimeout(r, 100));
+      const canvas = await html2canvas(el, {
+        scale: 2, useCORS: true, backgroundColor: '#ffffff',
+        width: el.scrollWidth, height: el.scrollHeight,
+        windowWidth: el.scrollWidth, windowHeight: el.scrollHeight,
+      });
+      el.style.display = '';
+      el.style.position = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.width = '';
+      el.style.zIndex = '';
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = pdf.internal.pageSize.getHeight();
+      const imgH = (canvas.height * pdfW) / canvas.width;
       let y = 0;
       while (y < imgH) {
         if (y > 0) pdf.addPage();
@@ -204,7 +255,7 @@ export default function CvBuilder() {
       pdf.save(`${tab === 'cv' ? 'CV' : 'Cover-Letter'}-${cv.fullName.replace(/\s+/g, '-') || 'document'}.pdf`);
     } catch (e) {
       console.error('PDF generation failed:', e);
-      alert('PDF generation failed. Please try switching to Preview mode first, then download.');
+      alert('PDF generation failed. Please try again.');
     }
   };
 
@@ -212,11 +263,13 @@ export default function CvBuilder() {
     if (!emailAddr.trim()) return;
     setEmailStatus('sending');
     try {
-      const res = await fetch('/api/wrp/send-document', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: emailAddr, type: tab, cv, cover }) });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        console.error('Email failed:', body);
-      }
+      const pdfBase64 = await generatePdfBase64();
+      const filename = `${tab === 'cv' ? 'CV' : 'Cover-Letter'}-${cv.fullName.replace(/\s+/g, '-') || 'document'}.pdf`;
+      const res = await fetch('/api/wrp/send-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: emailAddr, type: tab, cv, cover, pdfBase64, filename }),
+      });
       setEmailStatus(res.ok ? 'sent' : 'error');
     } catch (e) {
       console.error('Email exception:', e);
@@ -397,9 +450,9 @@ export default function CvBuilder() {
           </div>
         )}
 
-        {/* Preview panel — always rendered so html2canvas can capture it */}
+        {/* Preview panel — always in DOM so ref is always available for PDF generation */}
         <div className={`${mode === 'edit' ? 'lg:block lg:w-[420px]' : 'w-full'} overflow-y-auto max-h-[700px] bg-gray-100 ${mode === 'edit' ? 'hidden' : ''}`}>
-          <div ref={previewRef} style={{ background: '#ffffff' }}>
+          <div ref={previewRef} style={{ background: '#ffffff', width: '100%' }}>
             {tab === 'cv' ? <CvPreview cv={cv} /> : <CoverPreview cover={cover} cv={cv} />}
           </div>
         </div>
