@@ -20,7 +20,7 @@ export default function WrpCertificatePage() {
     const completed = raw ? Object.keys(JSON.parse(raw)).filter(k => JSON.parse(raw)[k]).length : 0;
     setAllowed(completed >= 7);
     const name = localStorage.getItem('ioai_name') || '';
-    setStudentName(name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
+    setStudentName(name.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase()));
   }, []);
 
   const handleDownload = async () => {
@@ -73,7 +73,7 @@ export default function WrpCertificatePage() {
         <div className="flex flex-col gap-4">
           <div>
             <label className="block text-sm font-medium text-secondary-text mb-1">Full Name *</label>
-            <input type="text" value={studentName} onChange={e => setStudentName(e.target.value)}
+            <input type="text" value={studentName} onChange={e => setStudentName(e.target.value.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()))}
               placeholder="e.g. Thabo Nkosi"
               className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent transition-all" />
           </div>
@@ -121,24 +121,27 @@ export default function WrpCertificatePage() {
           crossOrigin="anonymous"
         />
 
-        {/* Student name overlay — positioned at ~51% from top, centred */}
-        {/* The pptx places the name text box at y≈5462975 out of 10696055 EMUs ≈ 51.1% from top */}
+        {/* Student name — left=28.2% top=51.1% width=43.8% from pptx */}
         <div style={{
           position: 'absolute',
-          top: '51%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '70%',
-          textAlign: 'center',
+          top: '51.1%',
+          left: '28.2%',
+          width: '43.8%',
+          height: '4.2%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
         }}>
           <div style={{
             fontFamily: "'Georgia', 'Times New Roman', serif",
-            fontSize: 'clamp(18px, 3.5vw, 32px)',
             fontWeight: 700,
             color: '#1a1a1a',
             letterSpacing: 1,
-            lineHeight: 1.2,
+            lineHeight: 1,
             whiteSpace: 'nowrap',
+            fontSize: 'clamp(10px, 2.8vw, 28px)',
+            maxWidth: '100%',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}>
@@ -146,17 +149,16 @@ export default function WrpCertificatePage() {
           </div>
         </div>
 
-        {/* Date overlay — bottom area */}
+        {/* Date — bottom-right footer */}
         <div style={{
           position: 'absolute',
-          bottom: '8%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          textAlign: 'center',
+          bottom: '4.5%',
+          right: '8%',
+          textAlign: 'right',
           fontFamily: "'Georgia', serif",
-          fontSize: 'clamp(9px, 1.2vw, 13px)',
+          fontSize: 'clamp(8px, 1vw, 11px)',
           color: '#444',
-          letterSpacing: 1,
+          letterSpacing: 0.5,
         }}>
           {date}
         </div>
