@@ -1,6 +1,7 @@
 ---
 title: "User Input: Talking to Your Program"
 type: "read"
+video: "https://www.youtube.com/watch?v=mD07T_F20Kk"
 ---
 
 # User Input: Talking to Your Program

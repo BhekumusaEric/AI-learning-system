@@ -1,6 +1,7 @@
 ---
 title: "Functions: Reusable Code Blocks"
 type: "read"
+video: "https://www.youtube.com/watch?v=u-OmNv_w8Os"
 resources:
   - title: "Defining Functions in Python"
     url: "https://docs.python.org/3/tutorial/controlflow.html#defining-functions"

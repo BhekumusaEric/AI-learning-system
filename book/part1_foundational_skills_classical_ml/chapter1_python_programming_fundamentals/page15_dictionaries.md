@@ -1,6 +1,7 @@
 ---
 title: "Dictionaries: Labels for Your Data"
 type: "read"
+video: "https://www.youtube.com/watch?v=D-vIAtPq58E"
 ---
 
 # Dictionaries: Labels for Your Data
