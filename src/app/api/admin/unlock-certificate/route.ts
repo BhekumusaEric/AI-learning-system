@@ -172,10 +172,29 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from(PLATFORM_META[platform].table)
-    .select('login_id, full_name, email, certificate_requested, certificate_unlocked')
-    .eq('certificate_requested', true)
+    .select('login_id, full_name, email, certificate_requested, certificate_unlocked, name_change_requested, certificate_name')
+    .or('certificate_requested.eq.true,name_change_requested.eq.true')
     .order('full_name');
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data || []);
+}
+
+// PATCH /api/admin/unlock-certificate — approve name change
+export async function PATCH(request: Request) {
+  if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { login_id, platform } = await request.json();
+  if (!login_id || !platform) return NextResponse.json({ error: 'login_id and platform required' }, { status: 400 });
+
+  const table = PLATFORM_META[platform as 'dip' | 'wrp']?.table;
+  if (!table) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 });
+
+  // Clear the locked name and the request flag so student can re-enter
+  const { error } = await supabase
+    .from(table)
+    .update({ certificate_name: null, name_change_requested: false })
+    .eq('login_id', login_id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
 }

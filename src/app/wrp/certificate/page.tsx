@@ -23,6 +23,8 @@ export default function WrpCertificatePage() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [requested, setRequested] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [nameLocked, setNameLocked] = useState(false);
+  const [nameChangeRequested, setNameChangeRequested] = useState(false);
   const [ready, setReady] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -40,6 +42,12 @@ export default function WrpCertificatePage() {
       .then(data => {
         setAllowed(data.certificate_unlocked ?? false);
         setRequested(data.certificate_requested ?? false);
+        setNameChangeRequested(data.name_change_requested ?? false);
+        if (data.certificate_name) {
+          setStudentName(data.certificate_name);
+          setNameLocked(true);
+          setReady(true);
+        }
       })
       .catch(() => setAllowed(false));
   }, []);
@@ -90,16 +98,38 @@ export default function WrpCertificatePage() {
     if (!canvasRef.current) return;
     setDownloading(true);
     try {
+      // Save name to DB on first download
+      if (!nameLocked) {
+        const loginId = localStorage.getItem('ioai_user');
+        if (loginId) {
+          await fetch('/api/student/request-certificate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login_id: loginId, platform: 'wrp', action: 'save_name', certificate_name: studentName }),
+          });
+          setNameLocked(true);
+        }
+      }
       const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pdfW = pdf.internal.pageSize.getWidth();
       const pdfH = pdf.internal.pageSize.getHeight();
-      const imgData = canvasRef.current.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
+      pdf.addImage(canvasRef.current.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
       pdf.save(`WRP-Certificate-${(studentName || 'student').replace(/\s+/g, '-')}.pdf`);
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleRequestNameChange = async () => {
+    const loginId = localStorage.getItem('ioai_user');
+    if (!loginId) return;
+    await fetch('/api/student/request-certificate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_id: loginId, platform: 'wrp', action: 'request_name_change' }),
+    });
+    setNameChangeRequested(true);
   };
 
   const handleRequest = async () => {
@@ -163,7 +193,7 @@ export default function WrpCertificatePage() {
     <div className="flex h-full items-center justify-center p-8">
       <div className="w-full max-w-md bg-secondary border border-border-subtle rounded-2xl p-8">
         <h2 className="text-xl font-bold mb-1">Generate Your Certificate</h2>
-        <p className="text-secondary-text text-sm mb-6">Confirm your name as it should appear on the certificate.</p>
+        <p className="text-secondary-text text-sm mb-6">Enter your full name exactly as you want it on the certificate. <span className="text-warning font-semibold">This cannot be changed after downloading without admin approval.</span></p>
         <div className="flex flex-col gap-4">
           <div>
             <label className="block text-sm font-medium text-secondary-text mb-1">Full Name *</label>
@@ -172,7 +202,7 @@ export default function WrpCertificatePage() {
               value={studentName}
               onChange={e => setStudentName(e.target.value)}
               onBlur={e => setStudentName(toTitleCase(e.target.value))}
-              placeholder="e.g. Thabo Nkosi"
+              placeholder="e.g. Thabo Eric Nkosi"
               className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent transition-all"
             />
           </div>
@@ -188,12 +218,31 @@ export default function WrpCertificatePage() {
   return (
     <div className="flex flex-col items-center justify-start min-h-full overflow-y-auto p-6 bg-[#0a0a0a]">
       <div className="mb-6 flex gap-3 print:hidden w-full max-w-2xl justify-between items-center">
-        <button onClick={() => setReady(false)}
-          className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border-subtle text-secondary-text font-semibold rounded-xl hover:border-accent hover:text-accent transition-all text-sm">
-          <ChevronLeft className="w-4 h-4" /> Edit Name
-        </button>
+        {!nameLocked && (
+          <button onClick={() => setReady(false)}
+            className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border-subtle text-secondary-text font-semibold rounded-xl hover:border-accent hover:text-accent transition-all text-sm">
+            <ChevronLeft className="w-4 h-4" /> Edit Name
+          </button>
+        )}
+        {nameLocked && (
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-secondary-text border border-border-subtle rounded-lg px-3 py-2">
+              Name locked: <span className="text-foreground font-semibold">{studentName}</span>
+            </span>
+            {nameChangeRequested ? (
+              <span className="text-xs text-warning">Name update requested — pending admin approval</span>
+            ) : (
+              <button
+                onClick={handleRequestNameChange}
+                className="text-xs text-secondary-text hover:text-warning border border-border-subtle hover:border-warning/50 px-3 py-2 rounded-lg transition-all"
+              >
+                Request Name Update
+              </button>
+            )}
+          </div>
+        )}
         <button onClick={handleDownload} disabled={downloading}
-          className="flex items-center gap-2 px-6 py-3 bg-accent text-black font-bold rounded-xl hover:bg-accent/90 transition-all disabled:opacity-50">
+          className="flex items-center gap-2 px-6 py-3 bg-accent text-black font-bold rounded-xl hover:bg-accent/90 transition-all disabled:opacity-50 ml-auto">
           <Download className="w-5 h-5" />
           {downloading ? 'Generating PDF...' : 'Download PDF'}
         </button>

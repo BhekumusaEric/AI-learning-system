@@ -1062,9 +1062,10 @@ function CopyButton({ text }: { text: string }) {
 }
 
 function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
-  const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_unlocked: boolean }[]>([]);
+  const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_unlocked: boolean; name_change_requested: boolean; certificate_name: string | null }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unlocking, setUnlocking] = useState<string | null>(null);
+  const [approving, setApproving] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -1094,8 +1095,26 @@ function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; o
     }
   };
 
-  const pending = requests.filter(r => !r.certificate_unlocked);
-  const done = requests.filter(r => r.certificate_unlocked);
+  const approveName = async (login_id: string) => {
+    setApproving(login_id);
+    try {
+      const res = await fetch('/api/admin/unlock-certificate', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login_id, platform }),
+      });
+      if (res.ok) {
+        setResults(prev => ({ ...prev, [login_id]: 'Name update approved' }));
+        setRequests(prev => prev.map(r => r.login_id === login_id ? { ...r, name_change_requested: false, certificate_name: null } : r));
+      }
+    } finally {
+      setApproving(null);
+    }
+  };
+
+  const certPending = requests.filter(r => r.certificate_requested && !r.certificate_unlocked);
+  const namePending = requests.filter(r => r.name_change_requested);
+  const done = requests.filter(r => r.certificate_unlocked && !r.name_change_requested);
 
   return (
     <div className="p-4 border-b border-border-subtle bg-background/50">
@@ -1103,8 +1122,10 @@ function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; o
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 text-[#d4af37]" />
           <span className="text-sm font-bold text-foreground">Certificate Requests</span>
-          {pending.length > 0 && (
-            <span className="bg-[#d4af37] text-black text-xs font-bold px-2 py-0.5 rounded-full">{pending.length} pending</span>
+          {(certPending.length + namePending.length) > 0 && (
+            <span className="bg-[#d4af37] text-black text-xs font-bold px-2 py-0.5 rounded-full">
+              {certPending.length + namePending.length} pending
+            </span>
           )}
         </div>
         <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
@@ -1116,14 +1137,14 @@ function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; o
         <p className="text-secondary-text text-sm">No certificate requests yet.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {pending.length > 0 && (
+          {certPending.length > 0 && (
             <>
-              <p className="text-xs font-bold text-secondary-text uppercase tracking-wider mb-1">Pending</p>
-              {pending.map(r => (
+              <p className="text-xs font-bold text-secondary-text uppercase tracking-wider mb-1">Pending Unlock</p>
+              {certPending.map(r => (
                 <div key={r.login_id} className="flex items-center justify-between p-3 bg-[#0d0d0d] border border-[#d4af37]/20 rounded-lg">
                   <div>
                     <div className="text-sm font-semibold text-foreground">{r.full_name}</div>
-                    <div className="text-xs text-secondary-text font-mono">{r.login_id} {r.email ? `· ${r.email}` : '· no email'}</div>
+                    <div className="text-xs text-secondary-text font-mono">{r.login_id}{r.email ? ` · ${r.email}` : ' · no email'}</div>
                     {results[r.login_id] && <div className="text-xs text-accent mt-0.5">{results[r.login_id]}</div>}
                   </div>
                   <button
@@ -1138,6 +1159,29 @@ function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; o
               ))}
             </>
           )}
+          {namePending.length > 0 && (
+            <>
+              <p className="text-xs font-bold text-secondary-text uppercase tracking-wider mt-2 mb-1">Name Update Requests</p>
+              {namePending.map(r => (
+                <div key={r.login_id} className="flex items-center justify-between p-3 bg-[#0d0d0d] border border-warning/20 rounded-lg">
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">{r.full_name}</div>
+                    <div className="text-xs text-secondary-text font-mono">{r.login_id}</div>
+                    {r.certificate_name && <div className="text-xs text-secondary-text mt-0.5">Current name: <span className="text-foreground">{r.certificate_name}</span></div>}
+                    {results[r.login_id] && <div className="text-xs text-accent mt-0.5">{results[r.login_id]}</div>}
+                  </div>
+                  <button
+                    onClick={() => approveName(r.login_id)}
+                    disabled={approving === r.login_id}
+                    className="flex items-center gap-1.5 bg-warning/10 border border-warning/30 text-warning font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-warning hover:text-black transition-all disabled:opacity-50"
+                  >
+                    {approving === r.login_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                    Approve
+                  </button>
+                </div>
+              ))}
+            </>
+          )}
           {done.length > 0 && (
             <>
               <p className="text-xs font-bold text-secondary-text uppercase tracking-wider mt-2 mb-1">Already Unlocked</p>
@@ -1146,6 +1190,7 @@ function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; o
                   <div>
                     <div className="text-sm font-semibold text-foreground">{r.full_name}</div>
                     <div className="text-xs text-secondary-text font-mono">{r.login_id}</div>
+                    {r.certificate_name && <div className="text-xs text-secondary-text">Name: {r.certificate_name}</div>}
                   </div>
                   <span className="text-xs text-accent font-semibold">Unlocked</span>
                 </div>
