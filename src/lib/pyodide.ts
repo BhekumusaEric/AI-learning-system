@@ -54,6 +54,7 @@ export async function getPyodide(): Promise<void> {
       if (type === 'load_error') {
         loadError = error || 'Failed to load Python environment';
         isReady = false;
+        console.error('Pyodide load error:', loadError);
         return;
       }
 
@@ -67,6 +68,15 @@ export async function getPyodide(): Promise<void> {
       }
     };
   }
+}
+
+export function clearPyodideWorker() {
+  if (pyodideWorker) {
+    pyodideWorker.terminate();
+    pyodideWorker = null;
+  }
+  isReady = false;
+  loadError = null;
 }
 
 export async function runPythonCode(code: string, tests: string = '', timeoutMs: number = 30000): Promise<ExecutionResult> {

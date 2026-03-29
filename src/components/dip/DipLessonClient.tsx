@@ -6,7 +6,7 @@ import CodeEditor from '@/components/editor/CodeEditor';
 import FeedbackPanel, { TestResult } from '@/components/editor/FeedbackPanel';
 import ColabPanel from '@/components/editor/ColabPanel';
 import EmbeddedColabPanel from '@/components/editor/EmbeddedColabPanel';
-import { runPythonCode, getPyodide, isPyodideReady, setInputCallback } from '@/lib/pyodide';
+import { runPythonCode, getPyodide, isPyodideReady, getPyodideError, clearPyodideWorker, setInputCallback } from '@/lib/pyodide';
 import { usePersistedCode } from '@/lib/usePersistedCode';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -40,19 +40,40 @@ export default function DipLessonClient({
   const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
   const [isRunning, setIsRunning] = useState(false);
   const [isEnvLoading, setIsEnvLoading] = useState(true);
+  const [envError, setEnvError] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const { markCompleted, completedPages } = useProgress();
   const router = useRouter();
 
-  useEffect(() => {
+  const initPyodide = () => {
     if (!isPractice) return;
     setIsEnvLoading(true);
+    setEnvError(null);
     getPyodide();
     const interval = setInterval(() => {
-      if (isPyodideReady()) { setIsEnvLoading(false); clearInterval(interval); }
+      const error = getPyodideError();
+      if (error) {
+        setEnvError(error);
+        setIsEnvLoading(false);
+        clearInterval(interval);
+      } else if (isPyodideReady()) {
+        setIsEnvLoading(false);
+        setEnvError(null);
+        clearInterval(interval);
+      }
     }, 300);
-    return () => clearInterval(interval);
-  }, [isPractice]);
+    return interval;
+  };
+
+  useEffect(() => {
+    const interval = initPyodide();
+    return () => { if (interval) clearInterval(interval); };
+  }, [isPractice, pageId]);
+
+  const handleRetryEnv = () => {
+    clearPyodideWorker();
+    initPyodide();
+  };
   useEffect(() => { setResults(null); }, [pageId]);
 
   const handleRun = async () => {
@@ -216,17 +237,32 @@ export default function DipLessonClient({
     ) : (
       <>
         <CodeEditor code={code} onChange={v => setCode(v || '')} onRun={handleRun} onReset={() => { resetCode(); setResults(null); }} isRunning={isRunning} isLoading={isEnvLoading} onInputRequest={cb => setInputCallback(cb)} />
-        <FeedbackPanel
-          results={results}
-          isRunning={isRunning}
-          onNext={isLastPage
-            ? () => { markCompleted(pageId); router.push('/dip/exam'); }
-            : nextPageId
-              ? () => { markCompleted(pageId); navigate(nextPageId); }
-              : undefined
-          }
-          nextLabel={isLastPage ? 'Go to Final Exam' : 'Next Lesson'}
-        />
+        {envError ? (
+          <div className="p-6 m-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-200">
+            <h4 className="font-bold flex items-center gap-2 mb-2">
+              <span className="text-lg">⚠️</span> Python Environment Failed to Load
+            </h4>
+            <p className="text-sm mb-4 opacity-90">{envError}</p>
+            <button
+              onClick={handleRetryEnv}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded transition-colors"
+            >
+              Retry Loading Environment
+            </button>
+          </div>
+        ) : (
+          <FeedbackPanel
+            results={results}
+            isRunning={isRunning}
+            onNext={isLastPage
+              ? () => { markCompleted(pageId); router.push('/dip/exam'); }
+              : nextPageId
+                ? () => { markCompleted(pageId); navigate(nextPageId); }
+                : undefined
+            }
+            nextLabel={isLastPage ? 'Go to Final Exam' : 'Next Lesson'}
+          />
+        )}
       </>
     )
   ) : null;

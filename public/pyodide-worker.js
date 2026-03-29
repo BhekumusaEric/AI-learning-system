@@ -1,34 +1,36 @@
 // pyodide-worker.js
 // Runs in a Web Worker outside of the Next.js Turbopack bundled environment
 
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js");
+importScripts("https://cdn.jsdelivr.net/pyodide/v0.27.2/full/pyodide.js");
 
 let pyodideReadyPromise = null;
 
 async function load() {
   self.pyodide = await loadPyodide({
-    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/",
+    indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.2/full/",
   });
 
   // Load micropip first so we can install any extra packages
   await self.pyodide.loadPackage("micropip");
 
-  // Pre-load all packages used across the full curriculum:
-  // Part 1 – Python fundamentals, NumPy, Pandas, Matplotlib, Sklearn
-  // Part 2 – Neural networks (numpy-based perceptron exercises)
-  // Part 3 – Computer vision helpers
-  // Part 4 – NLP helpers
-  await self.pyodide.loadPackage([
-    "numpy",
-    "pandas",
-    "matplotlib",
-    "scipy",
-    "scikit-learn",
-  ]);
+  // Pre-load core packages — if these fail, the environment is broken
+  try {
+    await self.pyodide.loadPackage([
+      "numpy",
+      "pandas",
+      "matplotlib",
+      "scipy",
+      "scikit-learn",
+    ]);
+  } catch (e) {
+    console.error("Critical package load failure:", e);
+    throw new Error(`Critical package load failure: ${e.message || e}`);
+  }
 
   // Packages not bundled in Pyodide — install via micropip
   const micropip = self.pyodide.pyimport("micropip");
   try {
+    // Install seaborn and any other extras
     await micropip.install([
       "seaborn",
     ]);
