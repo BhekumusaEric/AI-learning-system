@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink, GitPullRequest, MapPin, UserCheck, UserX } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { ApplicationGroup, RawApplication } from '@/lib/applications';
 
 export interface AdminUser {
   login_id: string;
@@ -1203,8 +1204,185 @@ function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; o
   );
 }
 
+function OnboardingPipeline() {
+  const [groups, setGroups] = useState<ApplicationGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [processingGroupId, setProcessingGroupId] = useState<string | null>(null);
+  const [onboardResults, setOnboardResults] = useState<{ groupId: string; succeeded: number; total: number } | null>(null);
+
+  const fetchPipelines = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/applications');
+      const data = await res.json();
+      if (res.ok) setGroups(data.groups);
+      else setError(data.error || 'Failed to fetch applications');
+    } catch (e: any) {
+      setError(e.message || 'Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchPipelines(); }, []);
+
+  const handleOnboard = async (group: ApplicationGroup) => {
+    if (!confirm(`Activate cohort for ${group.city} (${group.students.length} students)?`)) return;
+    
+    setProcessingGroupId(group.id);
+    const dateStr = new Date().toISOString().split('T')[0];
+    const cohortName = `${group.city} - ${dateStr}`;
+
+    try {
+      const res = await fetch('/api/admin/onboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          students: group.students,
+          cohortName,
+          program: group.program
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOnboardResults({ 
+          groupId: group.id, 
+          succeeded: data.results.filter((r: any) => r.success).length, 
+          total: group.students.length 
+        });
+        // Remove processed group from UI
+        setGroups(prev => prev.filter(g => g.id !== group.id));
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (e: any) {
+      alert(`Network error: ${e.message}`);
+    } finally {
+      setProcessingGroupId(null);
+    }
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20 gap-3 text-secondary-text">
+      <Loader2 className="w-6 h-6 animate-spin" />
+      <span className="text-lg font-mono">Fetching pending applications...</span>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-bold text-foreground">Onboarding Pipeline</h3>
+          <p className="text-sm text-secondary-text">Automated student registration from application data</p>
+        </div>
+        <button onClick={fetchPipelines} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-secondary-text hover:text-accent">
+          <RefreshCw className="w-5 h-5" />
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-error/10 border border-error/20 p-4 rounded-xl flex items-center gap-3 text-error">
+          <AlertCircle className="w-5 h-5" />
+          <span className="text-sm font-semibold">{error}</span>
+        </div>
+      )}
+
+      {onboardResults && (
+        <div className="bg-accent/10 border border-accent/20 p-4 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-center gap-3 text-accent">
+            <CheckCircle className="w-5 h-5" />
+            <span className="text-sm font-semibold">
+              Successfully onboarded {onboardResults.succeeded} of {onboardResults.total} students!
+            </span>
+          </div>
+          <button onClick={() => setOnboardResults(null)} className="text-xs text-secondary-text hover:text-foreground">Dismiss</button>
+        </div>
+      )}
+
+      {groups.length === 0 ? (
+        <div className="text-center py-20 border-2 border-dashed border-border-subtle rounded-3xl">
+          <UserCheck className="w-12 h-12 text-secondary-text/30 mx-auto mb-4" />
+          <p className="text-secondary-text">No pending applications found in the pipeline.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {groups.map(group => (
+            <div key={group.id} className="bg-[#0a0a0a] border border-border-subtle rounded-2xl overflow-hidden shadow-lg transition-transform hover:scale-[1.01]">
+              <div className="p-5 border-b border-border-subtle flex items-start justify-between bg-white/[0.02]">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                      group.program.includes('Digital') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'
+                    }`}>
+                      {group.program}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-secondary-text font-mono">
+                      <MapPin className="w-3 h-3" /> {group.city}
+                    </span>
+                  </div>
+                  <h4 className="text-lg font-bold text-foreground">{group.campus}</h4>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-black text-accent">{group.students.length}</div>
+                  <div className="text-[11px] font-bold text-secondary-text uppercase tracking-tighter">Students</div>
+                </div>
+              </div>
+
+              <div className="p-5">
+                <div className="space-y-3 mb-6">
+                  {group.students.slice(0, 3).map((s, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="text-foreground font-medium">{s.Full_Name}</span>
+                      <span className="text-[11px] font-mono text-secondary-text">{s.Email_Address}</span>
+                    </div>
+                  ))}
+                  {group.students.length > 3 && (
+                    <div className="text-xs text-secondary-text italic">+ {group.students.length - 3} more students</div>
+                  )}
+                </div>
+
+                {group.duplicates.length > 0 && (
+                  <div className="bg-warning/5 border border-warning/20 p-3 rounded-xl mb-6">
+                    <div className="flex items-center gap-2 text-warning mb-2 text-xs font-bold uppercase">
+                      <UserX className="w-4 h-4" /> {group.duplicates.length} Duplicates Flagged
+                    </div>
+                    <div className="space-y-1">
+                      {group.duplicates.slice(0, 2).map((d, i) => (
+                        <div key={i} className="text-[11px] text-secondary-text flex justify-between">
+                          <span>{d.Full_Name}</span>
+                          <span>{d.Email_Address}</span>
+                        </div>
+                      ))}
+                      {group.duplicates.length > 2 && <div className="text-[10px] text-secondary-text">...and {group.duplicates.length - 2} others</div>}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => handleOnboard(group)}
+                  disabled={!!processingGroupId}
+                  className="w-full flex items-center justify-center gap-2 bg-accent text-black font-bold py-3 rounded-xl hover:scale-[1.03] transition-all disabled:opacity-50 disabled:scale-100"
+                >
+                  {processingGroupId === group.id ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>Activate Cohort <GitPullRequest className="w-4 h-4" /></>
+                  )}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPages }: { totalSaaioPages: number; totalDipPages: number; totalWrpPages: number }) {
-  const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp' | 'supervisors' | 'invite-links'>('saaio');
+  const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp' | 'supervisors' | 'invite-links' | 'onboarding'>('saaio');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -1335,7 +1513,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
       <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
         {/* Platform Tabs */}
         <div className="flex border-b border-border-subtle overflow-x-auto">
-          {(['saaio', 'dip', 'wrp', 'supervisors', 'invite-links'] as const).map(p => (
+          {(['saaio', 'dip', 'wrp', 'onboarding', 'supervisors', 'invite-links'] as const).map(p => (
             <button
               key={p}
               onClick={() => setPlatform(p)}
@@ -1343,16 +1521,13 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                 platform === p ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'
               }`}
             >
-              {p === 'saaio' ? 'SAAIO' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'supervisors' ? '🛡 Supervisors' : '🔗 Invite Links'}
+              {p === 'saaio' ? 'SAAIO' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'onboarding' ? '🚀 Onboarding' : p === 'supervisors' ? '🛡 Supervisors' : '🔗 Invite Links'}
             </button>
           ))}
         </div>
 
-        {/* Supervisors panel */}
-        {platform === 'supervisors' && <SupervisorsPanel />}
-
-        {/* Invite Links panel */}
-        {platform === 'invite-links' && <InviteLinksPanel />}
+        {/* Onboarding Pipeline */}
+        {platform === 'onboarding' && <OnboardingPipeline />}
 
         {/* Bulk Import */}
         {platform !== 'supervisors' && platform !== 'invite-links' && showBulk && <BulkImport platform={platform as 'saaio'|'dip'|'wrp'} onDone={fetchStudents} />}
@@ -1378,7 +1553,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
           <CertificateRequests platform={platform as 'dip'|'wrp'} onClose={() => setShowCertRequests(false)} />
         )}
 
-        {platform !== 'supervisors' && platform !== 'invite-links' && <>
+        {platform !== 'supervisors' && platform !== 'invite-links' && platform !== 'onboarding' && <>
         {/* Register Form */}
         <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
           {addError && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2">{addError}</p>}

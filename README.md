@@ -1,11 +1,15 @@
-# SAAIO Training Grounds
+---
 
-## 🔗 Platform Links
+## 🚀 Deployment & Infrastructure
 
-| Platform | URL |
-|---|---|
-| 🎓 Student Login (IDC SEF / DIP) | https://ai-learning-system-ten.vercel.app/dip/login |
-| Admin Dashboard | https://ai-learning-system-ten.vercel.app/admin |
+We have migrated to **AWS Hosting** under the **WeThinkCode** domain.
+
+| Service | Architecture | Documentation |
+|---|---|---|
+| **Frontend/Main App** | AWS Lambda + S3 + CloudFront | [Infrastructure Guide](./docs/aws_infrastructure_guide.md) |
+| **Mobile API Server** | AWS EC2 (Express/Node.js) | [EC2 Setup Guide](./docs/ec2_api_setup.md) |
+| **Onboarding Pipeline** | Automated Student Registration | [Onboarding Guide](./docs/ONBOARDING_PIPELINE.md) |
+| **DevOps Requirements** | Checklist for Wonderby | [Deployment Checklist](./docs/deployment_checklist.md) |
 
 ---
 
