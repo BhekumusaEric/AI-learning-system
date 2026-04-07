@@ -19,7 +19,6 @@ export interface ApplicationGroup {
   id: string; // key: Program-Campus
   program: string;
   campus: string;
-  cities: string[]; // Unique cities in this group
   students: RawApplication[];
   duplicates: RawApplication[];
   enrolledCount: number; // Count of students already in our database
@@ -61,15 +60,10 @@ export function groupApplications(
         id: groupId,
         program,
         campus,
-        cities: [],
         students: [],
         duplicates: [],
         enrolledCount: 0
       };
-    }
-
-    if (!groups[groupId].cities.includes(city)) {
-      groups[groupId].cities.push(city);
     }
 
     if (app.alreadyEnrolled) {

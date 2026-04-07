@@ -1400,13 +1400,6 @@ function OnboardingPipeline() {
               </div>
 
               <div className="p-5">
-                <div className="flex flex-wrap gap-1.5 mb-5">
-                  {group.cities.map((city, idx) => (
-                    <span key={idx} className="flex items-center gap-1 text-[10px] bg-white/5 border border-white/10 text-secondary-text px-2 py-0.5 rounded-md">
-                      <MapPin className="w-2.5 h-2.5" /> {city}
-                    </span>
-                  ))}
-                </div>
                 <div className="space-y-3 mb-6">
                   {group.students
                     .filter(s => !hideEnrolled || !s.alreadyEnrolled)
