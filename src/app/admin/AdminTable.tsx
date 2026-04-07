@@ -1641,6 +1641,12 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
         {/* Onboarding Pipeline */}
         {platform === 'onboarding' && <OnboardingPipeline />}
 
+        {/* Supervisors Manager */}
+        {platform === 'supervisors' && <SupervisorsPanel />}
+
+        {/* Invite Links Manager */}
+        {platform === 'invite-links' && <InviteLinksPanel />}
+
         {/* Bulk Import */}
         {platform !== 'supervisors' && platform !== 'invite-links' && showBulk && <BulkImport platform={platform as 'saaio'|'dip'|'wrp'} onDone={fetchStudents} />}
 
