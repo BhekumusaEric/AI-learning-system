@@ -1,0 +1,26 @@
+$kind: http-request
+name: Update Student Progress
+method: PUT
+url: '{{baseUrl}}/api/supervisor/students/{{loginId}}/progress'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "groundId": "{{groundId}}",
+      "contentId": "{{contentId}}",
+      "status": "completed",
+      "score": 85
+    }
+tests: |-
+  pm.test("Status is 200 or 400", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

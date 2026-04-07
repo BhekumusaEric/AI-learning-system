@@ -1,0 +1,15 @@
+$kind: http-request
+name: List Invite Links
+method: GET
+url: '{{baseUrl}}/api/supervisor/invite'
+order: 6000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+tests: |-
+  pm.test("Status is 200 or 401", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

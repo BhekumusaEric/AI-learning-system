@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink, GitPullRequest, MapPin, UserCheck, UserX, Rocket } from 'lucide-react';
+import UserTour, { TourStep } from '@/components/UserTour';
 import * as XLSX from 'xlsx';
 import { ApplicationGroup, RawApplication } from '@/lib/applications';
 
@@ -188,8 +189,8 @@ function BulkImport({ platform, onDone }: { platform: 'saaio' | 'dip' | 'wrp'; o
           {failed.length > 0 && <span className="text-error text-sm font-bold">{failed.length} failed</span>}
           <span className="text-secondary-text text-sm">{passed.filter(r => r.emailSent).length} emails sent</span>
         </div>
-        <div className="max-h-64 overflow-y-auto">
-          <table className="w-full text-xs font-mono">
+        <div id="admin-student-list" className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono">
             <thead>
               <tr className="text-secondary-text border-b border-border-subtle">
                 <th className="text-left py-1 px-2">Status</th>
@@ -1311,7 +1312,7 @@ function OnboardingPipeline() {
   );
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div id="admin-pipeline" className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-xl font-bold text-foreground">Onboarding Pipeline</h3>
@@ -1623,7 +1624,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
 
       <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
         {/* Platform Tabs */}
-        <div className="flex border-b border-border-subtle overflow-x-auto">
+        <div id="admin-tabs" className="flex border-b border-border-subtle overflow-x-auto">
           {(['saaio', 'dip', 'wrp', 'onboarding', 'supervisors', 'invite-links'] as const).map(p => (
             <button
               key={p}
@@ -1632,7 +1633,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                 platform === p ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'
               }`}
             >
-              {p === 'saaio' ? 'SAAIO' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'onboarding' ? '🚀 Onboarding' : p === 'supervisors' ? '🛡 Supervisors' : '🔗 Invite Links'}
+              {p === 'saaio' ? 'SAAIO' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'onboarding' ? 'Onboarding' : p === 'supervisors' ? 'Supervisors' : 'Invite Links'}
             </button>
           ))}
         </div>
@@ -1644,13 +1645,15 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
         {platform !== 'supervisors' && platform !== 'invite-links' && showBulk && <BulkImport platform={platform as 'saaio'|'dip'|'wrp'} onDone={fetchStudents} />}
 
         {/* Cohort Manager */}
-        {platform !== 'supervisors' && platform !== 'invite-links' && <CohortManager
-          platform={platform as 'saaio'|'dip'|'wrp'}
-          cohorts={cohorts}
-          selectedCohortId={selectedCohortId}
-          onSelect={setSelectedCohortId}
-          onRefresh={fetchCohorts}
-        />}
+        {platform !== 'supervisors' && platform !== 'invite-links' && <div id="admin-cohorts">
+          <CohortManager
+            platform={platform as 'saaio'|'dip'|'wrp'}
+            cohorts={cohorts}
+            selectedCohortId={selectedCohortId}
+            onSelect={setSelectedCohortId}
+            onRefresh={fetchCohorts}
+          />
+        </div>}
 
         {/* Notify Panel — all platforms */}
         {platform !== 'supervisors' && platform !== 'invite-links' && showNotify && <NotifyPanel platform={platform as 'saaio'|'dip'|'wrp'} onClose={() => setShowNotify(false)} />}
@@ -1877,6 +1880,21 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
       </>
       }
       </div>
+      <TourWrapper />
     </>
+  );
+}
+
+function TourWrapper() {
+  return (
+    <UserTour 
+      tourId="admin_dashboard"
+      steps={[
+        { targetId: 'admin-tabs', title: 'Program Navigation', description: 'Switch between SAAIO, IDC, and WRP datasets here to manage different training programs.', position: 'bottom' },
+        { targetId: 'admin-pipeline', title: 'Onboarding Pipeline', description: 'Access the automated cloud pipeline to fetch and activate new student applications.', position: 'bottom' },
+        { targetId: 'admin-cohorts', title: 'Cohort Management', description: 'Create and organize student groups to track their progress collectively.', position: 'top' },
+        { targetId: 'admin-student-list', title: 'Student Controls', description: 'Monitor individual progress, reset passwords, and unlock certificates for your learners.', position: 'top' }
+      ]}
+    />
   );
 }

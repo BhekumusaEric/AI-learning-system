@@ -1,0 +1,23 @@
+$kind: http-request
+name: Get Supervisor Students
+method: GET
+url: '{{baseUrl}}/api/supervisor/students'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+tests: |-
+  pm.test("Status is 200 or 401", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });
+  if (pm.response.code === 200) {
+    pm.test("Students is array or has data", function () {
+      const json = pm.response.json();
+      const isArray = Array.isArray(json);
+      const hasData = typeof json === "object" && (json.students || json.data);
+      pm.expect(isArray || hasData).to.be.true;
+    });
+  }

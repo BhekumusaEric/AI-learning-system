@@ -1,0 +1,22 @@
+$kind: http-request
+name: Verify OTP
+method: POST
+url: '{{baseUrl}}/api/auth/verify-otp'
+order: 5000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "login_id": "{{loginId}}",
+      "otp": "123456"
+    }
+tests: |-
+  pm.test("Status is 200 or 400", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 400, 401]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

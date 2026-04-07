@@ -431,12 +431,12 @@ from sklearn.ensemble import VotingClassifier
 
 By completing this lab you've practiced:
 
-✅ **Loading JSON data** — a common real-world format  
-✅ **Text feature extraction** — TF-IDF vectorisation  
-✅ **Multi-class classification** — predicting one of 20 categories  
-✅ **Data leakage prevention** — fit only on training data  
-✅ **Model evaluation** — accuracy, classification report, confusion matrix  
-✅ **Kaggle submission** — generating a properly formatted CSV  
-✅ **NLP fundamentals** — treating ingredient lists as text documents  
+ **Loading JSON data** — a common real-world format  
+ **Text feature extraction** — TF-IDF vectorisation  
+ **Multi-class classification** — predicting one of 20 categories  
+ **Data leakage prevention** — fit only on training data  
+ **Model evaluation** — accuracy, classification report, confusion matrix  
+ **Kaggle submission** — generating a properly formatted CSV  
+ **NLP fundamentals** — treating ingredient lists as text documents  
 
 > This is the kind of problem that appears in real data science interviews. Being able to say "I built a text classifier that predicts cuisine from ingredients with 80% accuracy and submitted to Kaggle" is a strong portfolio piece.

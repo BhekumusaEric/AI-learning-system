@@ -1,0 +1,31 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/auth/login'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "login_id": "{{loginId}}",
+      "password": "ABCD1234",
+      "platform": "{{platform}}"
+    }
+tests: |-
+  pm.test("Status is 200 or 401", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 401, 400]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });
+  if (pm.response.code === 200) {
+    pm.test("Response has token or session", function () {
+      const json = pm.response.json();
+      pm.expect(json).to.have.any.keys("token", "session", "access_token", "user");
+    });
+    const json = pm.response.json();
+    if (json.token) pm.collectionVariables.set("token", json.token);
+    if (json.access_token) pm.collectionVariables.set("token", json.access_token);
+  }

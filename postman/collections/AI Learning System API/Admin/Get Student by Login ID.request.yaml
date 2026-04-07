@@ -1,0 +1,21 @@
+$kind: http-request
+name: Get Student by Login ID
+method: GET
+url: '{{baseUrl}}/api/admin/students/{{loginId}}'
+order: 3000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+tests: |-
+  pm.test("Status is 200 or 404", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 404, 401]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });
+  if (pm.response.code === 200) {
+    pm.test("Student has login_id", function () {
+      const json = pm.response.json();
+      pm.expect(json).to.have.any.keys("login_id", "id", "username");
+    });
+  }

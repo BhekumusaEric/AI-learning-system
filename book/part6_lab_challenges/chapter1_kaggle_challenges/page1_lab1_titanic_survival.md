@@ -80,6 +80,6 @@ That's it! The rest is already written for you.
 
 ## Expected Result
 
-✅ Accuracy ≥ 70%
+ Accuracy ≥ 70%
 
 The most important feature is usually `sex` — women had a much higher survival rate. Can you confirm this from the feature importance chart?

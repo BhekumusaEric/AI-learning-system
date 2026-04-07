@@ -124,12 +124,12 @@ export default function JoinPage() {
           <div className="flex flex-wrap gap-3 mt-2">
             {cohort?.location && (
               <span className="text-xs bg-background border border-border-subtle px-3 py-1 rounded-full text-secondary-text">
-                📍 {cohort.location}
+                Location: {cohort.location}
               </span>
             )}
             {cohort?.start_date && (
               <span className="text-xs bg-background border border-border-subtle px-3 py-1 rounded-full text-secondary-text">
-                📅 {new Date(cohort.start_date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                Start Date: {new Date(cohort.start_date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}
               </span>
             )}
           </div>

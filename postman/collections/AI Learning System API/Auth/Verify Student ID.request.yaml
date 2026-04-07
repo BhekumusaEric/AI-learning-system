@@ -1,0 +1,29 @@
+$kind: http-request
+name: Verify Student ID
+method: POST
+url: '{{baseUrl}}/api/auth/verify'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "login_id": "{{loginId}}",
+      "platform": "{{platform}}"
+    }
+tests: |-
+  pm.test("Status is 200 or 404", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 404, 400]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });
+  if (pm.response.code === 200) {
+    pm.test("Response has exists field", function () {
+      const json = pm.response.json();
+      pm.expect(json).to.have.property("exists");
+      pm.expect(json.exists).to.be.a("boolean");
+    });
+  }

@@ -1,0 +1,50 @@
+$kind: collection
+name: AI Learning System API
+description: |-
+  # AI Learning System API
+
+  A comprehensive API for the WeThinkCode_ AI Learning System, supporting multiple educational programs:
+  - **DIP** - Digital Innovation Program
+  - **WRP** - Work Readiness Program
+  - **SAAIO** - South African AI Olympiad
+
+  ## Authentication
+  - **Admin endpoints**: Require `Cookie: admin_session=admin:{{adminPassword}}`
+  - **Supervisor endpoints**: Require `Cookie: supervisor_id={{supervisorId}}`
+  - **Student endpoints**: Use session cookies set after login
+
+  ## Base URL
+  Set the `baseUrl` collection variable to your deployment URL. Default: `http://localhost:3000`
+
+  ## Tech Stack
+  - Next.js App Router API routes
+  - Supabase (PostgreSQL) for data persistence
+  - SHA-256 password hashing
+  - Resend for transactional emails
+variables:
+  - key: baseUrl
+    value: 'http://localhost:3000'
+  - key: platform
+    value: dip
+  - key: adminPassword
+    value: supersecret
+  - key: supervisorId
+    value: ''
+  - key: loginId
+    value: ''
+  - key: cohortId
+    value: ''
+  - key: groundId
+    value: ''
+  - key: contentId
+    value: ''
+  - key: inviteCode
+    value: ''
+  - key: inviteLinkId
+    value: ''
+  - key: supervisorUuid
+    value: ''
+  - key: token
+    value: ''
+  - key: username
+    value: ''

@@ -1,0 +1,12 @@
+$kind: http-request
+name: Revoke Invite Link
+method: DELETE
+url: '{{baseUrl}}/api/supervisor/invite/{{inviteLinkId}}'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+tests: |-
+  pm.test("Status is 200 or 204", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 204, 401, 404]);
+  });

@@ -67,7 +67,7 @@ ___                # Fit on X_train, y_train
 
 ## Expected Results
 
-✅ Accuracy ≥ 85%
+ Accuracy ≥ 85%
 
 The model should correctly identify obvious spam like "WINNER! You have won $1,000,000!" and correctly pass through normal emails like "Can we schedule a meeting tomorrow?"
 

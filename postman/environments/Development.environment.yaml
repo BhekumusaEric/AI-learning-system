@@ -1,0 +1,47 @@
+$kind: environment
+name: Development
+values:
+  - key: baseUrl
+    value: 'http://localhost:3000'
+    enabled: true
+  - key: platform
+    value: dip
+    enabled: true
+  - key: adminPassword
+    value: supersecret
+    enabled: true
+    secret: true
+  - key: supervisorId
+    value: ''
+    enabled: true
+  - key: loginId
+    value: ''
+    enabled: true
+  - key: cohortId
+    value: ''
+    enabled: true
+  - key: groundId
+    value: ''
+    enabled: true
+  - key: contentId
+    value: ''
+    enabled: true
+  - key: inviteCode
+    value: ''
+    enabled: true
+  - key: inviteLinkId
+    value: ''
+    enabled: true
+  - key: supervisorUuid
+    value: ''
+    enabled: true
+  - key: token
+    value: ''
+    enabled: true
+  - key: username
+    value: ''
+    enabled: true
+  - key: originVerifyKey
+    value: 01bde452-415d-4107-87e8-c36fa9747f52
+    enabled: true
+    secret: true

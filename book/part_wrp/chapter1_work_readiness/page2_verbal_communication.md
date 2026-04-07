@@ -33,7 +33,7 @@ I'm passionate about [AREA OF INTEREST].
 I'm currently looking for [OPPORTUNITY].
 ```
 
-### ✅ Strong Example
+###  Strong Example
 
 > "Hi, I'm Thabo. I'm a recent graduate with a background in data analysis and a passion for using technology to solve real-world problems. I've completed projects in Python and Excel, and I'm currently looking for a junior analyst role where I can grow and contribute."
 

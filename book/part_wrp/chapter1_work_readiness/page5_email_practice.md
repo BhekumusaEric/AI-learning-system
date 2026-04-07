@@ -38,7 +38,7 @@ Write the application email.
 
 ---
 
-## ✅ Self-Assessment Checklist
+##  Self-Assessment Checklist
 
 After writing each email, check it against this list:
 

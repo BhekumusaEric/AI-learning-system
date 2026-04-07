@@ -42,7 +42,6 @@ function buildCongratulationsEmail(full_name: string, platform: 'dip' | 'wrp') {
     <!-- Header -->
     <div style="background:linear-gradient(135deg,#0d0d0d 0%,#111 100%);border-bottom:2px solid #d4af37;padding:32px;text-align:center;">
       <p style="margin:0 0 8px 0;color:#00ff9d;font-size:11px;letter-spacing:3px;text-transform:uppercase;">● ${meta.name}</p>
-      <div style="font-size:48px;margin:8px 0;">🎓</div>
       <h1 style="margin:0;color:#fff;font-size:26px;font-weight:bold;letter-spacing:1px;">Congratulations, ${firstName}!</h1>
     </div>
 
@@ -66,7 +65,7 @@ function buildCongratulationsEmail(full_name: string, platform: 'dip' | 'wrp') {
 
       <!-- Certificate CTA -->
       <div style="background:#0d0d0d;border:1px solid #d4af37;border-radius:10px;padding:24px;margin-bottom:28px;text-align:center;">
-        <p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 8px 0;">🏅 Your Certificate is Ready</p>
+        <p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 8px 0;">Your Certificate is Ready</p>
         <p style="color:#b0b0b0;font-size:13px;margin:0 0 20px 0;line-height:1.6;">
           Your official Certificate of Completion is waiting for you. Download it and share it on LinkedIn, add it to your CV, or keep it as a record of your achievement.
         </p>
@@ -76,7 +75,7 @@ function buildCongratulationsEmail(full_name: string, platform: 'dip' | 'wrp') {
       </div>
 
       <p style="color:#666;font-size:13px;line-height:1.8;margin:0;">
-        Thank you for being part of this program. We hope this is just the beginning of your journey in tech. Keep building, keep learning, and keep going. 🚀
+        Thank you for being part of this program. We hope this is just the beginning of your journey in tech. Keep building, keep learning, and keep going.
       </p>
     </div>
 
@@ -93,7 +92,7 @@ function buildCongratulationsEmail(full_name: string, platform: 'dip' | 'wrp') {
 </html>`;
 
   return {
-    subject: `🎓 Congratulations ${firstName} — Your Certificate of Completion is Ready!`,
+    subject: `Congratulations ${firstName} — Your Certificate of Completion is Ready!`,
     html,
   };
 }

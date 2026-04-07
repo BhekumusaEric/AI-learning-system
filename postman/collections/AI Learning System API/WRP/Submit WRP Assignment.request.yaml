@@ -1,0 +1,26 @@
+$kind: http-request
+name: Submit WRP Assignment
+method: POST
+url: '{{baseUrl}}/api/wrp/assignments/submit'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "assignmentId": "{{contentId}}",
+      "submissionUrl": "https://github.com/student/wrp-project",
+      "notes": "Completed all required tasks",
+      "platform": "{{platform}}"
+    }
+tests: |-
+  pm.test("Status is 200 or 201", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 401]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

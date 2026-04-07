@@ -7,7 +7,7 @@ resources:
     url: "https://www.kaggle.com/competitions/digit-recognizer"
 ---
 
-# ✏️ Lab 4: Handwritten Digit Recognition
+#  Lab 4: Handwritten Digit Recognition
 
 ## The Challenge
 
@@ -64,7 +64,7 @@ hardest_digit = ___ # np.argmin(per_class_acc)
 
 ## Expected Results
 
-✅ Accuracy ≥ 95%
+ Accuracy ≥ 95%
 
 Random Forest is very powerful for this task. The confusion matrix will show that digits like 3 and 8, or 4 and 9, sometimes get confused — they look similar even to humans!
 

@@ -248,7 +248,7 @@ print(f"  Expected labels: 0-9 ✓" if y_train.min() == 0 and y_train.max() == 9
 label_counts = np.bincount(y_train)
 balance_ratio = label_counts.min() / label_counts.max()
 print(".3f")
-print("  ✓ Well balanced" if balance_ratio > 0.8 else "  ⚠ Some imbalance detected")
+print("  ✓ Well balanced" if balance_ratio > 0.8 else "   Some imbalance detected")
 
 # 9. Save processed data (optional)
 print("\n" + "="*50)

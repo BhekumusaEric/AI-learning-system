@@ -4,10 +4,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   ShieldCheck, Plus, Users, Copy, Check, ExternalLink,
   RotateCcw, ChevronDown, ChevronUp, Archive, Clock,
-  TrendingUp, Award, KeyRound, LogOut, X, Loader2, RefreshCw, Download
+  TrendingUp, Award, KeyRound, LogOut, X, Loader2, RefreshCw, Download,
+  MapPin, Calendar
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useRouter } from 'next/navigation';
+import UserTour from '@/components/UserTour';
 
 interface Cohort {
   id: string; name: string; platform: string; description?: string;
@@ -227,9 +229,9 @@ function CohortCard({
             </div>
             {cohort.description && <p className="text-sm text-secondary-text mb-2">{cohort.description}</p>}
             <div className="flex flex-wrap gap-3 text-xs text-secondary-text">
-              {cohort.location && <span>📍 {cohort.location}</span>}
-              {cohort.start_date && <span>📅 {new Date(cohort.start_date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
-              <span><Users className="w-3 h-3 inline mr-1" />{cohort.student_count} student{cohort.student_count !== 1 ? 's' : ''}</span>
+              {cohort.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{cohort.location}</span>}
+              {cohort.start_date && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(cohort.start_date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+              <span className="flex items-center gap-1"><Users className="w-3 h-3" />{cohort.student_count} student{cohort.student_count !== 1 ? 's' : ''}</span>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -433,7 +435,7 @@ export default function SupervisorDashboard() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b border-border-subtle bg-secondary px-6 py-4 flex items-center justify-between">
+      <header id="supervisor-header" className="border-b border-border-subtle bg-secondary px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-accent/20 p-2 rounded-xl"><ShieldCheck className="w-6 h-6 text-accent" /></div>
           <div>
@@ -460,7 +462,7 @@ export default function SupervisorDashboard() {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div id="supervisor-metrics" className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <StatCard label="Total Students" value={totalStudents} color="accent" />
           <StatCard label="Active Cohorts" value={active.length} color="green" />
           <StatCard label="Platform" value={activePlatform.toUpperCase()} color="blue" />
@@ -470,7 +472,7 @@ export default function SupervisorDashboard() {
         {/* Cohorts header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">Your Cohorts</h2>
-          <button onClick={() => setShowNewCohort(true)}
+          <button id="supervisor-add-cohort" onClick={() => setShowNewCohort(true)}
             className="flex items-center gap-2 px-4 py-2 bg-accent text-black font-bold rounded-xl hover:bg-accent/90 transition-all text-sm">
             <Plus className="w-4 h-4" />New Cohort
           </button>
@@ -491,7 +493,7 @@ export default function SupervisorDashboard() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div id="supervisor-cohorts" className="flex flex-col gap-4">
             {active.map(c => (
               <CohortCard key={c.id} cohort={c} platform={activePlatform} totalPages={totalPages[activePlatform]} onArchive={handleArchive} />
             ))}
@@ -518,6 +520,16 @@ export default function SupervisorDashboard() {
           onCreated={c => { setCohorts(prev => [c, ...prev]); setShowNewCohort(false); }}
         />
       )}
+
+      <UserTour 
+        tourId="supervisor_dashboard"
+        steps={[
+          { targetId: 'supervisor-header', title: 'Supervisor Portal', description: 'Welcome to your oversight dashboard. Manage your training sessions and monitor student success here.', position: 'bottom' },
+          { targetId: 'supervisor-add-cohort', title: 'Create Cohorts', description: 'Start a new group and generate an invite link for students to register themselves.', position: 'left' },
+          { targetId: 'supervisor-metrics', title: 'Performance Stats', description: 'Track active enrollment and overall platform engagement at a high level.', position: 'bottom' },
+          { targetId: 'supervisor-cohorts', title: 'Detailed Oversight', description: 'Drill down into individual cohorts to view real-time progress, scores, and download reports.', position: 'top' }
+        ]}
+      />
     </div>
   );
 }

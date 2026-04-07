@@ -15,10 +15,11 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { useProgress } from '@/components/providers/ProgressProvider';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, CheckCircle2, ExternalLink } from 'lucide-react';
 import { PageData, ResourceData } from '@/lib/syllabus';
 import EmailGate from '@/components/EmailGate';
 import { WrpContent } from '@/components/wrp/WrpLessonClient';
+import UserTour from '@/components/UserTour';
 
 export default function LessonPageClient({ 
   pageId,
@@ -185,7 +186,7 @@ export default function LessonPageClient({
   ].includes(pageId);
 
   const leftPanel = isWrp ? (
-    <div className="w-full">
+    <div id="learner-content" className="w-full">
       {video && <VideoEmbed src={video} />}
       <div className="max-w-3xl mx-auto w-full py-8">
         <WrpContent content={content} video={video} />
@@ -237,17 +238,19 @@ export default function LessonPageClient({
         prose-li:marker:text-accent prose-li:my-1
         prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:bg-accent/5 prose-blockquote:py-2 prose-blockquote:px-5 prose-blockquote:rounded-r-lg prose-blockquote:text-gray-300 prose-blockquote:not-italic prose-blockquote:my-6
       ">
-        <ReactMarkdown 
-          remarkPlugins={[remarkGfm, remarkMath]} 
-          rehypePlugins={[rehypeKatex]}
-        >
-          {content}
-        </ReactMarkdown>
+        <div id="learner-theory">
+          <ReactMarkdown 
+            remarkPlugins={[remarkGfm, remarkMath]} 
+            rehypePlugins={[rehypeKatex]}
+          >
+            {content}
+          </ReactMarkdown>
+        </div>
 
         {resources && resources.length > 0 && (
           <div className="mt-12 not-prose">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-               <span className="text-accent">◆</span> Further Reading
+               Further Reading
             </h3>
             <div className="flex flex-col gap-3">
               {resources.map((res, i) => (
@@ -256,15 +259,10 @@ export default function LessonPageClient({
                   href={res.url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="group flex items-center justify-between p-4 rounded-xl border border-border-subtle bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all duration-200"
+                  className="group flex items-center gap-3 p-4 rounded-xl border border-border-subtle bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all duration-200"
                 >
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-200 group-hover:text-accent transition-colors">{res.title}</span>
-                    <span className="text-[11px] text-gray-500 mt-1 truncate max-w-md">{res.url}</span>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-black transition-all">
-                    ↗
-                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-accent" />
+                  <span className="text-sm font-medium text-gray-200 group-hover:text-accent transition-colors underline">{res.title}</span>
                 </a>
               ))}
             </div>
@@ -287,6 +285,7 @@ export default function LessonPageClient({
 
           {nextPage ? (
             <button 
+              id="learner-progress"
               onClick={() => {
                 markCompleted(pageId);
                 router.push(`/lesson/${nextPage.id}`);
@@ -329,39 +328,41 @@ export default function LessonPageClient({
       />
     ) : (
       <>
-        <CodeEditor
-          code={code}
-          onChange={(val) => setCode(val || '')}
-          onRun={handleRun}
-          onReset={handleReset}
+    <div id="learner-ide" className="flex flex-col h-full">
+      <CodeEditor
+        code={code}
+        onChange={(val) => setCode(val || '')}
+        onRun={handleRun}
+        onReset={handleReset}
+        isRunning={isRunning}
+        isLoading={isEnvLoading}
+        loadingStatus={loadingStatus}
+        onInputRequest={cb => setInputCallback(cb)}
+      />
+      {envError ? (
+        <div className="p-6 m-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-200">
+          <h4 className="font-bold flex items-center gap-2 mb-2">
+            Python Environment Failed to Load
+          </h4>
+          <p className="text-sm mb-4 opacity-90">{envError}</p>
+          <button
+            onClick={handleRetryEnv}
+            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded transition-colors"
+          >
+            Retry Loading Environment
+          </button>
+        </div>
+      ) : (
+        <FeedbackPanel
+          results={results}
           isRunning={isRunning}
-          isLoading={isEnvLoading}
-          loadingStatus={loadingStatus}
-          onInputRequest={cb => setInputCallback(cb)}
+          onNext={nextPage
+            ? () => { markCompleted(pageId); router.push(`/lesson/${nextPage.id}`); }
+            : undefined
+          }
         />
-        {envError ? (
-          <div className="p-6 m-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-200">
-            <h4 className="font-bold flex items-center gap-2 mb-2">
-              <span className="text-lg">⚠️</span> Python Environment Failed to Load
-            </h4>
-            <p className="text-sm mb-4 opacity-90">{envError}</p>
-            <button
-              onClick={handleRetryEnv}
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded transition-colors"
-            >
-              Retry Loading Environment
-            </button>
-          </div>
-        ) : (
-          <FeedbackPanel
-            results={results}
-            isRunning={isRunning}
-            onNext={nextPage
-              ? () => { markCompleted(pageId); router.push(`/lesson/${nextPage.id}`); }
-              : undefined
-            }
-          />
-        )}
+      )}
+    </div>
       </>
     )
   ) : null;
@@ -376,6 +377,16 @@ export default function LessonPageClient({
         />
       )}
       <TwoPanelLayout leftPanel={leftPanel} rightPanel={rightPanel} />
+
+      <UserTour 
+        tourId="learner_lesson"
+        steps={[
+          { targetId: 'learner-content', title: 'Your Classroom', description: 'Welcome to your interactive learning environment. This is where you will find your lessons and tutorials.', position: 'right' },
+          { targetId: 'learner-theory', title: 'Theory & Concepts', description: 'Read through the material and watch the videos to build your understanding before jumping into code.', position: 'bottom' },
+          { targetId: 'learner-ide', title: 'Interactive IDE', description: 'Practice what you learn! Write and run real Python code directly in the browser.', position: 'left' },
+          { targetId: 'learner-progress', title: 'Marking Progress', description: 'Crucial: Always click this button once you finish a page to save your progress and unlock your certificate.', position: 'top' }
+        ]}
+      />
     </>
   );
 }

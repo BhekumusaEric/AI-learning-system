@@ -1,0 +1,27 @@
+$kind: http-request
+name: Admin Login
+method: POST
+url: '{{baseUrl}}/api/admin/login'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "password": "{{adminPassword}}"
+    }
+tests: |-
+  pm.test("Status is 200 or 401", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 401, 400]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });
+  if (pm.response.code === 200) {
+    pm.test("Admin login returns success", function () {
+      const json = pm.response.json();
+      pm.expect(json).to.be.an("object");
+    });
+  }

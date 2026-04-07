@@ -1,0 +1,13 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/auth/logout'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+tests: |-
+  pm.test("Status is 200 or 204", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 204]);
+  });

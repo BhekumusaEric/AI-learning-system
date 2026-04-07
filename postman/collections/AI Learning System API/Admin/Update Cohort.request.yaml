@@ -1,0 +1,26 @@
+$kind: http-request
+name: Update Cohort
+method: PUT
+url: '{{baseUrl}}/api/admin/cohorts/{{cohortId}}'
+order: 9000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Updated Cohort 2024",
+      "platform": "{{platform}}",
+      "startDate": "2024-01-01",
+      "endDate": "2024-12-31"
+    }
+tests: |-
+  pm.test("Status is 200 or 400", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

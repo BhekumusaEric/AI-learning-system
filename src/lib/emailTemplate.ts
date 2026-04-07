@@ -87,7 +87,7 @@ export function buildCredentialsEmail({
       <!-- Security note -->
       <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;padding:16px;">
         <p style="color:#555;font-size:12px;margin:0;line-height:1.6;">
-          🔒 <strong style="color:#666;">Keep these credentials private.</strong> Do not share your password with anyone.
+          <strong style="color:#666;">Keep these credentials private.</strong> Do not share your password with anyone.
           ${isReset ? 'If you did not request this reset, please contact your program administrator immediately.' : 'You can change your password after logging in.'}
         </p>
       </div>

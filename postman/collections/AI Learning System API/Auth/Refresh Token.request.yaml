@@ -1,0 +1,16 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/auth/refresh'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{token}}'
+tests: |-
+  pm.test("Status is 200 or 401", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 401, 400]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

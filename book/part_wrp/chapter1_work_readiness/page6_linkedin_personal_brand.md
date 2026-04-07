@@ -44,7 +44,7 @@ LinkedIn has over **1 billion users**. Recruiters actively search it daily. A st
 
 ---
 
-## ✅ Strong LinkedIn Profile
+##  Strong LinkedIn Profile
 
 **Name:** Thabo Nkosi  
 **Headline:** Data Enthusiast | Python & Excel | Seeking Junior Analyst Roles  

@@ -1,0 +1,22 @@
+$kind: http-request
+name: Add Email
+method: POST
+url: '{{baseUrl}}/api/auth/add-email'
+order: 6000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "login_id": "{{loginId}}",
+      "email": "student@example.com"
+    }
+tests: |-
+  pm.test("Status is 200 or 400", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 400]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

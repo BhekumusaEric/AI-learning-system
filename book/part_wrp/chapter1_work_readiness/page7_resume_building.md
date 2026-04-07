@@ -52,7 +52,7 @@ Course Name — Provider (Year)
 
 ---
 
-## ✅ Strong Resume Entry
+##  Strong Resume Entry
 
 > **Cashier & Customer Service — Pick n Pay (Jan 2023 – Dec 2023)**
 > - Processed an average of 150+ customer transactions daily with 99% accuracy
@@ -113,7 +113,7 @@ If your bullet point doesn't answer "so what?", rewrite it.
 
 ---
 
-## ✅ Resume Checklist
+##  Resume Checklist
 
 - [ ] Full name and contact details at the top
 - [ ] Professional summary (2–3 sentences)

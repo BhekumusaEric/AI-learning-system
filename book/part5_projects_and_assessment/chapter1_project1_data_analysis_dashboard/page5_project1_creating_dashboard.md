@@ -31,7 +31,7 @@ import plotly.graph_objects as go
 # Set page configuration
 st.set_page_config(
     page_title="Sales Analytics Dashboard",
-    page_icon="📊",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -85,7 +85,7 @@ def load_data():
 df = load_data()
 
 # Sidebar for filters
-st.sidebar.markdown('<div class="sidebar-header">📊 Dashboard Filters</div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="sidebar-header"> Dashboard Filters</div>', unsafe_allow_html=True)
 
 # Date range filter
 st.sidebar.markdown("### Date Range")
@@ -129,7 +129,7 @@ elif discount_filter == "Without Discount":
     filtered_df = filtered_df[filtered_df['discount_applied'] == False]
 
 # Main content
-st.markdown('<div class="main-header">📊 Sales Analytics Dashboard</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header"> Sales Analytics Dashboard</div>', unsafe_allow_html=True)
 
 # Key Metrics Row
 col1, col2, col3, col4 = st.columns(4)
@@ -188,7 +188,7 @@ with col1:
     st.plotly_chart(fig_trend, use_container_width=True)
 
 with col2:
-    st.subheader("🏆 Sales by Region")
+    st.subheader(" Sales by Region")
     
     # Sales by region chart
     region_sales = filtered_df.groupby('region')['sales'].sum().reset_index()
@@ -204,7 +204,7 @@ with col2:
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("📊 Sales by Product Category")
+    st.subheader(" Sales by Product Category")
     
     # Product category chart
     category_sales = filtered_df.groupby('product_category')['sales'].sum().reset_index()
@@ -247,7 +247,7 @@ st.download_button(
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666;">
-    <p>Built with ❤️ using Streamlit | Data Analysis Dashboard</p>
+    <p>Built with  using Streamlit | Data Analysis Dashboard</p>
 </div>
 """, unsafe_allow_html=True)
 ```

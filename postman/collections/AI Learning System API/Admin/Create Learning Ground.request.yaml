@@ -1,0 +1,26 @@
+$kind: http-request
+name: Create Learning Ground
+method: POST
+url: '{{baseUrl}}/api/admin/grounds'
+order: 17000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Ground 1",
+      "description": "Introduction to programming concepts",
+      "program": "DIP",
+      "order": 1
+    }
+tests: |-
+  pm.test("Status is 200 or 201", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 401]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

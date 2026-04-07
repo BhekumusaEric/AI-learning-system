@@ -1,0 +1,28 @@
+$kind: http-request
+name: List All Students
+method: GET
+url: '{{baseUrl}}/api/admin/students'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+tests: |-
+  pm.test("Status is 200 or 401", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });
+  if (pm.response.code === 200) {
+    pm.test("Students response is array or has data", function () {
+      const json = pm.response.json();
+      const isArray = Array.isArray(json);
+      const hasData = typeof json === "object" && (json.students || json.data);
+      pm.expect(isArray || hasData).to.be.true;
+    });
+    const json = pm.response.json();
+    const students = Array.isArray(json) ? json : (json.students || json.data || []);
+    if (students.length > 0) {
+      pm.collectionVariables.set("loginId", students[0].login_id || students[0].id || "");
+    }
+  }

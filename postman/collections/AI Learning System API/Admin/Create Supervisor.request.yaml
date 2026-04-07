@@ -1,0 +1,33 @@
+$kind: http-request
+name: Create Supervisor
+method: POST
+url: '{{baseUrl}}/api/admin/supervisors'
+order: 12000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "email": "jane.smith@example.com",
+      "platform": "{{platform}}",
+      "cohortId": "{{cohortId}}"
+    }
+tests: |-
+  pm.test("Status is 200 or 201", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 401]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });
+  if (pm.response.code === 200 || pm.response.code === 201) {
+    pm.test("Created supervisor has id", function () {
+      const json = pm.response.json();
+      pm.expect(json).to.have.any.keys("id", "_id", "supervisor_id", "login_id");
+    });
+  }

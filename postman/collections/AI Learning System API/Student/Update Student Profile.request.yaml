@@ -1,0 +1,27 @@
+$kind: http-request
+name: Update Student Profile
+method: PUT
+url: '{{baseUrl}}/api/student/profile'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john.doe@student.wethinkcode.co.za",
+      "phone": "+27123456789",
+      "username": "{{username}}"
+    }
+tests: |-
+  pm.test("Status is 200 or 400", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

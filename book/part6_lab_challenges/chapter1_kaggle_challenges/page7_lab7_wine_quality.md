@@ -71,8 +71,8 @@ cv_scores = ___   # cross_val_score(gb_model, X, y, cv=5, scoring='accuracy')
 
 ## Expected Results
 
-✅ Accuracy ≥ 82%
-✅ AUC ≥ 0.80
+ Accuracy ≥ 82%
+ AUC ≥ 0.80
 
 The most important feature is almost always **alcohol** — higher alcohol content strongly predicts good quality. Can you confirm this from the feature importance chart?
 

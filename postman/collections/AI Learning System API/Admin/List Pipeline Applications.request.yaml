@@ -1,0 +1,15 @@
+$kind: http-request
+name: List Pipeline Applications
+method: GET
+url: '{{baseUrl}}/api/admin/applications'
+headers:
+  - key: Cookie
+    value: admin_session=admin:{{adminPassword}}
+tests: |-
+  pm.test("Status is 200", function () {
+    pm.response.to.have.status(200);
+  });
+  pm.test("Returns groups", function () {
+    const json = pm.response.json();
+    pm.expect(json.groups).to.be.an('array');
+  });

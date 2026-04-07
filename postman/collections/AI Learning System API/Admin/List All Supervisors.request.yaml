@@ -1,0 +1,28 @@
+$kind: http-request
+name: List All Supervisors
+method: GET
+url: '{{baseUrl}}/api/admin/supervisors'
+order: 11000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+tests: |-
+  pm.test("Status is 200 or 401", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });
+  if (pm.response.code === 200) {
+    pm.test("Supervisors response is array or has data", function () {
+      const json = pm.response.json();
+      const isArray = Array.isArray(json);
+      const hasData = typeof json === "object" && (json.supervisors || json.data);
+      pm.expect(isArray || hasData).to.be.true;
+    });
+    const json = pm.response.json();
+    const supervisors = Array.isArray(json) ? json : (json.supervisors || json.data || []);
+    if (supervisors.length > 0) {
+      pm.collectionVariables.set("supervisorUuid", supervisors[0].id || supervisors[0]._id || "");
+    }
+  }

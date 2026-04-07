@@ -1,0 +1,28 @@
+$kind: http-request
+name: Onboard Pipeline Students
+method: POST
+url: '{{baseUrl}}/api/admin/onboard'
+headers:
+  - key: Cookie
+    value: admin_session=admin:{{adminPassword}}
+  - key: Content-Type
+    value: application/json
+body:
+  mode: raw
+  raw: |-
+    {
+      "students": [
+        {
+          "Full_Name": "Test Student",
+          "Email_Address": "test@example.com",
+          "Program": "Work Readiness",
+          "Campus": "Johannesburg Campus"
+        }
+      ],
+      "cohortName": "Test-Cohort-{{$timestamp}}",
+      "program": "Work Readiness"
+    }
+tests: |-
+  pm.test("Status is 200", function () {
+    pm.response.to.have.status(200);
+  });

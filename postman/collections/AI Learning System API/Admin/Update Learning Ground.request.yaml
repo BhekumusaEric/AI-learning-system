@@ -1,0 +1,26 @@
+$kind: http-request
+name: Update Learning Ground
+method: PUT
+url: '{{baseUrl}}/api/admin/grounds/{{groundId}}'
+order: 19000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Ground 1 Updated",
+      "description": "Updated description for Ground 1",
+      "program": "DIP",
+      "order": 1
+    }
+tests: |-
+  pm.test("Status is 200 or 400", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

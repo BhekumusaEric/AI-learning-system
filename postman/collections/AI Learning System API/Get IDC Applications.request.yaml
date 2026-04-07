@@ -1,0 +1,17 @@
+$kind: http-request
+name: Get IDC Applications
+url: https://c66cbjnqn1.execute-api.af-south-1.amazonaws.com/idc/applications
+method: GET
+auth:
+  type: awsv4
+  credentials:
+    - key: accessKey
+      value: {{AWS_ACCESS_KEY}}
+    - key: secretKey
+      value: {{AWS_SECRET_KEY}}
+    - key: region
+      value: af-south-1
+    - key: service
+      value: execute-api
+    - key: addAuthDataToQuery
+      value: "false"

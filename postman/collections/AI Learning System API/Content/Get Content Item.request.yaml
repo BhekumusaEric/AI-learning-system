@@ -1,0 +1,18 @@
+$kind: http-request
+name: Get Content Item
+method: GET
+url: '{{baseUrl}}/api/content/{{contentId}}'
+order: 3000
+tests: |-
+  pm.test("Status is 200 or 404", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 404]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });
+  if (pm.response.code === 200) {
+    pm.test("Content item has id", function () {
+      const json = pm.response.json();
+      pm.expect(json).to.have.any.keys("id", "_id", "contentId");
+    });
+  }

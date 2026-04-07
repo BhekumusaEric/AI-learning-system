@@ -1,0 +1,27 @@
+$kind: http-request
+name: Validate Invite Code
+method: POST
+url: '{{baseUrl}}/api/registration/validate-invite'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "inviteCode": "{{inviteCode}}"
+    }
+tests: |-
+  pm.test("Status is 200 or 404", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 404, 400]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });
+  if (pm.response.code === 200) {
+    pm.test("Invite code response has valid field", function () {
+      const json = pm.response.json();
+      pm.expect(json).to.have.any.keys("valid", "cohort", "platform", "cohort_id");
+    });
+  }

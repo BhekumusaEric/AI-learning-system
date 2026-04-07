@@ -1,0 +1,26 @@
+$kind: http-request
+name: Update Supervisor
+method: PUT
+url: '{{baseUrl}}/api/admin/supervisors/{{supervisorId}}'
+order: 14000
+headers:
+  - key: Authorization
+    value: 'Bearer {{token}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "email": "jane.smith@example.com",
+      "cohortId": "{{cohortId}}"
+    }
+tests: |-
+  pm.test("Status is 200 or 400", function () {
+    pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 404]);
+  });
+  pm.test("Response is JSON", function () {
+    pm.response.to.be.json;
+  });

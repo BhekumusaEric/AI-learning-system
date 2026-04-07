@@ -57,7 +57,7 @@ Kind regards,
 
 ---
 
-## ✅ Perfect Email Example
+##  Perfect Email Example
 
 > **Subject:** Application for Junior Data Analyst Role — Thabo Nkosi
 >
