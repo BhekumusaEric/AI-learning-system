@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink, GitPullRequest, MapPin, UserCheck, UserX } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink, GitPullRequest, MapPin, UserCheck, UserX, Rocket } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { ApplicationGroup, RawApplication } from '@/lib/applications';
 
@@ -1208,8 +1208,10 @@ function OnboardingPipeline() {
   const [groups, setGroups] = useState<ApplicationGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [processingGroupId, setProcessingGroupId] = useState<string | null>(null);
-  const [onboardResults, setOnboardResults] = useState<{ groupId: string; succeeded: number; total: number } | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set());
+  const [customCohortName, setCustomCohortName] = useState('');
+  const [onboardResults, setOnboardResults] = useState<{ succeeded: number; total: number; cohortName: string } | null>(null);
 
   const fetchPipelines = async () => {
     setLoading(true);
@@ -1228,40 +1230,64 @@ function OnboardingPipeline() {
 
   useEffect(() => { fetchPipelines(); }, []);
 
-  const handleOnboard = async (group: ApplicationGroup) => {
-    if (!confirm(`Activate cohort for ${group.city} (${group.students.length} students)?`)) return;
-    
-    setProcessingGroupId(group.id);
+  const handleOnboardSelected = async () => {
+    const selectedGroups = groups.filter(g => selectedGroupIds.has(g.id));
+    if (selectedGroups.length === 0) return;
+
+    const totalStudents = selectedGroups.reduce((acc, g) => acc + g.students.length, 0);
     const dateStr = new Date().toISOString().split('T')[0];
-    const cohortName = `${group.city} - ${dateStr}`;
+    const defaultName = `${selectedGroups[0].campus} - ${dateStr}`;
+    const cohortName = customCohortName.trim() || defaultName;
+
+    if (!confirm(`Activate cohort "${cohortName}" for ${totalStudents} students across ${selectedGroups.length} groups?`)) return;
+    
+    setProcessing(true);
+    let totalSucceeded = 0;
 
     try {
-      const res = await fetch('/api/admin/onboard', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          students: group.students,
-          cohortName,
-          program: group.program
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setOnboardResults({ 
-          groupId: group.id, 
-          succeeded: data.results.filter((r: any) => r.success).length, 
-          total: group.students.length 
+      // Process each selected group
+      // Note: In a real production setup, we might want a single API call for all students,
+      // but here we reuse the existing endpoint for safety and modularity.
+      for (const group of selectedGroups) {
+        const res = await fetch('/api/admin/onboard', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            students: group.students,
+            cohortName,
+            program: group.program
+          }),
         });
-        // Remove processed group from UI
-        setGroups(prev => prev.filter(g => g.id !== group.id));
-      } else {
-        alert(`Error: ${data.error}`);
+        const data = await res.json();
+        if (res.ok) {
+          totalSucceeded += data.results.filter((r: any) => r.success).length;
+        } else {
+          console.error(`Error onboarding group ${group.id}:`, data.error);
+        }
       }
+
+      setOnboardResults({ 
+        succeeded: totalSucceeded, 
+        total: totalStudents,
+        cohortName
+      });
+      
+      // Remove processed groups from UI
+      setGroups(prev => prev.filter(g => !selectedGroupIds.has(g.id)));
+      setSelectedGroupIds(new Set());
+      setCustomCohortName('');
     } catch (e: any) {
       alert(`Network error: ${e.message}`);
     } finally {
-      setProcessingGroupId(null);
+      setProcessing(false);
     }
+  };
+
+  const toggleGroup = (id: string) => {
+    const next = new Set(selectedGroupIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedGroupIds(next);
   };
 
   if (loading) return (
@@ -1291,14 +1317,17 @@ function OnboardingPipeline() {
       )}
 
       {onboardResults && (
-        <div className="bg-accent/10 border border-accent/20 p-4 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-4">
-          <div className="flex items-center gap-3 text-accent">
-            <CheckCircle className="w-5 h-5" />
-            <span className="text-sm font-semibold">
-              Successfully onboarded {onboardResults.succeeded} of {onboardResults.total} students!
-            </span>
+        <div className="bg-accent/10 border border-accent/20 p-5 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">Cohort Activated: {onboardResults.cohortName}</p>
+              <p className="text-xs text-secondary-text">Successfully onboarded {onboardResults.succeeded} of {onboardResults.total} students.</p>
+            </div>
           </div>
-          <button onClick={() => setOnboardResults(null)} className="text-xs text-secondary-text hover:text-foreground">Dismiss</button>
+          <button onClick={() => setOnboardResults(null)} className="text-xs font-bold text-secondary-text hover:text-foreground">Dismiss</button>
         </div>
       )}
 
@@ -1308,22 +1337,30 @@ function OnboardingPipeline() {
           <p className="text-secondary-text">No pending applications found in the pipeline.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-32">
           {groups.map(group => (
-            <div key={group.id} className="bg-[#0a0a0a] border border-border-subtle rounded-2xl overflow-hidden shadow-lg transition-transform hover:scale-[1.01]">
+            <div key={group.id} 
+              onClick={() => toggleGroup(group.id)}
+              className={`bg-[#0a0a0a] border rounded-2xl overflow-hidden shadow-lg transition-all cursor-pointer select-none ${
+                selectedGroupIds.has(group.id) ? 'border-accent ring-1 ring-accent' : 'border-border-subtle hover:border-accent/40'
+              }`}>
               <div className="p-5 border-b border-border-subtle flex items-start justify-between bg-white/[0.02]">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                      group.program.includes('Digital') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'
-                    }`}>
-                      {group.program}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-secondary-text font-mono">
-                      <MapPin className="w-3 h-3" /> {group.city}
-                    </span>
+                <div className="flex gap-3">
+                  <div className={`mt-1 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                    selectedGroupIds.has(group.id) ? 'bg-accent border-accent text-black' : 'border-border-subtle bg-background'
+                  }`}>
+                    {selectedGroupIds.has(group.id) && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                   </div>
-                  <h4 className="text-lg font-bold text-foreground">{group.campus}</h4>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                        group.program.includes('Digital') ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'
+                      }`}>
+                        {group.program}
+                      </span>
+                    </div>
+                    <h4 className="text-lg font-bold text-foreground">{group.campus}</h4>
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-black text-accent">{group.students.length}</div>
@@ -1332,6 +1369,13 @@ function OnboardingPipeline() {
               </div>
 
               <div className="p-5">
+                <div className="flex flex-wrap gap-1.5 mb-5">
+                  {group.cities.map((city, idx) => (
+                    <span key={idx} className="flex items-center gap-1 text-[10px] bg-white/5 border border-white/10 text-secondary-text px-2 py-0.5 rounded-md">
+                      <MapPin className="w-2.5 h-2.5" /> {city}
+                    </span>
+                  ))}
+                </div>
                 <div className="space-y-3 mb-6">
                   {group.students.slice(0, 3).map((s, i) => (
                     <div key={i} className="flex items-center justify-between text-sm">
@@ -1361,20 +1405,52 @@ function OnboardingPipeline() {
                   </div>
                 )}
 
-                <button
-                  onClick={() => handleOnboard(group)}
-                  disabled={!!processingGroupId}
-                  className="w-full flex items-center justify-center gap-2 bg-accent text-black font-bold py-3 rounded-xl hover:scale-[1.03] transition-all disabled:opacity-50 disabled:scale-100"
-                >
-                  {processingGroupId === group.id ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>Activate Cohort <GitPullRequest className="w-4 h-4" /></>
-                  )}
-                </button>
+                <div className="flex items-center justify-between text-xs text-secondary-text font-bold uppercase tracking-wider">
+                  <span>Group Sample</span>
+                  <span>{selectedGroupIds.has(group.id) ? 'Selected' : 'Click to select'}</span>
+                </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Floating Bulk Action Bar */}
+      {selectedGroupIds.size > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-50 animate-in slide-in-from-bottom-8 duration-300">
+          <div className="bg-secondary/95 backdrop-blur-md border border-accent/30 rounded-3xl p-6 shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-secondary-text uppercase">Consolidating {selectedGroupIds.size} groups</p>
+                <p className="text-lg font-black text-foreground">
+                  {groups.filter(g => selectedGroupIds.has(g.id)).reduce((acc, g) => acc + g.students.length, 0)} Combined Students
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedGroupIds(new Set())}
+                className="text-xs font-bold text-secondary-text hover:text-foreground p-2"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input 
+                type="text" 
+                placeholder="Custom Cohort Name (e.g. JHB-Consolidated-April)"
+                value={customCohortName}
+                onChange={e => setCustomCohortName(e.target.value)}
+                className="flex-1 bg-background border border-border-subtle rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent"
+              />
+              <button
+                onClick={handleOnboardSelected}
+                disabled={processing}
+                className="bg-accent text-black font-bold px-8 py-3 rounded-xl hover:scale-[1.05] transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:scale-100"
+              >
+                {processing ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Rocket className="w-4 h-4" /> Activate Everything</>}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

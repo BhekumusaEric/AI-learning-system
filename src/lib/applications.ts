@@ -15,10 +15,10 @@ export interface RawApplication {
 }
 
 export interface ApplicationGroup {
-  id: string; // key: Program-Campus-City
+  id: string; // key: Program-Campus
   program: string;
   campus: string;
-  city: string;
+  cities: string[]; // Unique cities in this group
   students: RawApplication[];
   duplicates: RawApplication[];
 }
@@ -33,24 +33,30 @@ export function groupApplications(apps: RawApplication[]): ApplicationGroup[] {
     emailMap[email] = (emailMap[email] || 0) + 1;
   });
 
-  // Second pass: Group students
+  // Second pass: Group students by Program + Campus
   apps.forEach(app => {
     const program = app.Program || 'Unknown';
     const campus = app.Campus || 'Unknown';
     const city = (app.City || 'Unknown').trim();
     const email = app.Email_Address.toLowerCase().trim();
     
-    const groupId = `${program}-${campus}-${city}`.replace(/\s+/g, '_');
+    // CONSOLDATED KEY: Only Program and Campus
+    const groupId = `${program}-${campus}`.replace(/\s+/g, '_');
 
     if (!groups[groupId]) {
       groups[groupId] = {
         id: groupId,
         program,
         campus,
-        city,
+        cities: [],
         students: [],
         duplicates: []
       };
+    }
+
+    // Track unique cities
+    if (!groups[groupId].cities.includes(city)) {
+      groups[groupId].cities.push(city);
     }
 
     if (emailMap[email] > 1) {
