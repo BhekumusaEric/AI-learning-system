@@ -1211,7 +1211,8 @@ function OnboardingPipeline() {
   const [processing, setProcessing] = useState(false);
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set());
   const [customCohortName, setCustomCohortName] = useState('');
-  const [onboardResults, setOnboardResults] = useState<{ succeeded: number; total: number; cohortName: string } | null>(null);
+  const [hideEnrolled, setHideEnrolled] = useState(true);
+  const [onboardResults, setOnboardResults] = useState<{ succeeded: number; skipped: number; total: number; cohortName: string } | null>(null);
 
   const fetchPipelines = async () => {
     setLoading(true);
@@ -1234,41 +1235,53 @@ function OnboardingPipeline() {
     const selectedGroups = groups.filter(g => selectedGroupIds.has(g.id));
     if (selectedGroups.length === 0) return;
 
-    const totalStudents = selectedGroups.reduce((acc, g) => acc + g.students.length, 0);
+    // Safety Filter: Only students not already enrolled
+    const studentsToOnboard = selectedGroups.flatMap(g => g.students.filter(s => !s.alreadyEnrolled));
+    const allSelectedStudentsCount = selectedGroups.reduce((acc, g) => acc + g.students.length, 0);
+    const alreadyEnrolledCount = allSelectedStudentsCount - studentsToOnboard.length;
+
+    if (studentsToOnboard.length === 0) {
+      alert("All selected students are already enrolled in this program.");
+      return;
+    }
+
     const dateStr = new Date().toISOString().split('T')[0];
     const defaultName = `${selectedGroups[0].campus} - ${dateStr}`;
     const cohortName = customCohortName.trim() || defaultName;
 
-    if (!confirm(`Activate cohort "${cohortName}" for ${totalStudents} students across ${selectedGroups.length} groups?`)) return;
+    const confirmMsg = alreadyEnrolledCount > 0 
+      ? `Activate cohort "${cohortName}" for ${studentsToOnboard.length} new students? (${alreadyEnrolledCount} existing students will be skipped automatically.)`
+      : `Activate cohort "${cohortName}" for ${studentsToOnboard.length} students across ${selectedGroups.length} groups?`;
+
+    if (!confirm(confirmMsg)) return;
     
     setProcessing(true);
     let totalSucceeded = 0;
 
     try {
-      // Process each selected group
-      // Note: In a real production setup, we might want a single API call for all students,
-      // but here we reuse the existing endpoint for safety and modularity.
-      for (const group of selectedGroups) {
+      // Group students back by their group program for processing
+      const programBatches: Record<string, RawApplication[]> = {};
+      studentsToOnboard.forEach(s => {
+        if (!programBatches[s.Program]) programBatches[s.Program] = [];
+        programBatches[s.Program].push(s);
+      });
+
+      for (const [program, students] of Object.entries(programBatches)) {
         const res = await fetch('/api/admin/onboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            students: group.students,
-            cohortName,
-            program: group.program
-          }),
+          body: JSON.stringify({ students, cohortName, program }),
         });
         const data = await res.json();
         if (res.ok) {
           totalSucceeded += data.results.filter((r: any) => r.success).length;
-        } else {
-          console.error(`Error onboarding group ${group.id}:`, data.error);
         }
       }
 
       setOnboardResults({ 
         succeeded: totalSucceeded, 
-        total: totalStudents,
+        skipped: alreadyEnrolledCount,
+        total: allSelectedStudentsCount,
         cohortName
       });
       
@@ -1304,9 +1317,20 @@ function OnboardingPipeline() {
           <h3 className="text-xl font-bold text-foreground">Onboarding Pipeline</h3>
           <p className="text-sm text-secondary-text">Automated student registration from application data</p>
         </div>
-        <button onClick={fetchPipelines} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-secondary-text hover:text-accent">
-          <RefreshCw className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setHideEnrolled(!hideEnrolled)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+              hideEnrolled ? 'bg-accent/10 border-accent/30 text-accent' : 'border-border-subtle text-secondary-text'
+            }`}
+          >
+            {hideEnrolled ? <UserCheck className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+            {hideEnrolled ? 'Hiding Members' : 'Showing All'}
+          </button>
+          <button onClick={fetchPipelines} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-secondary-text hover:text-accent">
+            <RefreshCw className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -1324,7 +1348,10 @@ function OnboardingPipeline() {
             </div>
             <div>
               <p className="text-sm font-bold text-foreground">Cohort Activated: {onboardResults.cohortName}</p>
-              <p className="text-xs text-secondary-text">Successfully onboarded {onboardResults.succeeded} of {onboardResults.total} students.</p>
+              <p className="text-xs text-secondary-text">
+                Successfully onboarded {onboardResults.succeeded} new students.
+                {onboardResults.skipped > 0 && ` Skipped ${onboardResults.skipped} existing members.`}
+              </p>
             </div>
           </div>
           <button onClick={() => setOnboardResults(null)} className="text-xs font-bold text-secondary-text hover:text-foreground">Dismiss</button>
@@ -1363,8 +1390,12 @@ function OnboardingPipeline() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-black text-accent">{group.students.length}</div>
-                  <div className="text-[11px] font-bold text-secondary-text uppercase tracking-tighter">Students</div>
+                  <div className="text-2xl font-black text-accent">
+                    {group.students.filter(s => !hideEnrolled || !s.alreadyEnrolled).length}
+                  </div>
+                  <div className="text-[11px] font-bold text-secondary-text uppercase tracking-tighter">
+                    {hideEnrolled ? 'Fresh' : 'Total'} Students
+                  </div>
                 </div>
               </div>
 
@@ -1377,14 +1408,25 @@ function OnboardingPipeline() {
                   ))}
                 </div>
                 <div className="space-y-3 mb-6">
-                  {group.students.slice(0, 3).map((s, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm">
-                      <span className="text-foreground font-medium">{s.Full_Name}</span>
+                  {group.students
+                    .filter(s => !hideEnrolled || !s.alreadyEnrolled)
+                    .slice(0, 3).map((s, i) => (
+                    <div key={i} className={`flex items-center justify-between text-sm ${s.alreadyEnrolled ? 'opacity-50' : ''}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-foreground font-medium">{s.Full_Name}</span>
+                        {s.alreadyEnrolled && (
+                          <span className="flex items-center gap-1 text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded font-bold uppercase">
+                            <UserCheck className="w-2.5 h-2.5" /> Member
+                          </span>
+                        )}
+                      </div>
                       <span className="text-[11px] font-mono text-secondary-text">{s.Email_Address}</span>
                     </div>
                   ))}
-                  {group.students.length > 3 && (
-                    <div className="text-xs text-secondary-text italic">+ {group.students.length - 3} more students</div>
+                  {group.students.filter(s => !hideEnrolled || !s.alreadyEnrolled).length > 3 && (
+                    <div className="text-xs text-secondary-text italic">
+                      + {group.students.filter(s => !hideEnrolled || !s.alreadyEnrolled).length - 3} more
+                    </div>
                   )}
                 </div>
 

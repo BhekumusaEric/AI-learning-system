@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { RawApplication, groupApplications } from '@/lib/applications';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,7 @@ export async function GET(request: Request) {
   }
 
   try {
+    // 1. Fetch external applications
     const response = await fetch(EXTERNAL_API_URL, {
       method: 'GET',
       headers: {
@@ -34,8 +36,22 @@ export async function GET(request: Request) {
     const json = await response.json();
     const rawApps: RawApplication[] = json.data || [];
 
-    // Group them effectively
-    const groups = groupApplications(rawApps);
+    // 2. Fetch existing students to cross-check "freshness"
+    // We pull just the emails to keep the payload lean
+    const [saaioRes, dipRes, wrpRes] = await Promise.all([
+      supabase.from('saaio_students').select('email'),
+      supabase.from('dip_students').select('email'),
+      supabase.from('wrp_students').select('email'),
+    ]);
+
+    const existingEmailsMap: Record<string, Set<string>> = {
+      saaio: new Set(saaioRes.data?.map(s => s.email?.toLowerCase().trim()).filter(Boolean)),
+      dip: new Set(dipRes.data?.map(s => s.email?.toLowerCase().trim()).filter(Boolean)),
+      wrp: new Set(wrpRes.data?.map(s => s.email?.toLowerCase().trim()).filter(Boolean)),
+    };
+
+    // 3. Group and flag "already enrolled" students
+    const groups = groupApplications(rawApps, existingEmailsMap);
 
     return NextResponse.json({ groups, total: rawApps.length });
   } catch (error: any) {
