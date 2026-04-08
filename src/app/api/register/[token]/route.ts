@@ -34,7 +34,7 @@ async function validateToken(token: string) {
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const { valid, reason, link } = await validateToken(token);
-  if (!valid) return NextResponse.json({ error: reason }, { status: 410 });
+  if (!valid || !link) return NextResponse.json({ error: reason || 'Invalid link' }, { status: 410 });
 
   return NextResponse.json({
     type: link.type,
@@ -50,7 +50,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const { valid, reason, link } = await validateToken(token);
-  if (!valid) return NextResponse.json({ error: reason }, { status: 410 });
+  if (!valid || !link) return NextResponse.json({ error: reason || 'Invalid link' }, { status: 410 });
 
   const body = await request.json();
 
