@@ -28,58 +28,58 @@ function buildCongratulationsEmail(full_name: string, platform: 'dip' | 'wrp') {
   const firstName = full_name.split(' ')[0];
 
   const competencyBadges = meta.competencies
-    .map(c => `<span style="display:inline-block;font-size:11px;letter-spacing:1px;text-transform:uppercase;border:1px solid #d4af37;color:#888;padding:4px 10px;border-radius:3px;margin:3px;">${c}</span>`)
+    .map(c => `<span style="display:inline-block;font-size:11px;letter-spacing:1px;text-transform:uppercase;border:1px solid #0047AB;color:#0047AB;background:#e0e7ff;padding:4px 10px;border-radius:12px;margin:3px;font-weight:bold;">${c}</span>`)
     .join('');
 
   const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
-<body style="margin:0;padding:0;background:#0a0a0a;">
-  <div style="font-family:'Courier New',Courier,monospace;max-width:560px;margin:40px auto;background:#000;border:1px solid #222;border-radius:12px;overflow:hidden;">
+<body style="margin:0;padding:0;background:#f5f7fa;">
+  <div style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;max-width:560px;margin:40px auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.1);">
 
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#0d0d0d 0%,#111 100%);border-bottom:2px solid #d4af37;padding:32px;text-align:center;">
-      <p style="margin:0 0 8px 0;color:#00ff9d;font-size:11px;letter-spacing:3px;text-transform:uppercase;">● ${meta.name}</p>
-      <h1 style="margin:0;color:#fff;font-size:26px;font-weight:bold;letter-spacing:1px;">Congratulations, ${firstName}!</h1>
+    <div style="background:#0047AB;border-bottom:1px solid #003380;padding:32px;text-align:center;">
+      <p style="margin:0 0 8px 0;color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">● ${meta.name}</p>
+      <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:bold;letter-spacing:1px;">Congratulations, ${firstName}!</h1>
     </div>
 
     <!-- Body -->
     <div style="padding:36px 32px;">
 
-      <p style="color:#e0e0e0;font-size:15px;line-height:1.8;margin:0 0 24px 0;">
+      <p style="color:#334155;font-size:15px;line-height:1.8;margin:0 0 24px 0;">
         You've done it! You have successfully completed the
-        <strong style="color:#d4af37;">${meta.programTitle}</strong> — and that is something to be genuinely proud of.
+        <strong style="color:#0047AB;">${meta.programTitle}</strong> — and that is something to be genuinely proud of.
       </p>
 
-      <p style="color:#b0b0b0;font-size:14px;line-height:1.8;margin:0 0 28px 0;">
+      <p style="color:#475569;font-size:14px;line-height:1.8;margin:0 0 28px 0;">
         Completing this program shows real commitment and dedication. The skills you've built here are a foundation you can carry forward into your career, your studies, and beyond.
       </p>
 
       <!-- Competencies -->
-      <div style="background:#0d0d0d;border:1px solid #2a2a2a;border-radius:10px;padding:24px;margin-bottom:28px;text-align:center;">
-        <p style="color:#666;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin:0 0 16px 0;">Skills You've Earned</p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:24px;margin-bottom:28px;text-align:center;">
+        <p style="color:#64748b;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin:0 0 16px 0;font-weight:bold;">Skills You've Earned</p>
         <div>${competencyBadges}</div>
       </div>
 
       <!-- Certificate CTA -->
-      <div style="background:#0d0d0d;border:1px solid #d4af37;border-radius:10px;padding:24px;margin-bottom:28px;text-align:center;">
-        <p style="color:#d4af37;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 8px 0;">Your Certificate is Ready</p>
-        <p style="color:#b0b0b0;font-size:13px;margin:0 0 20px 0;line-height:1.6;">
+      <div style="background:#ffffff;border:2px solid #0047AB;border-radius:10px;padding:24px;margin-bottom:28px;text-align:center;box-shadow:0 4px 10px rgba(0, 71, 171, 0.05);">
+        <p style="color:#0047AB;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 8px 0;font-weight:bold;">Your Certificate is Ready</p>
+        <p style="color:#475569;font-size:13px;margin:0 0 20px 0;line-height:1.6;">
           Your official Certificate of Completion is waiting for you. Download it and share it on LinkedIn, add it to your CV, or keep it as a record of your achievement.
         </p>
-        <a href="${meta.certUrl}" style="display:inline-block;background:#d4af37;color:#000;padding:14px 32px;border-radius:8px;font-weight:bold;font-size:15px;text-decoration:none;letter-spacing:1px;">
+        <a href="${meta.certUrl}" style="display:inline-block;background:#0047AB;color:#ffffff;padding:14px 32px;border-radius:8px;font-weight:bold;font-size:15px;text-decoration:none;letter-spacing:1px;transition:background 0.2s;">
           Download My Certificate →
         </a>
       </div>
 
-      <p style="color:#666;font-size:13px;line-height:1.8;margin:0;">
+      <p style="color:#64748b;font-size:13px;line-height:1.8;margin:0;">
         Thank you for being part of this program. We hope this is just the beginning of your journey in tech. Keep building, keep learning, and keep going.
       </p>
     </div>
 
     <!-- Footer -->
-    <div style="background:#0d0d0d;border-top:1px solid #1a1a1a;padding:20px 32px;">
-      <p style="color:#444;font-size:12px;margin:0;line-height:1.6;">
+    <div style="background:#f1f5f9;border-top:1px solid #e2e8f0;padding:20px 32px;">
+      <p style="color:#64748b;font-size:12px;margin:0;line-height:1.6;">
         ${meta.name}<br/>
         This is an automated message — please do not reply directly to this email.
       </p>

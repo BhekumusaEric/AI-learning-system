@@ -16,7 +16,7 @@ Log in now and pick up where you left off.`,
   mark_done: {
     subject: 'Quick reminder: mark your completed topics',
     heading: "Your progress isn't being tracked!",
-    body: `After reading or completing a topic, make sure you click the <strong style="color:#00ff9d;">Mark as Done</strong> button at the bottom of each page.<br/><br/>
+    body: `After reading or completing a topic, make sure you click the <strong style="color:#0047AB;">Mark as Done</strong> button at the bottom of each page.<br/><br/>
 Without marking pages done, your progress won't be saved and your completion percentage won't update.<br/><br/>
 Log in and go through your completed chapters — mark each one done so your progress reflects your hard work.`,
     cta: 'Update My Progress →',
@@ -24,7 +24,7 @@ Log in and go through your completed chapters — mark each one done so your pro
   kaggle: {
     subject: 'New technical challenges have been added',
     heading: 'New challenges are live!',
-    body: `Fresh <strong style="color:#00ff9d;">technical challenges</strong> have been added to the WeThinkCode_ Training Grounds.<br/><br/>
+    body: `Fresh <strong style="color:#0047AB;">technical challenges</strong> have been added to the WeThinkCode_ Training Grounds.<br/><br/>
 These hands-on competitions are one of the best ways to apply what you've learned and build real experience.<br/><br/>
 Log in, head to the Challenges section, and start competing!`,
     cta: 'View Challenges →',
@@ -58,24 +58,24 @@ function buildNotificationEmail(type: keyof typeof TEMPLATES, platform: keyof ty
   const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
-<body style="margin:0;padding:0;background:#0a0a0a;">
-  <div style="font-family:'Courier New',Courier,monospace;max-width:520px;margin:40px auto;background:#000;border:1px solid #222;border-radius:12px;overflow:hidden;">
-    <div style="background:#0d0d0d;border-bottom:1px solid #1a1a1a;padding:24px 32px;">
-      <p style="margin:0;color:#00ff9d;font-size:11px;letter-spacing:3px;text-transform:uppercase;">● ${label}</p>
+<body style="margin:0;padding:0;background:#f5f7fa;">
+  <div style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;max-width:520px;margin:40px auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+    <div style="background:#0047AB;border-bottom:1px solid #003380;padding:24px 32px;">
+      <p style="margin:0;color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">● ${label}</p>
     </div>
     <div style="padding:32px;">
-      <h2 style="color:#fff;font-size:20px;margin:0 0 20px 0;">${t.heading}</h2>
-      <p style="color:#b0b0b0;font-size:15px;line-height:1.8;margin:0 0 28px 0;">${body}</p>
-      <a href="${loginUrl}" style="display:block;background:#00ff9d;color:#000;text-align:center;padding:14px 24px;border-radius:8px;font-weight:bold;font-size:15px;text-decoration:none;letter-spacing:1px;margin-bottom:28px;">${t.cta}</a>
-      <div style="background:#0d0d0d;border:1px solid #1a1a1a;border-radius:8px;padding:16px;">
-        <p style="color:#555;font-size:12px;margin:0;line-height:1.6;">
+      <h2 style="color:#0f172a;font-size:20px;margin:0 0 20px 0;">${t.heading}</h2>
+      <p style="color:#334155;font-size:15px;line-height:1.8;margin:0 0 28px 0;">${body}</p>
+      <a href="${loginUrl}" style="display:block;background:#0047AB;color:#ffffff;text-align:center;padding:14px 24px;border-radius:8px;font-weight:bold;font-size:15px;text-decoration:none;letter-spacing:1px;margin-bottom:28px;">${t.cta}</a>
+      <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:16px;">
+        <p style="color:#475569;font-size:12px;margin:0;line-height:1.6;">
           You're receiving this because you're registered on the ${label}.<br/>
           Need help? Contact your program administrator.
         </p>
       </div>
     </div>
-    <div style="background:#0d0d0d;border-top:1px solid #1a1a1a;padding:20px 32px;">
-      <p style="color:#444;font-size:12px;margin:0;">This is an automated message — please do not reply directly to this email.</p>
+    <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 32px;">
+      <p style="color:#64748b;font-size:12px;margin:0;">This is an automated message — please do not reply directly to this email.</p>
     </div>
   </div>
 </body>
