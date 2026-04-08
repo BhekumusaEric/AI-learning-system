@@ -469,7 +469,7 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
 
 function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
   const [isSending, setIsSending] = useState(false);
-  const [result, setResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
+  const [result, setResult] = useState<{ sent: number; failed: number; total: number; errors?: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const platformName = platform === 'dip' ? 'IDC SEF Digital Inclusion Program' : 'WeThinkCode_ Work Readiness Program';
@@ -525,10 +525,18 @@ function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onC
       {error && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2 mb-3">{error}</p>}
 
       {result && (
-        <div className="flex items-center gap-4 mb-3 text-sm">
-          <span className="text-[#d4af37] font-bold">{result.sent} sent</span>
-          {result.failed > 0 && <span className="text-error font-bold">{result.failed} failed</span>}
-          <span className="text-secondary-text">out of {result.total} students with emails</span>
+        <div className="mb-3">
+          <div className="flex items-center gap-4 text-sm mb-2">
+            <span className="text-[#d4af37] font-bold">{result.sent} sent</span>
+            {result.failed > 0 && <span className="text-error font-bold">{result.failed} failed</span>}
+            <span className="text-secondary-text">out of {result.total} students with emails</span>
+          </div>
+          {result.errors && result.errors.length > 0 && (
+            <div className="bg-error/10 border border-error/30 p-2 rounded-lg break-words text-[10px] text-error font-mono max-h-32 overflow-y-auto">
+              <p className="font-bold">Error Logs:</p>
+              {result.errors.map((e, i) => <div key={i}>{e}</div>)}
+            </div>
+          )}
         </div>
       )}
 

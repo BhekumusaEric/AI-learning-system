@@ -131,6 +131,7 @@ export async function POST(request: Request) {
 
   let sent = 0;
   let failed = 0;
+  let errorMsgs: string[] = [];
 
   await Promise.allSettled(
     recipients.map(async (s) => {
@@ -140,11 +141,12 @@ export async function POST(request: Request) {
         const subjectLine = adminEmail ? `[FORWARD TO ${s.email}] ${subject}` : subject;
         await sendEmail({ to_email: to, subject: subjectLine, message_html: html });
         sent++;
-      } catch {
+      } catch (e: any) {
         failed++;
+        errorMsgs.push(e.message || String(e));
       }
     })
   );
 
-  return NextResponse.json({ sent, failed, total: recipients.length });
+  return NextResponse.json({ sent, failed, total: recipients.length, errors: errorMsgs.slice(0, 5) });
 }
