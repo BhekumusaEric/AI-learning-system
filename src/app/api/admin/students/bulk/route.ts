@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
-import { Resend } from 'resend';
 import { nextUniqueLoginId } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
+import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 function hashPassword(p: string) {
   return createHash('sha256').update(p).digest('hex');
@@ -24,11 +22,10 @@ async function sendCredentialsEmail(to: string, full_name: string, login_id: str
   const recipient = adminEmail || to;
   const subjectLine = adminEmail && adminEmail !== to ? adminForwardSubject(subject, to) : subject;
 
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-    to: recipient,
+  await sendEmail({
+    to_email: recipient,
     subject: subjectLine,
-    html,
+    message_html: html,
   });
 }
 
@@ -87,7 +84,7 @@ export async function POST(request: Request) {
     results.push(resultEntry);
 
     // Fire emails in parallel — don't block the loop
-    if (email && process.env.RESEND_API_KEY) {
+    if (email && process.env.WTC_EMAIL_API_KEY) {
       emailPromises.push(
         sendCredentialsEmail(email, full_name, login_id, plainPassword, platform)
           .then(() => { resultEntry.emailSent = true; })

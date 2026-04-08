@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { Resend } from 'resend';
+import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 function generateOtp() {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -87,11 +85,10 @@ export async function POST(request: Request) {
 
     let emailSent = false;
     try {
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-        to: normalizedEmail,
+      await sendEmail({
+        to_email: normalizedEmail,
         subject: `${otp} is your verification code — ${platformName}`,
-        html,
+        message_html: html,
       });
       emailSent = true;
     } catch (e: any) {

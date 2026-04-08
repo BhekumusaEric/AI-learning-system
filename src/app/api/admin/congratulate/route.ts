@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { Resend } from 'resend';
+import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const PLATFORM_META = {
   dip: {
@@ -137,7 +135,7 @@ export async function POST(request: Request) {
         const { subject, html } = buildCongratulationsEmail(s.full_name, platform as 'dip' | 'wrp');
         const to = adminEmail || s.email!;
         const subjectLine = adminEmail ? `[FORWARD TO ${s.email}] ${subject}` : subject;
-        await resend.emails.send({ from, to, subject: subjectLine, html });
+        await sendEmail({ to_email: to, subject: subjectLine, message_html: html });
         sent++;
       } catch {
         failed++;

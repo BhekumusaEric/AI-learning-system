@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
-import { Resend } from 'resend';
 import { nextUniqueLoginId } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
+import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 function hashPassword(password: string) {
   return createHash('sha256').update(password).digest('hex');
@@ -28,11 +26,10 @@ async function sendCredentialsEmail({
   const recipient = adminEmail || to;
   const subjectLine = adminEmail && adminEmail !== to ? adminForwardSubject(subject, to) : subject;
 
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-    to: recipient,
+  await sendEmail({
+    to_email: recipient,
     subject: subjectLine,
-    html,
+    message_html: html,
   });
 }
 
@@ -106,9 +103,9 @@ export async function POST(request: Request) {
       RETURNING id, login_id, full_name, email, created_at
     `;
 
-    // Send email if address provided and Resend is configured
+    // Send email if address provided and API key is configured
     let emailSent = false;
-    if (email && process.env.RESEND_API_KEY) {
+    if (email && process.env.WTC_EMAIL_API_KEY) {
       try {
         await sendCredentialsEmail({ to: email, full_name, login_id, password: plainPassword, platform });
         emailSent = true;
@@ -154,9 +151,9 @@ export async function PATCH(request: Request) {
 
     if (!student) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
 
-    // Send reset email if address exists and Resend is configured
+    // Send reset email if address exists and API is configured
     let emailSent = false;
-    if (student.email && process.env.RESEND_API_KEY) {
+    if (student.email && process.env.WTC_EMAIL_API_KEY) {
       try {
         await sendCredentialsEmail({
           to: student.email, full_name: student.full_name, login_id, password: plainPassword, platform, isReset: true,

@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
-import { Resend } from 'resend';
+import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   const { to, type, cv, cover, pdfBase64, filename } = await request.json();
   if (!to || !type || !cv) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
-  if (!process.env.RESEND_API_KEY) return NextResponse.json({ error: 'Email not configured' }, { status: 503 });
+  if (!process.env.WTC_EMAIL_API_KEY) return NextResponse.json({ error: 'Email not configured' }, { status: 503 });
 
   const isCv = type === 'cv';
   const docName = isCv ? 'CV' : 'Cover Letter';
@@ -41,9 +39,11 @@ export async function POST(request: Request) {
     </div>`;
 
   try {
-    const from = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-
-    const emailPayload: any = { from, to, subject, html };
+    const emailPayload: any = { 
+      to_email: to, 
+      subject, 
+      message_html: html 
+    };
 
     // Attach PDF if provided
     if (pdfBase64 && filename) {
@@ -53,12 +53,8 @@ export async function POST(request: Request) {
       }];
     }
 
-    const result = await resend.emails.send(emailPayload);
+    await sendEmail(emailPayload);
 
-    if ((result as any).error) {
-      console.error('Resend error:', (result as any).error);
-      return NextResponse.json({ error: (result as any).error.message || 'Email send failed' }, { status: 500 });
-    }
     return NextResponse.json({ success: true });
   } catch (e: any) {
     console.error('Send document exception:', e);

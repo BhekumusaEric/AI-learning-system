@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { Resend } from 'resend';
+import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 const PLATFORM_META = {
   dip: {
@@ -143,15 +141,16 @@ export async function POST(request: Request) {
 
   // Send grand email
   let emailSent = false;
-  if (student.email && process.env.RESEND_API_KEY) {
+  if (student.email && process.env.WTC_EMAIL_API_KEY) {
     try {
       const { subject, html } = buildUnlockEmail(student.full_name, platform as 'dip' | 'wrp');
       const adminEmail = process.env.ADMIN_EMAIL;
       const to = adminEmail || student.email;
       const subjectLine = adminEmail ? `[FORWARD TO ${student.email}] ${subject}` : subject;
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-        to, subject: subjectLine, html,
+      await sendEmail({
+        to_email: to,
+        subject: subjectLine,
+        message_html: html,
       });
       emailSent = true;
     } catch (e) {
