@@ -32,9 +32,6 @@ For an automated, guided deployment today, you can use the built-in scripts loca
 
 ## Security Mandates (CRITICAL)
 
-> [!CAUTION]
-> **IAM Key Rotation**: The AWS Access Keys provided during development were briefly exposed in the local Git history (now scrubbed). For production, you **MUST** generate fresh IAM credentials with limited `execute-api` permissions.
-
 - **Admin Password**: Ensure `ADMIN_PASSWORD` in `.env` is a high-entropy secret.
 - **SSL**: Deployment should **only** occur over HTTPS via Nginx and Let's Encrypt.
 - **Secrets**: Do **not** commit the `.env` file to your remote repository.
@@ -54,16 +51,16 @@ Admins can monitor real-time engagement and progress through the [Admin Dashboar
 ### 3. User Onboarding
 The automated pipeline fetches student applications from the external IDC endpoint. Access this via the **Onboarding** tab in the Admin table.
 
----
-
 ## Reference Materials
+
+For a complete interactive experience, visit the **[Documentation Portal (http://localhost:3000/docs)](http://localhost:3000/docs)**.
 
 | Resource | Description |
 |---|---|
-| [Admin Guide (HTML)](./docs/manuals/html/AdminGuide.html) | Guide for program managers |
-| [Supervisor Guide (HTML)](./docs/manuals/html/SupervisorGuide.html) | Guide for stakeholders |
-| [Learner Guide (HTML)](./docs/manuals/html/LearnerGuide.html) | Guide for students |
-| [API Reference](./docs/system_architecture.md) | Technical system overview |
+| [Admin Guide (HTML)](/manuals/AdminGuide.html) | Guide for program managers |
+| [Supervisor Guide (HTML)](/manuals/SupervisorGuide.html) | Guide for stakeholders |
+| [Learner Guide (HTML)](/manuals/LearnerGuide.html) | Guide for students |
+| [System Architecture](/docs/ARCHITECTURE_GUIDE.md) | Technical system overview |
 
 ---
 

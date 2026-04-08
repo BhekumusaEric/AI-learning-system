@@ -19,13 +19,18 @@ Follow these three simple steps to run the platform on your local machine:
 
 ---
 
-## User Manuals & Guides
+## Documentation Portal
 
-We have prepared high-fidelity HTML manuals for every type of user. You can open these directly in any web browser:
+## Reference Materials
 
-- **[Admin Manual](./docs/manuals/html/AdminGuide.html)** — For program managers and system administrators.
-- **[Supervisor Manual](./docs/manuals/html/SupervisorGuide.html)** — For stakeholders and reporting officers.
-- **[Learner Manual](./docs/manuals/html/LearnerGuide.html)** — For students entering the training grounds.
+For a complete interactive experience, visit the **[Documentation Portal (http://localhost:3000/docs)](http://localhost:3000/docs)**.
+
+| Resource | Description |
+|---|---|
+| [Admin Guide (HTML)](/manuals/AdminGuide.html) | Guide for program managers |
+| [Supervisor Guide (HTML)](/manuals/SupervisorGuide.html) | Guide for stakeholders |
+| [Learner Guide (HTML)](/manuals/LearnerGuide.html) | Guide for students |
+| [System Architecture](/docs/ARCHITECTURE_GUIDE.md) | Technical system overview |
 
 ---
 
