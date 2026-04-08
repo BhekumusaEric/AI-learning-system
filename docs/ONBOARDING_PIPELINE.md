@@ -1,11 +1,11 @@
-# 🚀 Onboarding Pipeline: Simple Guide
+# Onboarding Pipeline: Simple Guide
 
 The **Onboarding Pipeline** is a tool that automates the process of turning student applications into active accounts. It replaces manual data entry with a single-click "activation" flow.
 
-## 📖 How to use it
+## How to use it
 
 1.  **Open the Admin Panel**: Log in as an admin and go to the dashboard.
-2.  **Go to "🚀 Onboarding"**: Click the **Onboarding** tab at the top.
+2.  **Go to "Onboarding"**: Click the **Onboarding** tab at the top.
 3.  **Fetch Data**: The list of applications from the AWS API will load automatically.
 4.  **Review the Groups**: Students are grouped by their **Program** and **Location** (e.g., *Work Readiness - Johannesburg*).
 5.  **Activate Cohort**: 

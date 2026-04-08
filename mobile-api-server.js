@@ -18,7 +18,7 @@ const LEARNING_GROUNDS = [
     id: 'python-fundamentals',
     title: 'Python Programming Fundamentals',
     description: 'Master the basics of Python programming with hands-on exercises.',
-    emoji: '🐍',
+    icon: 'python',
     difficulty: 'Beginner',
     contentCount: 15,
     estimatedHours: 20,
@@ -27,7 +27,7 @@ const LEARNING_GROUNDS = [
     id: 'data-science-ml',
     title: 'Data Science & Machine Learning',
     description: 'Learn data analysis and machine learning algorithms.',
-    emoji: '📊',
+    icon: 'data-science',
     difficulty: 'Intermediate',
     contentCount: 25,
     estimatedHours: 40,
@@ -36,7 +36,7 @@ const LEARNING_GROUNDS = [
     id: 'deep-learning',
     title: 'Deep Learning & Neural Networks',
     description: 'Explore neural network architectures and deep learning.',
-    emoji: '🧠',
+    icon: 'ai',
     difficulty: 'Advanced',
     contentCount: 20,
     estimatedHours: 35,
@@ -204,8 +204,8 @@ app.post('/api/progress', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Mobile App API Server running on http://localhost:${PORT}`);
-  console.log('📱 Ready for mobile app connections!');
-  console.log('\n📋 Available endpoints:');
+  console.log('API Server: Ready for mobile app connections.');
+  console.log('\nAvailable endpoints:');
   console.log('  POST /api/auth/login');
   console.log('  GET  /api/content/grounds');
   console.log('  GET  /api/content/ground/:groundId');

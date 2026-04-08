@@ -1,4 +1,4 @@
-# ☁️ AWS Infrastructure Guide: Next.js on Lambda
+# AWS Infrastructure Guide: Next.js on Lambda
 
 This guide provides technical details for deploying the SAAIO Training Grounds Next.js application to AWS using a combination of **Lambda**, **S3**, and **CloudFront**.
 

@@ -4,7 +4,7 @@ This guide explains how the **IOAI Training Grounds** syllabus is organized, how
 
 ---
 
-## 📚 High-Level Structure
+## High-Level Structure
 
 The curriculum is organized as a **book** in the repository. It is divided into:
 
@@ -40,11 +40,11 @@ Practice pages include a `check_...()` function so the runner can validate stude
 
 ---
 
-## 🧠 Solutions & Student Mode
+## Solutions & Student Mode
 
 To support both learners and validation/CI, the repository includes:
 
-### ✅ `solutions/` folder
+### solutions/ folder
 
 A parallel folder structure containing solved versions of every practice page.
 Each solution file mirrors its practice sibling but includes a `## Solution` section with a complete, working answer.
@@ -54,7 +54,7 @@ Example:
 solutions/part1_foundational_skills_classical_ml/chapter1_python_programming_fundamentals/page4_variable_practice_solution.md
 ```
 
-### 🏃 Course Runner (`course_runner.py`)
+### Course Runner (course_runner.py)
 
 This script can:
 
@@ -70,7 +70,7 @@ This script can:
 
 ---
 
-## ✍️ How to Add a New Lesson
+## How to Add a New Lesson
 
 1. Create a new markdown file in the appropriate chapter folder under `book/`.
 2. Follow the existing format:
@@ -100,7 +100,7 @@ This script scans `book/` for `*practice*.md` files and creates/updates correspo
 
 ---
 
-## 🧩 How the Runner Validates Exercises
+## How the Runner Validates Exercises
 
 ### Expected structure in practice pages
 
@@ -123,19 +123,16 @@ def check_example():
 
 ---
 
-## 🧭 Best Practices for Future Developers
+## Best Practices for Future Developers
 
-✅ **Consistent formatting**: keep each lesson structured (Intro → Code → Tests) so tools can parse it reliably.
-
-✅ **Small lessons**: keep each page focused on a single concept or task.
-
-✅ **Ensure `check_...()` exists** on every practice page so student mode can run without failures.
-
-✅ **Keep `solutions/` in sync**: regenerate solutions after editing practice pages.
+- **Consistent formatting**: keep each lesson structured.
+- **Small lessons**: keep each page focused on a single concept or task.
+- **Ensure check_...() exists** on every practice page.
+- **Keep solutions/ in sync**: regenerate solutions after editing.
 
 ---
 
-## 📦 Project Layout (Quick Reference)
+## Project Layout (Quick Reference)
 
 ```
 book/          # lesson content (Read + Practice)

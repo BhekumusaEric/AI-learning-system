@@ -6,7 +6,7 @@ const http = require('http');
 const BASE_URL = 'http://localhost:3000';
 
 async function testAPI() {
-  console.log('🧪 Testing SAAIO Training Grounds Backend API...\n');
+  console.log('--- Testing SAAIO Training Grounds Backend API ---\n');
 
   // Test 1: Auth Login
   console.log('1. Testing Auth Login...');
@@ -15,10 +15,10 @@ async function testAPI() {
       email: 'test@example.com',
       password: 'password123'
     });
-    console.log('✅ Auth Login: SUCCESS');
+    console.log('[SUCCESS]');
     console.log('   Response:', JSON.parse(loginResponse).user?.email);
   } catch (error) {
-    console.log('❌ Auth Login: FAILED');
+    console.log('[FAILED]');
     console.log('   Error:', error.message);
   }
 
@@ -27,10 +27,9 @@ async function testAPI() {
   try {
     const groundsResponse = await makeRequest('/api/content/grounds');
     const grounds = JSON.parse(groundsResponse);
-    console.log('✅ Get Grounds: SUCCESS');
-    console.log(`   Found ${grounds.length} learning grounds`);
+    console.log(`[SUCCESS] Found ${grounds.length} learning grounds`);
     grounds.slice(0, 2).forEach(ground => {
-      console.log(`   - ${ground.emoji} ${ground.title} (${ground.difficulty})`);
+      console.log(`   - ${ground.title} (${ground.difficulty})`);
     });
   } catch (error) {
     console.log('❌ Get Grounds: FAILED');
@@ -42,8 +41,7 @@ async function testAPI() {
   try {
     const contentResponse = await makeRequest('/api/content/ground/python-fundamentals?groundId=python-fundamentals');
     const content = JSON.parse(contentResponse);
-    console.log('✅ Get Ground Content: SUCCESS');
-    console.log(`   Found ${content.length} content items`);
+    console.log(`[SUCCESS] Found ${content.length} content items`);
     content.slice(0, 2).forEach(item => {
       console.log(`   - ${item.title} (${item.type})`);
     });
@@ -57,10 +55,7 @@ async function testAPI() {
   try {
     const itemResponse = await makeRequest('/api/content/item/python-intro?contentId=python-intro');
     const item = JSON.parse(itemResponse);
-    console.log('✅ Get Content Item: SUCCESS');
-    console.log(`   Title: ${item.title}`);
-    console.log(`   Type: ${item.type}`);
-    console.log(`   Content length: ${item.content.length} characters`);
+    console.log(`[SUCCESS] Content length: ${item.content.length} characters`);
   } catch (error) {
     console.log('❌ Get Content Item: FAILED');
     console.log('   Error:', error.message);
@@ -71,16 +66,15 @@ async function testAPI() {
   try {
     const progressResponse = await makeRequest('/api/progress');
     const progress = JSON.parse(progressResponse);
-    console.log('✅ Progress API: SUCCESS');
-    console.log(`   Progress items: ${Array.isArray(progress) ? progress.length : 'N/A'}`);
+    console.log(`[SUCCESS] Progress items: ${Array.isArray(progress) ? progress.length : 'N/A'}`);
   } catch (error) {
     console.log('❌ Progress API: FAILED');
     console.log('   Error:', error.message);
   }
 
-  console.log('\n🎉 API Testing Complete!');
-  console.log('\n💡 The mobile app should now be able to connect to this backend.');
-  console.log('   Make sure to start the mobile app with: cd mobile-app && npx expo start');
+  console.log('\nAPI Testing Complete.');
+  console.log('\nThe platform is ready for client connections.');
+  console.log('   To start the app: npm run dev');
 }
 
 function makeRequest(path, method = 'GET', data = null) {

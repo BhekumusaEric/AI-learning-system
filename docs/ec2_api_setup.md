@@ -1,13 +1,13 @@
-# 🖥️ EC2 Setup Guide: Mobile API Server
+# EC2 Setup Guide: Mobile API Server
 
-This guide details how to host the `mobile-api-server.js` (Express-based API) on an **AWS EC2** instance for high availability and persistence.
+This guide details how to host the `mobile-api-server.js` (Express-based API) on an AWS EC2 instance for high availability and persistence.
 
 ## 1. Instance Configuration
 
 - **AMI**: Amazon Linux 2023 or Ubuntu 22.04 LTS.
 - **Instance Type**: `t3.micro` (sufficient for most training ground traffic) or `t3.small` if usage increases.
 - **Storage**: 20GB gp3 EBS volume.
-- **Public IP**: Assign an **Elastic IP** so the server address doesn't change after reboots.
+- **Public IP**: Assign an Elastic IP so the server address doesn't change after reboots.
 
 ## 2. Security Group Settings
 
@@ -76,6 +76,12 @@ Nginx handles SSL termination and redirects traffic from port 80/443 to the Node
    server {
        listen 80;
        server_name api.saaio.wethinkcode.co.za;
+
+       # Security Headers
+       add_header X-Content-Type-Options nosniff;
+       add_header X-Frame-Options SAMEORIGIN;
+       add_header X-XSS-Protection "1; mode=block";
+       add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
        location / {
            proxy_pass http://localhost:3001;

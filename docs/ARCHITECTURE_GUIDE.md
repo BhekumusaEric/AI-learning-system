@@ -4,7 +4,7 @@ This guide outlines a scalable, maintainable architecture for the IOAI Training 
 
 ---
 
-## 🎯 Why Separation of Concerns Matters
+## Why Separation of Concerns Matters
 
 - **Maintainability**: Changes in one area (e.g., UI) don't affect others (e.g., data).
 - **Scalability**: Components can be scaled independently (e.g., add more servers for code execution).
@@ -14,7 +14,7 @@ This guide outlines a scalable, maintainable architecture for the IOAI Training 
 
 ---
 
-## 🏗️ High-Level Architecture
+## High-Level Architecture
 
 The platform follows a **layered architecture** with clear boundaries:
 
@@ -43,7 +43,7 @@ The platform follows a **layered architecture** with clear boundaries:
 
 ---
 
-## 📱 Detailed Layer Breakdown
+## Detailed Layer Breakdown
 
 ### 1. Presentation Layer (UI/UX)
 **Concern**: User interface, rendering, interactions.
@@ -102,7 +102,7 @@ The platform follows a **layered architecture** with clear boundaries:
 
 ---
 
-## 🔧 Key Architectural Patterns
+## Key Architectural Patterns
 
 ### 1. Component-Based Architecture (Frontend)
 - **Why**: React's strength — reusable, testable components.
