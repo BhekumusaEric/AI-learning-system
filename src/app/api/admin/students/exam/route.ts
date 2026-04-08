@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,11 +25,14 @@ export async function PATCH(request: Request) {
   if (score !== undefined) updates.exam_score = score;
   if (exam_passed !== undefined) updates.exam_passed = exam_passed;
 
-  // Upsert into dip_progress
-  const { error } = await supabase
-    .from('dip_progress')
-    .upsert({ login_id, ...updates }, { onConflict: 'login_id' });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await sql`
+      INSERT INTO dip_progress (login_id)
+      VALUES (${login_id})
+      ON CONFLICT (login_id) DO UPDATE SET ${sql(updates)}
+    `;
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
   return NextResponse.json({ success: true });
 }

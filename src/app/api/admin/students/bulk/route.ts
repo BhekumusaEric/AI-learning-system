@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
 import { Resend } from 'resend';
 import { nextUniqueLoginId } from '@/lib/loginId';
@@ -68,9 +68,15 @@ export async function POST(request: Request) {
     const plainPassword = generatePassword();
     const password_hash = hashPassword(plainPassword);
 
-    const { error: insertError } = await supabase
-      .from(table)
-      .insert({ login_id, password_hash, full_name, email });
+    let insertError: any = null;
+    try {
+      await sql`
+        INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
+        VALUES (${login_id}, ${password_hash}, ${full_name}, ${email})
+      `;
+    } catch (e: any) {
+      insertError = e;
+    }
 
     if (insertError) {
       results.push({ full_name, login_id, plainPassword: '', email, success: false, error: insertError.message });

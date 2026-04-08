@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
 import { Resend } from 'resend';
 import { nextUniqueLoginId } from '@/lib/loginId';
@@ -45,13 +45,12 @@ export async function POST(request: Request) {
   const normalizedEmail = email.trim().toLowerCase();
 
   // Check if email already exists
-  const { data: existing } = await supabase
-    .from(table)
-    .select('login_id, full_name')
-    .eq('email', normalizedEmail)
-    .maybeSingle();
+  const existingRows = await sql`
+    SELECT login_id, full_name FROM ${sql(table)} WHERE email = ${normalizedEmail}
+  `;
 
-  if (existing) {
+  if (existingRows.length > 0) {
+    const existing = existingRows[0];
     return NextResponse.json({ already_registered: true, login_id: existing.login_id, full_name: existing.full_name });
   }
 
@@ -60,11 +59,14 @@ export async function POST(request: Request) {
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 
-  const { error: insertError } = await supabase
-    .from(table)
-    .insert({ login_id, password_hash, full_name: full_name.trim(), email: normalizedEmail });
-
-  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
+  try {
+    await sql`
+      INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
+      VALUES (${login_id}, ${password_hash}, ${full_name.trim()}, ${normalizedEmail})
+    `;
+  } catch (insertError: any) {
+    return NextResponse.json({ error: insertError.message }, { status: 500 });
+  }
 
   // Send credentials email
   let emailSent = false;

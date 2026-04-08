@@ -3,20 +3,20 @@ import { Users, BookOpen } from 'lucide-react';
 import { getSyllabus } from '@/lib/syllabus';
 import { getWrpSyllabus } from '@/lib/wrpSyllabus';
 import AdminTable from './AdminTable';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 async function getStats() {
   const [saaioRes, dipRes, wrpRes] = await Promise.all([
-    supabase.from('saaio_students').select('*', { count: 'exact', head: true }),
-    supabase.from('dip_students').select('*', { count: 'exact', head: true }),
-    supabase.from('wrp_students').select('*', { count: 'exact', head: true }),
+    sql`SELECT COUNT(*) as count FROM saaio_students`,
+    sql`SELECT COUNT(*) as count FROM dip_students`,
+    sql`SELECT COUNT(*) as count FROM wrp_students`,
   ]);
   return {
-    saaioCount: saaioRes.count || 0,
-    dipCount: dipRes.count || 0,
-    wrpCount: wrpRes.count || 0,
+    saaioCount: Number(saaioRes[0]?.count || 0),
+    dipCount: Number(dipRes[0]?.count || 0),
+    wrpCount: Number(wrpRes[0]?.count || 0),
   };
 }
 

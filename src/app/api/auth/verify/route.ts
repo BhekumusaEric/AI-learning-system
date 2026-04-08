@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -13,16 +13,28 @@ export async function POST(request: Request) {
 
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
 
-  const { data, error } = await supabase
-    .from(table)
-    .select('id, login_id, full_name, email, email_verified')
-    .eq('login_id', login_id.trim().toUpperCase())
-    .maybeSingle();
+  try {
+    const data = await sql`
+      SELECT id, login_id, full_name, email 
+      FROM ${sql(table)} 
+      WHERE login_id = ${login_id.trim().toUpperCase()}
+    `;
 
-  if (error || !data) {
-    return NextResponse.json({ error: 'Student ID not found' }, { status: 401 });
+    if (data.length === 0) {
+      return NextResponse.json({ error: 'Student ID not found' }, { status: 401 });
+    }
+
+    const user = data[0];
+    const has_email = !!(user.email);
+
+    return NextResponse.json({ 
+      success: true, 
+      login_id: user.login_id, 
+      full_name: user.full_name, 
+      has_email 
+    });
+  } catch (error: any) {
+    console.error('[VERIFY_SESSION_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  const has_email = !!(data.email);
-  return NextResponse.json({ success: true, login_id: data.login_id, full_name: data.full_name, has_email });
 }

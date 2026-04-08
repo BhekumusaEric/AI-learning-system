@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { RawApplication, groupApplications } from '@/lib/applications';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,17 +37,16 @@ export async function GET(request: Request) {
     const rawApps: RawApplication[] = json.data || [];
 
     // 2. Fetch existing students to cross-check "freshness"
-    // We pull just the emails to keep the payload lean
     const [saaioRes, dipRes, wrpRes] = await Promise.all([
-      supabase.from('saaio_students').select('email'),
-      supabase.from('dip_students').select('email'),
-      supabase.from('wrp_students').select('email'),
+      sql`SELECT email FROM saaio_students`,
+      sql`SELECT email FROM dip_students`,
+      sql`SELECT email FROM wrp_students`,
     ]);
 
     const existingEmailsMap: Record<string, Set<string>> = {
-      saaio: new Set(saaioRes.data?.map(s => s.email?.toLowerCase().trim()).filter(Boolean)),
-      dip: new Set(dipRes.data?.map(s => s.email?.toLowerCase().trim()).filter(Boolean)),
-      wrp: new Set(wrpRes.data?.map(s => s.email?.toLowerCase().trim()).filter(Boolean)),
+      saaio: new Set(saaioRes.map((s: any) => s.email?.toLowerCase().trim()).filter(Boolean)),
+      dip: new Set(dipRes.map((s: any) => s.email?.toLowerCase().trim()).filter(Boolean)),
+      wrp: new Set(wrpRes.map((s: any) => s.email?.toLowerCase().trim()).filter(Boolean)),
     };
 
     // 3. Group and flag "already enrolled" students

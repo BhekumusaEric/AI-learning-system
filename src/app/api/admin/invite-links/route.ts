@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,12 +18,16 @@ function genToken() {
 // GET — list all invite links
 export async function GET(request: Request) {
   if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { data, error } = await supabase
-    .from('invite_links')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || []);
+  
+  try {
+    const data = await sql`
+      SELECT * FROM invite_links 
+      ORDER BY created_at DESC
+    `;
+    return NextResponse.json(data);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // POST — create a new invite link
@@ -32,22 +36,25 @@ export async function POST(request: Request) {
   const { type, platform, label, expires_at, max_uses } = await request.json();
   if (!type) return NextResponse.json({ error: 'type required' }, { status: 400 });
 
-  // Unique token with collision check
-  let token = genToken();
-  for (let i = 0; i < 5; i++) {
-    const { data: existing } = await supabase.from('invite_links').select('id').eq('token', token).maybeSingle();
-    if (!existing) break;
-    token = genToken();
+  try {
+    // Unique token with collision check
+    let token = genToken();
+    for (let i = 0; i < 5; i++) {
+      const existing = await sql`SELECT id FROM invite_links WHERE token = ${token}`;
+      if (existing.length === 0) break;
+      token = genToken();
+    }
+
+    const [data] = await sql`
+      INSERT INTO invite_links (token, type, platform, label, expires_at, max_uses)
+      VALUES (${token}, ${type}, ${platform || null}, ${label || null}, ${expires_at || null}, ${max_uses || null})
+      RETURNING *
+    `;
+
+    return NextResponse.json(data);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  const { data, error } = await supabase
-    .from('invite_links')
-    .insert({ token, type, platform: platform || null, label: label || null, expires_at: expires_at || null, max_uses: max_uses || null })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
 }
 
 // PATCH — refresh token or update expiry/label
@@ -56,21 +63,42 @@ export async function PATCH(request: Request) {
   const { id, refresh, ...updates } = await request.json();
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  if (refresh) {
-    let token = genToken();
-    for (let i = 0; i < 5; i++) {
-      const { data: existing } = await supabase.from('invite_links').select('id').eq('token', token).maybeSingle();
-      if (!existing) break;
-      token = genToken();
-    }
-    updates.token = token;
-    updates.use_count = 0;
-    updates.revoked = false;
-  }
+  try {
+    const finalUpdates: Record<string, any> = { ...updates };
 
-  const { data, error } = await supabase.from('invite_links').update(updates).eq('id', id).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+    if (refresh) {
+      let token = genToken();
+      for (let i = 0; i < 5; i++) {
+        const existing = await sql`SELECT id FROM invite_links WHERE token = ${token}`;
+        if (existing.length === 0) break;
+        token = genToken();
+      }
+      finalUpdates.token = token;
+      finalUpdates.use_count = 0;
+      finalUpdates.revoked = false;
+    }
+
+    // Filter valid update keys
+    const validKeys = ['token', 'label', 'expires_at', 'max_uses', 'use_count', 'revoked'];
+    const filteredUpdates: Record<string, any> = {};
+    validKeys.forEach(key => {
+      if (key in finalUpdates) filteredUpdates[key] = finalUpdates[key];
+    });
+
+    if (Object.keys(filteredUpdates).length === 0) {
+      return NextResponse.json({ error: 'No valid updates provided' }, { status: 400 });
+    }
+
+    const [data] = await sql`
+      UPDATE invite_links SET ${sql(filteredUpdates)}
+      WHERE id = ${id}
+      RETURNING *
+    `;
+
+    return NextResponse.json(data);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // DELETE — revoke (soft) or hard delete
@@ -81,10 +109,14 @@ export async function DELETE(request: Request) {
   const hard = searchParams.get('hard') === 'true';
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  if (hard) {
-    await supabase.from('invite_links').delete().eq('id', id);
-  } else {
-    await supabase.from('invite_links').update({ revoked: true }).eq('id', id);
+  try {
+    if (hard) {
+      await sql`DELETE FROM invite_links WHERE id = ${id}`;
+    } else {
+      await sql`UPDATE invite_links SET revoked = true WHERE id = ${id}`;
+    }
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ success: true });
 }

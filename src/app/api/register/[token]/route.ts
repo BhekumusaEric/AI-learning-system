@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
 import { nextUniqueLoginId } from '@/lib/loginId';
 
@@ -12,17 +12,22 @@ function generatePassword(length = 8) {
 function hashPassword(p: string) { return createHash('sha256').update(p).digest('hex'); }
 
 async function validateToken(token: string) {
-  const { data, error } = await supabase
-    .from('invite_links')
-    .select('*')
-    .eq('token', token)
-    .maybeSingle();
+  try {
+    const data = await sql`
+      SELECT * FROM invite_links WHERE token = ${token}
+    `;
 
-  if (error || !data) return { valid: false, reason: 'Invalid link' };
-  if (data.revoked) return { valid: false, reason: 'This link has been revoked' };
-  if (data.expires_at && new Date(data.expires_at) < new Date()) return { valid: false, reason: 'This link has expired' };
-  if (data.max_uses !== null && data.use_count >= data.max_uses) return { valid: false, reason: 'This link has reached its maximum number of uses' };
-  return { valid: true, link: data };
+    if (data.length === 0) return { valid: false, reason: 'Invalid link' };
+    const link = data[0];
+
+    if (link.revoked) return { valid: false, reason: 'This link has been revoked' };
+    if (link.expires_at && new Date(link.expires_at) < new Date()) return { valid: false, reason: 'This link has expired' };
+    if (link.max_uses !== null && link.use_count >= link.max_uses) return { valid: false, reason: 'This link has reached its maximum number of uses' };
+    
+    return { valid: true, link };
+  } catch (error) {
+    return { valid: false, reason: 'Error validating link' };
+  }
 }
 
 // GET — validate token and return link metadata (no sensitive data)
@@ -30,6 +35,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   const { token } = await params;
   const { valid, reason, link } = await validateToken(token);
   if (!valid) return NextResponse.json({ error: reason }, { status: 410 });
+
   return NextResponse.json({
     type: link.type,
     platform: link.platform,
@@ -48,56 +54,60 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
 
   const body = await request.json();
 
-  if (link.type === 'supervisor') {
-    const { full_name, email, platform } = body;
-    if (!full_name?.trim() || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
+  try {
+    if (link.type === 'supervisor') {
+      const { full_name, email, platform } = body;
+      if (!full_name?.trim() || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
-    // Auto-generate supervisor login ID
-    const year = new Date().getFullYear();
-    const { data: existing } = await supabase.from('supervisors').select('login_id').like('login_id', `SUP-${year}-%`);
-    const ids = (existing || []).map((r: any) => r.login_id as string);
-    let max = 0;
-    for (const id of ids) { const n = parseInt(id.split('-').pop() || '0', 10); if (n > max) max = n; }
-    const login_id = `SUP-${year}-${String(max + 1).padStart(3, '0')}`;
+      // 1. Generate supervisor login ID
+      const year = new Date().getFullYear();
+      const existing = await sql`SELECT login_id FROM supervisors WHERE login_id LIKE ${'SUP-' + year + '-%'}`;
+      const ids = existing.map((r: any) => r.login_id as string);
+      let max = 0;
+      for (const id of ids) { const n = parseInt(id.split('-').pop() || '0', 10); if (n > max) max = n; }
+      const login_id = `SUP-${year}-${String(max + 1).padStart(3, '0')}`;
 
-    const plainPassword = generatePassword();
-    const { data, error } = await supabase
-      .from('supervisors')
-      .insert({ login_id, password_hash: hashPassword(plainPassword), full_name: full_name.trim(), email: email?.trim() || null, platform })
-      .select('id, login_id, full_name')
-      .single();
+      // 2. Insert Supervisor
+      const plainPassword = generatePassword();
+      const [data] = await sql`
+        INSERT INTO supervisors (login_id, password_hash, full_name, email, platform)
+        VALUES (${login_id}, ${hashPassword(plainPassword)}, ${full_name.trim()}, ${email?.trim() || null}, ${platform})
+        RETURNING id, login_id, full_name
+      `;
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      // 3. Increment use_count
+      await sql`UPDATE invite_links SET use_count = use_count + 1 WHERE id = ${link.id}`;
 
-    await supabase.from('invite_links').update({ use_count: (link.use_count || 0) + 1 }).eq('id', link.id);
-    return NextResponse.json({ ...data, plainPassword, type: 'supervisor' });
-  }
-
-  if (link.type === 'student') {
-    const { full_name, email, platform } = body;
-    if (!full_name?.trim() || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
-
-    // Validate platform against link's allowed platform
-    const allowed = link.platform;
-    if (allowed && allowed !== 'both' && allowed !== platform) {
-      return NextResponse.json({ error: 'Invalid platform for this link' }, { status: 400 });
+      return NextResponse.json({ ...data, plainPassword, type: 'supervisor' });
     }
 
-    const table = platform === 'wrp' ? 'wrp_students' : platform === 'dip' ? 'dip_students' : 'saaio_students';
-    const login_id = await nextUniqueLoginId(platform);
-    const plainPassword = generatePassword();
+    if (link.type === 'student') {
+      const { full_name, email, platform } = body;
+      if (!full_name?.trim() || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
-    const { data, error } = await supabase
-      .from(table)
-      .insert({ login_id, password_hash: hashPassword(plainPassword), full_name: full_name.trim(), email: email?.trim() || null })
-      .select('id, login_id, full_name')
-      .single();
+      const allowed = link.platform;
+      if (allowed && allowed !== 'both' && allowed !== platform) {
+        return NextResponse.json({ error: 'Invalid platform for this link' }, { status: 400 });
+      }
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      const table = platform === 'wrp' ? 'wrp_students' : platform === 'dip' ? 'dip_students' : 'saaio_students';
+      const login_id = await nextUniqueLoginId(platform);
+      const plainPassword = generatePassword();
 
-    await supabase.from('invite_links').update({ use_count: (link.use_count || 0) + 1 }).eq('id', link.id);
-    return NextResponse.json({ ...data, plainPassword, type: 'student', platform });
+      const [data] = await sql`
+        INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
+        VALUES (${login_id}, ${hashPassword(plainPassword)}, ${full_name.trim()}, ${email?.trim() || null})
+        RETURNING id, login_id, full_name
+      `;
+
+      await sql`UPDATE invite_links SET use_count = use_count + 1 WHERE id = ${link.id}`;
+
+      return NextResponse.json({ ...data, plainPassword, type: 'student', platform });
+    }
+
+    return NextResponse.json({ error: 'Unknown link type' }, { status: 400 });
+  } catch (error: any) {
+    console.error('[REGISTRATION_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  return NextResponse.json({ error: 'Unknown link type' }, { status: 400 });
 }

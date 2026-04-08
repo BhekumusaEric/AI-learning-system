@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
@@ -56,16 +56,12 @@ export async function POST(request: Request) {
         { expiresIn: '7d' }
       );
 
-      // Store user session in Supabase (optional)
+      // Store user session in RDS (optional)
       try {
-        await supabase
-          .from('user_sessions')
-          .insert({
-            user_id: user.id,
-            email: user.email,
-            token: token,
-            created_at: new Date().toISOString(),
-          });
+        await sql`
+          INSERT INTO user_sessions (user_id, email, token, created_at)
+          VALUES (${user.id}, ${user.email}, ${token}, ${new Date().toISOString()})
+        `;
       } catch (dbError) {
         console.warn('Failed to store session in database:', dbError);
         // Continue anyway - session storage is optional

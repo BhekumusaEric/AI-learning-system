@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { Resend } from 'resend';
 
 export const dynamic = 'force-dynamic';
@@ -105,14 +105,11 @@ export async function POST(request: Request) {
 
   const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG] || PLATFORM_CONFIG.saaio;
 
-  const { data: students, error } = await supabase
-    .from(config.table)
-    .select('full_name, email')
-    .not('email', 'is', null);
+  const students = await sql`
+    SELECT full_name, email FROM ${sql(config.table)} WHERE email IS NOT NULL
+  `;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  const recipients = (students || []).filter(s => s.email?.trim());
+  const recipients = students.filter((s: any) => s.email?.trim());
   if (recipients.length === 0) {
     return NextResponse.json({ sent: 0, failed: 0, total: 0, message: 'No students with email addresses found' });
   }

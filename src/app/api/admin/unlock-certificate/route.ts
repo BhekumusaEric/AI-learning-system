@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { Resend } from 'resend';
 
 export const dynamic = 'force-dynamic';
@@ -131,15 +131,15 @@ export async function POST(request: Request) {
 
   const meta = PLATFORM_META[platform as 'dip' | 'wrp'];
 
-  // Unlock in DB
-  const { data: student, error } = await supabase
-    .from(meta.table)
-    .update({ certificate_unlocked: true })
-    .eq('login_id', login_id)
-    .select('full_name, email')
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // Unlock in DB and return student details
+  const rows = await sql`
+    UPDATE ${sql(meta.table)}
+    SET certificate_unlocked = true
+    WHERE login_id = ${login_id}
+    RETURNING full_name, email
+  `;
+  if (rows.length === 0) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+  const student = rows[0];
 
   // Send grand email
   let emailSent = false;
@@ -170,14 +170,14 @@ export async function GET(request: Request) {
   const platform = searchParams.get('platform') as 'dip' | 'wrp' | null;
   if (!platform || !PLATFORM_META[platform]) return NextResponse.json({ error: 'platform required' }, { status: 400 });
 
-  const { data, error } = await supabase
-    .from(PLATFORM_META[platform].table)
-    .select('login_id, full_name, email, certificate_requested, certificate_unlocked, name_change_requested, certificate_name')
-    .or('certificate_requested.eq.true,name_change_requested.eq.true')
-    .order('full_name');
+  const data = await sql`
+    SELECT login_id, full_name, email, certificate_requested, certificate_unlocked, name_change_requested, certificate_name
+    FROM ${sql(PLATFORM_META[platform].table)}
+    WHERE certificate_requested = true OR name_change_requested = true
+    ORDER BY full_name
+  `;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || []);
+  return NextResponse.json(data);
 }
 
 // PATCH /api/admin/unlock-certificate — approve name change
@@ -190,11 +190,15 @@ export async function PATCH(request: Request) {
   if (!table) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 });
 
   // Clear the locked name and the request flag so student can re-enter
-  const { error } = await supabase
-    .from(table)
-    .update({ certificate_name: null, name_change_requested: false })
-    .eq('login_id', login_id);
+  try {
+    await sql`
+      UPDATE ${sql(table)}
+      SET certificate_name = null, name_change_requested = false
+      WHERE login_id = ${login_id}
+    `;
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }

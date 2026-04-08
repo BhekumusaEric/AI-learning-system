@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from('wrp_students')
-    .select('login_id, full_name')
-    .order('full_name', { ascending: true });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || []);
+  try {
+    const data = await sql`
+      SELECT login_id, full_name 
+      FROM wrp_students 
+      ORDER BY full_name ASC
+    `;
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.error('[WRP_GET_STUDENTS_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

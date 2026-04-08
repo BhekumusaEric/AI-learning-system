@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
 import { nextUniqueLoginId } from '@/lib/loginId';
 
@@ -15,16 +15,20 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   if (!code) return NextResponse.json({ error: 'code required' }, { status: 400 });
 
-  const { data, error } = await supabase
-    .from('cohorts')
-    .select('id, name, platform, description, location, start_date, archived')
-    .eq('invite_code', code.toUpperCase())
-    .maybeSingle();
+  try {
+    const data = await sql`
+      SELECT id, name, platform, description, location, start_date, archived 
+      FROM cohorts 
+      WHERE UPPER(invite_code) = ${code.toUpperCase()}
+    `;
 
-  if (error || !data) return NextResponse.json({ error: 'Invalid invite code' }, { status: 404 });
-  if (data.archived) return NextResponse.json({ error: 'This cohort is no longer accepting registrations' }, { status: 410 });
+    if (data.length === 0) return NextResponse.json({ error: 'Invalid invite code' }, { status: 404 });
+    if (data[0].archived) return NextResponse.json({ error: 'This cohort is no longer accepting registrations' }, { status: 410 });
 
-  return NextResponse.json(data);
+    return NextResponse.json(data[0]);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
@@ -32,28 +36,30 @@ export async function POST(request: Request) {
   if (!full_name?.trim() || !cohort_id || !platform)
     return NextResponse.json({ error: 'full_name, cohort_id and platform required' }, { status: 400 });
 
-  // Verify cohort exists, belongs to the right platform, and is not archived
-  const { data: cohort } = await supabase
-    .from('cohorts')
-    .select('id, archived, platform')
-    .eq('id', cohort_id)
-    .maybeSingle();
+  try {
+    // Verify cohort exists, belongs to the right platform, and is not archived
+    const cohort = await sql`
+      SELECT id, archived, platform FROM cohorts WHERE id = ${cohort_id}
+    `;
 
-  if (!cohort) return NextResponse.json({ error: 'Invalid cohort' }, { status: 404 });
-  if (cohort.archived) return NextResponse.json({ error: 'This cohort is no longer accepting registrations' }, { status: 410 });
-  if (cohort.platform !== platform) return NextResponse.json({ error: 'Platform mismatch' }, { status: 400 });
+    if (cohort.length === 0) return NextResponse.json({ error: 'Invalid cohort' }, { status: 404 });
+    if (cohort[0].archived) return NextResponse.json({ error: 'This cohort is no longer accepting registrations' }, { status: 410 });
+    if (cohort[0].platform !== platform) return NextResponse.json({ error: 'Platform mismatch' }, { status: 400 });
 
-  const table = platform === 'wrp' ? 'wrp_students' : 'dip_students';
-  const login_id = await nextUniqueLoginId(platform);
-  const plainPassword = generatePassword();
-  const password_hash = createHash('sha256').update(plainPassword).digest('hex');
+    const table = platform === 'wrp' ? 'wrp_students' : 'dip_students';
+    const login_id = await nextUniqueLoginId(platform);
+    const plainPassword = generatePassword();
+    const password_hash = createHash('sha256').update(plainPassword).digest('hex');
 
-  const { data, error } = await supabase
-    .from(table)
-    .insert({ login_id, password_hash, full_name: full_name.trim(), email: email?.trim() || null, cohort_id })
-    .select('id, login_id, full_name')
-    .single();
+    const result = await sql`
+      INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+      VALUES (${login_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${cohort_id})
+      RETURNING id, login_id, full_name
+    `;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ...data, plainPassword });
+    return NextResponse.json({ ...result[0], plainPassword });
+  } catch (error: any) {
+    console.error('[JOIN_POST_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
