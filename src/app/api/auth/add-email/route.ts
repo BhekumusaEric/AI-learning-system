@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
 
   // Send OTP email
-  const platformName = platform === 'dip' ? 'IDC SEF Digital Inclusion Program' : platform === 'wrp' ? 'WeThinkCode_ Work Readiness Program' : 'SAAIO Training Grounds';
+  const platformName = platform === 'dip' ? 'IDC SEF Digital Inclusion Program' : platform === 'wrp' ? 'WeThinkCode_ Work Readiness Program' : 'WeThinkCode_ IDC Curriculum';
 
   const html = `<!DOCTYPE html>
 <html>

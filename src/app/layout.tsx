@@ -16,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "WeThinkCode_ Training Grounds",
+  title: "WeThinkCode_ IDC Curriculum",
   description: "Next-generation AI and Python training environment.",
   manifest: "/manifest.json",
   appleWebApp: {
@@ -51,7 +51,7 @@ export default function RootLayout({
           <img src="/logo_white.png" alt="WeThinkCode" className="w-8 h-8 object-contain" />
         </div>
         <h1 className="text-xl font-bold text-foreground tracking-tight">
-          WeThinkCode_ Training Grounds
+          WeThinkCode_ IDC Curriculum
         </h1>
         <ProgressProvider>
           {children}

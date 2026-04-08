@@ -92,7 +92,7 @@ export default function SaaioRegisterPage() {
       <div className="w-full max-w-md bg-secondary border border-border-subtle rounded-2xl p-8 shadow-2xl">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-accent/20 p-4 rounded-2xl mb-4"><Brain className="w-10 h-10 text-accent" /></div>
-          <h1 className="text-2xl font-bold tracking-tight mb-1">SAAIO Training Grounds</h1>
+          <h1 className="text-2xl font-bold tracking-tight mb-1">WeThinkCode_ IDC Curriculum</h1>
           <p className="text-accent text-sm font-semibold mb-3">International Olympiad in AI</p>
           <p className="text-secondary-text text-center text-sm">Create your student account to get started.</p>
         </div>

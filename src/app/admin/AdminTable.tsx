@@ -450,7 +450,7 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
     : 0;
   const summaryData = [
     ['Report Generated', new Date().toLocaleString()],
-    ['Platform', platform === 'dip' ? 'IDC SEF / DIP' : 'SAAIO Training Grounds'],
+    ['Platform', platform === 'dip' ? 'IDC SEF / DIP' : 'WeThinkCode_ IDC Curriculum'],
     ['Total Students', users.length],
     ['Total Topics', totalPages],
     ['Avg Completion', `${avgPct}%`],

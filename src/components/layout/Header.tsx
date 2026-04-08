@@ -32,7 +32,7 @@ export default function Header({ syllabus = [] }: HeaderProps) {
           <img src="/logo_white.png" alt="WeThinkCode" className="w-8 h-8 object-contain" />
         </div>
         <h1 className="text-xl font-bold text-foreground tracking-tight">
-          WeThinkCode_ Training Grounds
+          WeThinkCode_ IDC Curriculum
         </h1>
       </div>
 

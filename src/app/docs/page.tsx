@@ -132,7 +132,7 @@ export default function DocsPortal() {
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
              <img src="/logo_white.png" alt="WeThinkCode" className="w-5 h-5 object-contain" />
-             <span className="text-xs text-secondary-text font-bold uppercase tracking-widest">WeThinkCode_ Training Grounds &copy; 2026</span>
+             <span className="text-xs text-secondary-text font-bold uppercase tracking-widest">WeThinkCode_ IDC Curriculum &copy; 2026</span>
           </div>
           <div className="flex items-center gap-6">
             <a href="/login" className="text-xs text-secondary-text hover:text-accent transition-colors font-bold uppercase tracking-widest">Back to Dashboard</a>

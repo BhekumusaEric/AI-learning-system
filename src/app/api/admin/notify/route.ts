@@ -8,7 +8,7 @@ const TEMPLATES = {
   reminder: {
     subject: 'Keep going — your WeThinkCode_ training is waiting',
     heading: "Don't lose your momentum!",
-    body: `You're registered on the WeThinkCode_ Training Grounds but there's still course content waiting for you.<br/><br/>
+    body: `You're registered on the WeThinkCode_ IDC Curriculum but there's still course content waiting for you.<br/><br/>
 Every chapter you complete brings you one step closer to your final certification.<br/><br/>
 Log in now and pick up where you left off.`,
     cta: 'Continue Learning →',
@@ -24,7 +24,7 @@ Log in and go through your completed chapters — mark each one done so your pro
   kaggle: {
     subject: 'New technical challenges have been added',
     heading: 'New challenges are live!',
-    body: `Fresh <strong style="color:#0047AB;">technical challenges</strong> have been added to the WeThinkCode_ Training Grounds.<br/><br/>
+    body: `Fresh <strong style="color:#0047AB;">technical challenges</strong> have been added to the WeThinkCode_ IDC Curriculum.<br/><br/>
 These hands-on competitions are one of the best ways to apply what you've learned and build real experience.<br/><br/>
 Log in, head to the Challenges section, and start competing!`,
     cta: 'View Challenges →',
@@ -35,7 +35,7 @@ const PLATFORM_CONFIG = {
   saaio: {
     table: 'saaio_students',
     loginUrl: 'https://ai-learning-system-ten.vercel.app/saaio/login',
-    label: 'WeThinkCode_ Training Grounds',
+    label: 'WeThinkCode_ IDC Curriculum',
   },
   dip: {
     table: 'dip_students',
