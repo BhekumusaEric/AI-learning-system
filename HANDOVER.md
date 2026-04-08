@@ -15,22 +15,22 @@ The SAAIO Training Grounds is a high-fidelity, dual-pane learning environment de
 
 ---
 
-## Deployment Strategy (EC2)
+## Automated Deployment Suite
 
-The platform is designed to be hosted on a single **t3.micro** or **t3.small** instance under **Amazon Linux 2023**.
+For an automated, guided deployment today, you can use the built-in scripts located in `scripts/deploy/`.
 
-1. **Environment Config**: Refer to the [.env.example](./.env.example) in the root directory. This must be populated with production keys before build.
-2. **Setup Instructions**: Follow the detailed [EC2 Configuration Guide](./docs/ec2_api_setup.md) for Nginx and PM2 setup.
-3. **Build Command**: 
+1. **Setup Environment**: Automatically generates your production `.env` file by prompting for mandatory keys.
    ```bash
-   npm install
-   npm run build
-   pm2 start npm --name "saaio-grounds" -- start
+   bash scripts/deploy/setup_env.sh
+   ```
+2. **Master Deploy**: Orchestrates the environment setup and pushes the latest code to EC2 via rsync.
+   ```bash
+   bash scripts/deploy/master_deploy.sh
    ```
 
 ---
 
-## 🔒 Security Mandates (CRITICAL)
+## Security Mandates (CRITICAL)
 
 > [!CAUTION]
 > **IAM Key Rotation**: The AWS Access Keys provided during development were briefly exposed in the local Git history (now scrubbed). For production, you **MUST** generate fresh IAM credentials with limited `execute-api` permissions.
@@ -56,7 +56,7 @@ The automated pipeline fetches student applications from the external IDC endpoi
 
 ---
 
-## 📚 Reference Materials
+## Reference Materials
 
 | Resource | Description |
 |---|---|
