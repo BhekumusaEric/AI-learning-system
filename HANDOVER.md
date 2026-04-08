@@ -23,9 +23,12 @@ For an automated, guided deployment today, you can use the built-in scripts loca
    ```bash
    bash scripts/deploy/setup_env.sh
    ```
-2. **Master Deploy**: Orchestrates the environment setup and pushes the latest code to EC2 via rsync.
+2. **Master Deploy**: Orchestrates the environment setup and pushes the latest code to EC23. **Build Command**: 
    ```bash
-   bash scripts/deploy/master_deploy.sh
+   npm install
+   npm run build
+   # The standalone entry point for deployment is:
+   pm2 start .next/standalone/server.js --name "saaio-grounds"
    ```
 
 ---

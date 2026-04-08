@@ -28,11 +28,11 @@ export default function Header({ syllabus = [] }: HeaderProps) {
   return (
     <header className="h-16 w-full border-b border-border-subtle bg-secondary flex items-center justify-between px-6 shrink-0 z-20">
       <div className="flex items-center gap-3">
-        <div className="bg-accent/20 p-2 rounded-lg">
-          <BookOpen className="w-6 h-6 text-accent" />
+        <div className="bg-white/10 p-1.5 rounded-lg">
+          <img src="/logo_white.png" alt="WeThinkCode" className="w-8 h-8 object-contain" />
         </div>
         <h1 className="text-xl font-bold text-foreground tracking-tight">
-          SAAIO Training Grounds
+          WeThinkCode_ Training Grounds
         </h1>
       </div>
 

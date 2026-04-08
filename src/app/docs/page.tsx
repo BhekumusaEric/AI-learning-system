@@ -52,7 +52,7 @@ export default function DocsPortal() {
             <BookOpen className="w-6 h-6 text-accent" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">SAAIO Documentation Portal</h1>
+            <h1 className="text-xl font-bold tracking-tight">WeThinkCode_ Documentation Portal</h1>
             <p className="text-[10px] text-secondary-text uppercase tracking-widest font-semibold">Intelligence Hub</p>
           </div>
         </div>
@@ -66,12 +66,12 @@ export default function DocsPortal() {
       {/* Hero */}
       <section className="py-20 px-8 max-w-7xl mx-auto">
         <div className="flex flex-col gap-4 mb-16 max-w-3xl">
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
             Centralized Knowledge <br />
-            <span className="text-accent underline decoration-accent/30 decoration-4 underline-offset-8 italic">for the Future of AI Learning.</span>
+            <span className="text-accent underline decoration-accent/30 decoration-4 underline-offset-8 italic">for technical excellence.</span>
           </h2>
           <p className="text-secondary-text text-lg leading-relaxed">
-            Welcome to the SAAIO Knowledge Portal. This unified dashboard provides direct access to all high-fidelity user manuals, technical architecture guides, and deployment orchestrated scripts for your training ecosystem.
+            Welcome to the WeThinkCode_ Documentation Portal. This unified dashboard provides direct access to all high-fidelity user manuals, technical architecture guides, and deployment orchestrated scripts for your training ecosystem.
           </p>
         </div>
 
@@ -131,8 +131,8 @@ export default function DocsPortal() {
       <footer className="py-12 border-t border-border-subtle bg-secondary/30 mt-20">
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
-             <BookOpen className="w-5 h-5 text-secondary-text" />
-             <span className="text-xs text-secondary-text font-bold uppercase tracking-widest">SAAIO Training Grounds &copy; 2026</span>
+             <img src="/logo_white.png" alt="WeThinkCode" className="w-5 h-5 object-contain" />
+             <span className="text-xs text-secondary-text font-bold uppercase tracking-widest">WeThinkCode_ Training Grounds &copy; 2026</span>
           </div>
           <div className="flex items-center gap-6">
             <a href="/login" className="text-xs text-secondary-text hover:text-accent transition-colors font-bold uppercase tracking-widest">Back to Dashboard</a>

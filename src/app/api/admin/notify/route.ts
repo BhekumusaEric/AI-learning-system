@@ -8,10 +8,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const TEMPLATES = {
   reminder: {
-    subject: 'Keep going — your SAAIO training is waiting',
+    subject: 'Keep going — your WeThinkCode_ training is waiting',
     heading: "Don't lose your momentum!",
-    body: `You're registered on the SAAIO Training Grounds but there's still course content waiting for you.<br/><br/>
-Every chapter you complete brings you one step closer to being ready for the <strong style="color:#00ff9d;">International Olympiad in Artificial Intelligence</strong>.<br/><br/>
+    body: `You're registered on the WeThinkCode_ Training Grounds but there's still course content waiting for you.<br/><br/>
+Every chapter you complete brings you one step closer to your final certification.<br/><br/>
 Log in now and pick up where you left off.`,
     cta: 'Continue Learning →',
   },
@@ -24,12 +24,12 @@ Log in and go through your completed chapters — mark each one done so your pro
     cta: 'Update My Progress →',
   },
   kaggle: {
-    subject: 'New Kaggle challenges have been added',
+    subject: 'New technical challenges have been added',
     heading: 'New challenges are live!',
-    body: `Fresh <strong style="color:#00ff9d;">Kaggle challenges</strong> have been added to the SAAIO Training Grounds.<br/><br/>
-These hands-on competitions are one of the best ways to apply what you've learned and build real experience for the IOAI.<br/><br/>
-Log in, head to the Kaggle Challenges section, and start competing!`,
-    cta: 'View Kaggle Challenges →',
+    body: `Fresh <strong style="color:#00ff9d;">technical challenges</strong> have been added to the WeThinkCode_ Training Grounds.<br/><br/>
+These hands-on competitions are one of the best ways to apply what you've learned and build real experience.<br/><br/>
+Log in, head to the Challenges section, and start competing!`,
+    cta: 'View Challenges →',
   },
 };
 
@@ -37,7 +37,7 @@ const PLATFORM_CONFIG = {
   saaio: {
     table: 'saaio_students',
     loginUrl: 'https://ai-learning-system-ten.vercel.app/saaio/login',
-    label: 'SAAIO Training Grounds',
+    label: 'WeThinkCode_ Training Grounds',
   },
   dip: {
     table: 'dip_students',

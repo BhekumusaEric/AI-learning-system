@@ -16,17 +16,16 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SAAIO Training Grounds",
-  description: "Learn Artificial Intelligence hands-on.",
+  title: "WeThinkCode_ Training Grounds",
+  description: "Next-generation AI and Python training environment.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "SAAIO",
+    title: "WeThinkCode_",
   },
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/apple-touch-icon.png",
+    icon: "/logo.png",
   },
 };
 
@@ -48,6 +47,12 @@ export default function RootLayout({
       <body
         className={`${jetbrainsMono.variable} ${inter.variable} font-sans antialiased`}
       >
+        <div className="bg-white/10 p-1.5 rounded-lg">
+          <img src="/logo_white.png" alt="WeThinkCode" className="w-8 h-8 object-contain" />
+        </div>
+        <h1 className="text-xl font-bold text-foreground tracking-tight">
+          WeThinkCode_ Training Grounds
+        </h1>
         <ProgressProvider>
           {children}
         </ProgressProvider>

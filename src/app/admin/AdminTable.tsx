@@ -440,7 +440,7 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
   ];
 
   const wb = XLSX.utils.book_new();
-  const sheetName = platform === 'dip' ? 'DIP Students' : 'SAAIO Students';
+  const sheetName = platform === 'dip' ? 'DIP Students' : 'WeThinkCode_ Students';
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
   // Summary sheet
