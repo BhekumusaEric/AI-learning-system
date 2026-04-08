@@ -1040,11 +1040,11 @@ function SupervisorsPanel() {
                   <td className="py-3 px-5 text-xs text-secondary-text">{new Date(sup.created_at).toLocaleDateString()}</td>
                   <td className="py-3 px-5 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => handleReset(sup)} disabled={resettingId === sup.id} title="Reset password"
+                      <button type="button" onClick={() => handleReset(sup)} disabled={resettingId === sup.id} title="Reset password"
                         className="text-secondary-text hover:text-warning p-1.5 rounded-lg hover:bg-warning/10 transition-all disabled:opacity-50">
                         {resettingId === sup.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                       </button>
-                      <button onClick={() => handleDelete(sup)} disabled={deletingId === sup.id} title="Delete supervisor"
+                      <button type="button" onClick={() => handleDelete(sup)} disabled={deletingId === sup.id} title="Delete supervisor"
                         className="text-secondary-text hover:text-error p-1.5 rounded-lg hover:bg-error/10 transition-all disabled:opacity-50">
                         {deletingId === sup.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </button>
@@ -1641,7 +1641,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                 platform === p ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'
               }`}
             >
-              {p === 'saaio' ? 'SAAIO' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'onboarding' ? 'Onboarding' : p === 'supervisors' ? 'Supervisors' : 'Invite Links'}
+              {p === 'saaio' ? 'WeThinkCode_ IDC Curriculum' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'onboarding' ? 'Onboarding' : p === 'supervisors' ? 'Supervisors' : 'Invite Links'}
             </button>
           ))}
         </div>
@@ -1867,7 +1867,8 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                       <td className="py-3 px-5 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
-                            onClick={() => handleResetPassword(user)}
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); handleResetPassword(user); }}
                             disabled={resettingId === user.login_id}
                             title="Reset password"
                             className="text-secondary-text hover:text-warning transition-colors p-1.5 rounded-lg hover:bg-warning/10 disabled:opacity-50"
@@ -1875,7 +1876,8 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                             {resettingId === user.login_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                           </button>
                           <button
-                            onClick={() => handleDelete(user.login_id)}
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); handleDelete(user.login_id); }}
                             disabled={deletingId === user.login_id}
                             title="Delete student"
                             className="text-secondary-text hover:text-error transition-colors p-1.5 rounded-lg hover:bg-error/10 disabled:opacity-50"
