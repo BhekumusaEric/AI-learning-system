@@ -126,15 +126,17 @@ export default function DipSidebar({ syllabus, onClose }: { syllabus: PartData[]
             )}
           </div>
 
-          {/* Chapter 2: Battle Grounds (optional) */}
+          {/* Chapter 2: Battle Grounds */}
           {battlePages.length > 0 && (
             <>
-              <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+              <div className="px-4 pt-4 pb-1 flex items-center gap-2">
                 <span className="text-lg shrink-0">⚔️</span>
                 <span className="text-sm font-bold text-foreground truncate">Battle Grounds</span>
-                <span className="text-xs text-secondary-text/50 ml-1">(optional)</span>
                 <span className="text-[10px] text-secondary-text ml-auto shrink-0">{battlePages.filter(p => completedPages[p.id]).length}/{battlePages.length}</span>
               </div>
+              <p className="px-4 pb-2 text-[11px] text-secondary-text/70 leading-snug">
+                Optional — but top performers get noticed. Complete katas to stand out on the leaderboard.
+              </p>
               <div className="pl-4 py-1">
                 {battlePages.map(page => {
                   const isActive = pathname === `/dip/lesson/${page.id}`;
