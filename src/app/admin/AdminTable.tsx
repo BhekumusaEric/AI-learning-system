@@ -1071,6 +1071,73 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function CertificateVault({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
+  const [files, setFiles] = useState<{ name: string; updated_at: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  useEffect(() => {
+    const prefix = platform === 'wrp' ? 'WRP-Certificate-' : 'IDC-DIP-Certificate-';
+    fetch(`/api/admin/certificate-vault?platform=${platform}`)
+      .then(r => r.json())
+      .then(data => { setFiles(data || []); setIsLoading(false); })
+      .catch(() => setIsLoading(false));
+  }, [platform]);
+
+  const handleDownload = async (fileName: string) => {
+    setDownloading(fileName);
+    try {
+      const res = await fetch(`/api/admin/certificate-vault?platform=${platform}&file=${encodeURIComponent(fileName)}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  return (
+    <div className="bg-secondary border border-[#d4af37]/20 rounded-2xl p-6 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Download className="w-4 h-4 text-[#d4af37]" />
+          <span className="text-sm font-bold text-foreground">Certificate Vault — {platform.toUpperCase()}</span>
+          <span className="text-xs text-secondary-text">({files.length} stored)</span>
+        </div>
+        <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
+      </div>
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-secondary-text text-sm py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>
+      ) : files.length === 0 ? (
+        <p className="text-secondary-text text-sm py-4">No certificates stored yet.</p>
+      ) : (
+        <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
+          {files.map(f => (
+            <div key={f.name} className="flex items-center justify-between p-3 bg-[#0d0d0d] border border-[#d4af37]/20 rounded-lg">
+              <div>
+                <div className="text-sm font-semibold text-foreground">{f.name.replace(/\.(pdf)$/i, '').replace(/-/g, ' ')}</div>
+                <div className="text-xs text-secondary-text">{new Date(f.updated_at).toLocaleDateString('en-ZA')}</div>
+              </div>
+              <button
+                onClick={() => handleDownload(f.name)}
+                disabled={downloading === f.name}
+                className="flex items-center gap-1.5 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 font-bold px-3 py-1.5 rounded-lg text-xs transition-all disabled:opacity-50"
+              >
+                {downloading === f.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                Download
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CertificateRequests({ platform, mandatoryPages, onClose }: { platform: 'dip' | 'wrp'; mandatoryPages: number; onClose: () => void }) {
   const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_requested: boolean; certificate_unlocked: boolean; name_change_requested: boolean; certificate_name: string | null; completedCount: number; examPassed: boolean | null }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1592,6 +1659,7 @@ export default function AdminTable({
   const [showNotify, setShowNotify] = useState(false);
   const [showCongratulate, setShowCongratulate] = useState(false);
   const [showCertRequests, setShowCertRequests] = useState(false);
+  const [showCertVault, setShowCertVault] = useState(false);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [selectedCohortId, setSelectedCohortId] = useState<string | null>(null);
   const [examEditing, setExamEditing] = useState<string | null>(null);
@@ -1756,6 +1824,10 @@ export default function AdminTable({
           <CertificateRequests platform={platform as 'dip'|'wrp'} mandatoryPages={platform === 'wrp' ? mandatoryWrpPages : totalDipPages} onClose={() => setShowCertRequests(false)} />
         )}
 
+        {showCertVault && (platform === 'dip' || platform === 'wrp') && (
+          <CertificateVault platform={platform as 'dip'|'wrp'} onClose={() => setShowCertVault(false)} />
+        )}
+
         {platform !== 'supervisors' && platform !== 'invite-links' && platform !== 'onboarding' && <>
         {/* Register Form */}
         <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-4">
@@ -1828,6 +1900,16 @@ export default function AdminTable({
               >
                 <Award className="w-3.5 h-3.5" />
                 Certificate Requests
+              </button>
+            )}
+            {(platform === 'dip' || platform === 'wrp') && (
+              <button
+                type="button"
+                onClick={() => setShowCertVault(v => !v)}
+                className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Certificate Vault
               </button>
             )}
             <button
