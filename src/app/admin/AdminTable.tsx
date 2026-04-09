@@ -1427,7 +1427,7 @@ function AdminSettings() {
       </div>
     </div>
   );
-}({ platform, mandatoryPages }: { platform: 'dip' | 'wrp'; mandatoryPages: number }) {
+function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wrp'; mandatoryPages: number }) {
   const [students, setStudents] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
