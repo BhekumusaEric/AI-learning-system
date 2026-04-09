@@ -16,6 +16,8 @@ export interface AdminUser {
   examScore: number | null;
   examPassed: boolean | null;
   cohortId: string | null;
+  certificate_requested?: boolean;
+  certificate_unlocked?: boolean;
 }
 
 export interface Cohort {
@@ -1071,6 +1073,116 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wrp'; mandatoryPages: number }) {
+  const [students, setStudents] = useState<AdminUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const threshold = Math.ceil(mandatoryPages * 0.8);
+
+  useEffect(() => {
+    fetch(`/api/admin/students?platform=${platform}`)
+      .then(r => r.json())
+      .then((data: AdminUser[]) => {
+        const completed = data.filter(s =>
+          s.completedCount >= threshold && (platform === 'wrp' || s.examPassed === true)
+        );
+        setStudents(completed);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
+  }, [platform, threshold]);
+
+  if (isLoading) return (
+    <div className="flex items-center justify-center py-16 gap-2 text-secondary-text">
+      <Loader2 className="w-5 h-5 animate-spin" /> Loading...
+    </div>
+  );
+
+  return (
+    <div className="p-6">
+      {/* Stats bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="bg-background border border-border-subtle rounded-xl p-4">
+          <p className="text-xs text-secondary-text uppercase tracking-wider mb-1">Total Completed</p>
+          <p className="text-2xl font-bold text-accent">{students.length}</p>
+        </div>
+        <div className="bg-background border border-border-subtle rounded-xl p-4">
+          <p className="text-xs text-secondary-text uppercase tracking-wider mb-1">Cert Requested</p>
+          <p className="text-2xl font-bold text-[#d4af37]">{students.filter(s => s.certificate_requested).length}</p>
+        </div>
+        <div className="bg-background border border-border-subtle rounded-xl p-4">
+          <p className="text-xs text-secondary-text uppercase tracking-wider mb-1">Cert Unlocked</p>
+          <p className="text-2xl font-bold text-emerald-400">{students.filter(s => s.certificate_unlocked).length}</p>
+        </div>
+        {platform === 'dip' && (
+          <div className="bg-background border border-border-subtle rounded-xl p-4">
+            <p className="text-xs text-secondary-text uppercase tracking-wider mb-1">Exam Pass Rate</p>
+            <p className="text-2xl font-bold text-foreground">
+              {students.length > 0 ? `${Math.round((students.filter(s => s.examPassed).length / students.length) * 100)}%` : '—'}
+            </p>
+          </div>
+        )}
+        {platform === 'wrp' && (
+          <div className="bg-background border border-border-subtle rounded-xl p-4">
+            <p className="text-xs text-secondary-text uppercase tracking-wider mb-1">Avg Completion</p>
+            <p className="text-2xl font-bold text-foreground">
+              {students.length > 0 ? `${Math.round(students.reduce((s, u) => s + Math.min(100, (u.completedCount / mandatoryPages) * 100), 0) / students.length)}%` : '—'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {students.length === 0 ? (
+        <p className="text-secondary-text text-sm text-center py-8">No completed students yet.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr className="bg-background/30 border-b border-border-subtle">
+                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Login ID</th>
+                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
+                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Email</th>
+                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Modules</th>
+                {platform === 'dip' && <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
+                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Cert Status</th>
+                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Registered</th>
+                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Last Active</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle">
+              {students.map(s => (
+                <tr key={s.login_id} className="hover:bg-background/30 transition-colors">
+                  <td className="py-3 px-3 font-mono text-accent font-semibold text-xs whitespace-nowrap">{s.login_id}</td>
+                  <td className="py-3 px-3 max-w-[150px]">
+                    <div className="font-semibold text-foreground text-sm truncate">{s.full_name}</div>
+                  </td>
+                  <td className="py-3 px-3 text-xs text-secondary-text max-w-[180px] truncate">{s.email || '—'}</td>
+                  <td className="py-3 px-3 text-xs font-bold text-accent whitespace-nowrap">{s.completedCount}/{mandatoryPages}</td>
+                  {platform === 'dip' && (
+                    <td className="py-3 px-3 text-xs whitespace-nowrap">
+                      {s.examScore !== null
+                        ? <span className={`font-bold ${s.examPassed ? 'text-emerald-400' : 'text-error'}`}>{s.examScore}% — {s.examPassed ? 'Pass' : 'Fail'}</span>
+                        : <span className="text-secondary-text">—</span>}
+                    </td>
+                  )}
+                  <td className="py-3 px-3 text-xs whitespace-nowrap">
+                    {s.certificate_unlocked
+                      ? <span className="text-emerald-400 font-bold">✓ Unlocked</span>
+                      : s.certificate_requested
+                      ? <span className="text-[#d4af37] font-bold">⏳ Requested</span>
+                      : <span className="text-secondary-text">Not requested</span>}
+                  </td>
+                  <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">{new Date(s.created_at).toLocaleDateString('en-ZA')}</td>
+                  <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">{s.lastActive ? new Date(s.lastActive).toLocaleDateString('en-ZA') : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CertificateVault({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
   const [files, setFiles] = useState<{ name: string; updated_at: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1653,7 +1765,7 @@ function OnboardingPipeline() {
   );
 }
 
-export type PlatformTab = 'saaio' | 'dip' | 'wrp' | 'supervisors' | 'invite-links' | 'onboarding';
+export type PlatformTab = 'saaio' | 'dip' | 'wrp' | 'supervisors' | 'invite-links' | 'onboarding' | 'completed-dip' | 'completed-wrp';
 
 interface AdminTableProps {
   totalSaaioPages?: number;
@@ -1669,7 +1781,7 @@ export default function AdminTable({
   totalDipPages = 0, 
   totalWrpPages = 0,
   mandatoryWrpPages = 0,
-  allowedTabs = ['saaio', 'dip', 'wrp', 'onboarding', 'supervisors', 'invite-links'],
+  allowedTabs = ['saaio', 'dip', 'wrp', 'onboarding', 'supervisors', 'invite-links', 'completed-dip', 'completed-wrp'],
   defaultTab = 'saaio'
 }: AdminTableProps) {
   const [platform, setPlatform] = useState<PlatformTab>(defaultTab);
@@ -1812,7 +1924,7 @@ export default function AdminTable({
                 platform === p ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'
               }`}
             >
-              {p === 'saaio' ? 'WeThinkCode_ IDC Curriculum' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'onboarding' ? 'Onboarding' : p === 'supervisors' ? 'Supervisors' : 'Invite Links'}
+              {p === 'saaio' ? 'WeThinkCode_ IDC Curriculum' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'completed-dip' ? '✓ Completed DIP' : p === 'completed-wrp' ? '✓ Completed WRP' : p === 'onboarding' ? 'Onboarding' : p === 'supervisors' ? 'Supervisors' : 'Invite Links'}
             </button>
           ))}
         </div>
@@ -1825,6 +1937,10 @@ export default function AdminTable({
 
         {/* Invite Links Manager */}
         {platform === 'invite-links' && <InviteLinksPanel />}
+
+        {/* Completed Students */}
+        {platform === 'completed-dip' && <CompletedStudents platform="dip" mandatoryPages={totalDipPages} />}
+        {platform === 'completed-wrp' && <CompletedStudents platform="wrp" mandatoryPages={mandatoryWrpPages} />}
 
         {/* Bulk Import */}
         {platform !== 'supervisors' && platform !== 'invite-links' && showBulk && <BulkImport platform={platform as 'saaio'|'dip'|'wrp'} onDone={fetchStudents} />}

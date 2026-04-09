@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from(table)
-    .select('id, login_id, full_name, email, created_at, cohort_id')
+    .select('id, login_id, full_name, email, created_at, cohort_id, certificate_requested, certificate_unlocked')
     .order('created_at', { ascending: false });
 
   if (cohortId === 'unassigned') query = query.is('cohort_id', null);
@@ -81,6 +81,8 @@ export async function GET(request: Request) {
       examScore: prog?.exam_score ?? null,
       examPassed: prog?.exam_passed ?? null,
       cohortId: s.cohort_id ?? null,
+      certificate_requested: s.certificate_requested ?? false,
+      certificate_unlocked: s.certificate_unlocked ?? false,
     };
   });
 

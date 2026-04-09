@@ -80,7 +80,7 @@ export default async function AdminDashboard() {
           totalDipPages={totalDipPages} 
           totalWrpPages={totalWrpPages}
           mandatoryWrpPages={mandatoryWrpPages}
-          allowedTabs={['dip', 'wrp', 'onboarding', 'supervisors', 'invite-links']}
+          allowedTabs={['dip', 'wrp', 'completed-dip', 'completed-wrp', 'onboarding', 'supervisors', 'invite-links']}
           defaultTab="dip"
         />
       </div>
