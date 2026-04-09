@@ -182,11 +182,13 @@ export async function POST(request: Request) {
 
   const meta = PLATFORM_META[platform as 'dip' | 'wrp'];
 
-  let updatePayload = {};
+  let updatePayload: Record<string, any> = {};
   if (action === 'decline') {
     updatePayload = { certificate_requested: false };
   } else {
-    updatePayload = { certificate_unlocked: true };
+    // Generate a unique verify token
+    const verifyToken = require('crypto').randomBytes(16).toString('hex');
+    updatePayload = { certificate_unlocked: true, verify_token: verifyToken };
   }
 
   // Update in DB

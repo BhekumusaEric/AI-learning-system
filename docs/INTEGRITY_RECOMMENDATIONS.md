@@ -37,7 +37,7 @@ Beyond paste detection, if two students submit identical code flag it for admin 
 
 ## 2. Strengthen Certificate Value
 
-### 2.1 ⬜ Certificate Verification URL
+### 2.1 ✅ Certificate Verification URL
 Add a unique verification link to every certificate that employers can visit to confirm it's real.
 - Generate a unique verification token per student per platform
 - Public page at `/verify/[token]` showing name, program, date

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const table = platform === 'dip' ? 'dip_students' : 'wrp_students';
   const { data, error } = await supabase
     .from(table)
-    .select('certificate_requested, certificate_unlocked, certificate_name, name_change_requested')
+    .select('certificate_requested, certificate_unlocked, certificate_name, name_change_requested, verify_token')
     .eq('login_id', login_id)
     .single();
 
