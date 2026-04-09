@@ -19,9 +19,8 @@ export default function DipSidebar({ syllabus, onClose }: { syllabus: PartData[]
   const fundamentalPages = chapter1 ? [...chapter1.pages].sort((a, b) => a.order - b.order) : [];
   const battlePages = chapter2 ? [...chapter2.pages].sort((a, b) => a.order - b.order) : [];
 
-  const allDipPages = [...fundamentalPages, ...battlePages];
-  const totalPages = allDipPages.length;
-  const completedCount = allDipPages.filter(p => completedPages[p.id]).length;
+  const totalPages = fundamentalPages.length;
+  const completedCount = fundamentalPages.filter(p => completedPages[p.id]).length;
   const examUnlocked = completedCount >= Math.floor(totalPages * 0.8);
 
   useEffect(() => {
@@ -89,33 +88,6 @@ export default function DipSidebar({ syllabus, onClose }: { syllabus: PartData[]
             })}
           </div>
 
-          {/* Chapter 2: Battle Grounds */}
-          {battlePages.length > 0 && (
-            <>
-              <div className="px-4 pt-4 pb-2 flex items-center gap-2">
-                <span className="text-lg shrink-0">⚔️</span>
-                <span className="text-sm font-bold text-foreground truncate">Battle Grounds</span>
-                <span className="text-[10px] text-secondary-text ml-auto shrink-0">{battlePages.filter(p => completedPages[p.id]).length}/{battlePages.length}</span>
-              </div>
-              <div className="pl-4 py-1">
-                {battlePages.map(page => {
-                  const isActive = pathname === `/dip/lesson/${page.id}`;
-                  return (
-                    <Link href={`/dip/lesson/${page.id}`} key={page.id}
-                      className={`flex items-start gap-2 px-4 py-2 text-sm rounded-l-md transition-colors ${
-                        isActive ? 'bg-secondary border-r-2 border-accent text-accent font-medium'
-                          : 'text-secondary-text hover:text-foreground hover:bg-secondary/30'
-                      }`}
-                    >
-                      {completedPages[page.id] ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" /> : <Circle className="w-4 h-4 text-secondary-text/50 shrink-0 mt-0.5" />}
-                      <span className="leading-snug">{page.title}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </>
-          )}
-
           {/* Exam / Certificate links */}
           <div className="mt-4 mx-4 border-t border-border-subtle pt-4 flex flex-col gap-2">
             {examPassed ? (
@@ -153,6 +125,34 @@ export default function DipSidebar({ syllabus, onClose }: { syllabus: PartData[]
               </Link>
             )}
           </div>
+
+          {/* Chapter 2: Battle Grounds (optional) */}
+          {battlePages.length > 0 && (
+            <>
+              <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+                <span className="text-lg shrink-0">⚔️</span>
+                <span className="text-sm font-bold text-foreground truncate">Battle Grounds</span>
+                <span className="text-xs text-secondary-text/50 ml-1">(optional)</span>
+                <span className="text-[10px] text-secondary-text ml-auto shrink-0">{battlePages.filter(p => completedPages[p.id]).length}/{battlePages.length}</span>
+              </div>
+              <div className="pl-4 py-1">
+                {battlePages.map(page => {
+                  const isActive = pathname === `/dip/lesson/${page.id}`;
+                  return (
+                    <Link href={`/dip/lesson/${page.id}`} key={page.id}
+                      className={`flex items-start gap-2 px-4 py-2 text-sm rounded-l-md transition-colors ${
+                        isActive ? 'bg-secondary border-r-2 border-accent text-accent font-medium'
+                          : 'text-secondary-text hover:text-foreground hover:bg-secondary/30'
+                      }`}
+                    >
+                      {completedPages[page.id] ? <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" /> : <Circle className="w-4 h-4 text-secondary-text/50 shrink-0 mt-0.5" />}
+                      <span className="leading-snug">{page.title}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
     </aside>
