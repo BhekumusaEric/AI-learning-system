@@ -10,7 +10,7 @@ function getDriveClient() {
   const key = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON!);
   const auth = new google.auth.GoogleAuth({
     credentials: key,
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
+    scopes: ['https://www.googleapis.com/auth/drive'],
   });
   return google.drive({ version: 'v3', auth });
 }
@@ -27,6 +27,15 @@ export async function POST(request: Request) {
     const drive = getDriveClient();
     const buffer = Buffer.from(pdfBase64, 'base64');
     const stream = Readable.from(buffer);
+
+    // Delete existing file with same name in folder to avoid duplicates
+    const existing = await drive.files.list({
+      q: `name='${fileName}' and '${FOLDER_ID}' in parents and trashed=false`,
+      fields: 'files(id)',
+    });
+    for (const file of existing.data.files || []) {
+      await drive.files.delete({ fileId: file.id! });
+    }
 
     const res = await drive.files.create({
       requestBody: {
