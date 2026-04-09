@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink, GitPullRequest, MapPin, UserCheck, UserX, Rocket } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink, GitPullRequest, MapPin, UserCheck, UserX, Rocket, ChevronDown } from 'lucide-react';
 import UserTour, { TourStep } from '@/components/UserTour';
 import * as XLSX from 'xlsx';
 import { ApplicationGroup, RawApplication } from '@/lib/applications';
@@ -1902,52 +1902,76 @@ export default function AdminTable({
               <FileSpreadsheet className="w-3.5 h-3.5" />
               Bulk Import
             </button>
-            <button
-              type="button"
-              onClick={() => setShowNotify(v => !v)}
-              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
-            >
-              <Bell className="w-3.5 h-3.5" />
-              Notify Students
-            </button>
-            {(platform === 'dip' || platform === 'wrp') && (
+
+            {/* Communications dropdown */}
+            <div className="relative group">
               <button
                 type="button"
-                onClick={() => setShowCongratulate(v => !v)}
-                className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-[#d4af37] hover:border-[#d4af37]/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
-              >
-                <Award className="w-3.5 h-3.5" />
-                Send Certificates
-              </button>
-            )}
-            {(platform === 'dip' || platform === 'wrp') && (
-              <button
-                type="button"
-                onClick={() => setShowCertRequests(v => !v)}
-                className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
-              >
-                <Award className="w-3.5 h-3.5" />
-                Certificate Requests
-              </button>
-            )}
-            {(platform === 'dip' || platform === 'wrp') && (
-              <button
-                type="button"
-                onClick={() => setShowCertVault(v => !v)}
                 className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
               >
-                <Download className="w-3.5 h-3.5" />
-                Certificate Vault
+                <Bell className="w-3.5 h-3.5" />
+                Communications
+                <ChevronDown className="w-3 h-3" />
               </button>
+              <div className="absolute left-0 top-full mt-1 w-48 bg-secondary border border-border-subtle rounded-xl shadow-2xl z-50 overflow-hidden hidden group-hover:flex flex-col">
+                <button
+                  type="button"
+                  onClick={() => setShowNotify(v => !v)}
+                  className="flex items-center gap-2 px-4 py-2.5 text-xs text-secondary-text hover:text-accent hover:bg-background transition-all"
+                >
+                  <Bell className="w-3.5 h-3.5" /> Notify Students
+                </button>
+                {(platform === 'dip' || platform === 'wrp') && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCongratulate(v => !v)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-xs text-secondary-text hover:text-[#d4af37] hover:bg-background transition-all"
+                  >
+                    <Award className="w-3.5 h-3.5" /> Send Certificates
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Certificates dropdown */}
+            {(platform === 'dip' || platform === 'wrp') && (
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  Certificates
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                <div className="absolute left-0 top-full mt-1 w-52 bg-secondary border border-border-subtle rounded-xl shadow-2xl z-50 overflow-hidden hidden group-hover:flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => { setShowCertRequests(v => !v); setShowCertVault(false); }}
+                    className="flex items-center gap-2 px-4 py-2.5 text-xs text-secondary-text hover:text-[#d4af37] hover:bg-background transition-all"
+                  >
+                    <Award className="w-3.5 h-3.5" /> Certificate Requests
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowCertVault(v => !v); setShowCertRequests(false); }}
+                    className="flex items-center gap-2 px-4 py-2.5 text-xs text-secondary-text hover:text-accent hover:bg-background transition-all"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Certificate Vault
+                  </button>
+                </div>
+              </div>
             )}
+
+            {/* Export — right aligned */}
             <button
               type="button"
               onClick={() => downloadReport(users, platform as any, totalPages)}
               disabled={users.length === 0}
-              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+              className="ml-auto flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download Excel report"
             >
-              <Download className="w-3.5 h-3.5" />
+              <FileSpreadsheet className="w-3.5 h-3.5" />
               Export Report
             </button>
           </div>
