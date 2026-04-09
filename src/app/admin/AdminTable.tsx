@@ -1071,12 +1071,13 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
-  const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_requested: boolean; certificate_unlocked: boolean; name_change_requested: boolean; certificate_name: string | null }[]>([]);
+function CertificateRequests({ platform, totalPages, onClose }: { platform: 'dip' | 'wrp'; totalPages: number; onClose: () => void }) {
+  const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_requested: boolean; certificate_unlocked: boolean; name_change_requested: boolean; certificate_name: string | null; completedCount: number; examPassed: boolean | null }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unlocking, setUnlocking] = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, string>>({});
+  const [auditResults, setAuditResults] = useState<Record<string, 'eligible' | 'ineligible'>>({});
 
   useEffect(() => {
     fetch(`/api/admin/unlock-certificate?platform=${platform}`)
@@ -1085,13 +1086,38 @@ function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; o
       .catch(() => setIsLoading(false));
   }, [platform]);
 
+  const audit = (r: typeof requests[0]) => {
+    const isEligible = r.completedCount >= totalPages && (platform === 'wrp' || r.examPassed === true);
+    setAuditResults(prev => ({ ...prev, [r.login_id]: isEligible ? 'eligible' : 'ineligible' }));
+  };
+
+  const decline = async (login_id: string) => {
+    setUnlocking(login_id);
+    try {
+      const res = await fetch('/api/admin/unlock-certificate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login_id, platform, action: 'decline' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResults(prev => ({ ...prev, [login_id]: data.emailSent ? 'Declined & email sent' : 'Declined (no email)' }));
+        setRequests(prev => prev.filter(r => r.login_id !== login_id));
+      } else {
+        setResults(prev => ({ ...prev, [login_id]: data.error || 'Failed' }));
+      }
+    } finally {
+      setUnlocking(null);
+    }
+  };
+
   const unlock = async (login_id: string) => {
     setUnlocking(login_id);
     try {
       const res = await fetch('/api/admin/unlock-certificate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login_id, platform }),
+        body: JSON.stringify({ login_id, platform, action: 'unlock' }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -1154,17 +1180,48 @@ function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; o
                 <div key={r.login_id} className="flex items-center justify-between p-3 bg-[#0d0d0d] border border-[#d4af37]/20 rounded-lg">
                   <div>
                     <div className="text-sm font-semibold text-foreground">{r.full_name}</div>
-                    <div className="text-xs text-secondary-text font-mono">{r.login_id}{r.email ? ` · ${r.email}` : ' · no email'}</div>
+                    <div className="text-xs text-secondary-text font-mono">
+                      {r.login_id}{r.email ? ` · ${r.email}` : ' · no email'}
+                      <span className="ml-2 text-accent/70 font-bold tracking-widest gap-2">
+                        [{r.completedCount}/{totalPages} MODS]
+                        {platform === 'dip' && (r.examPassed ? ' [EXAM ✅]' : ' [EXAM ❌]')}
+                      </span>
+                    </div>
                     {results[r.login_id] && <div className="text-xs text-accent mt-0.5">{results[r.login_id]}</div>}
                   </div>
-                  <button
-                    onClick={() => unlock(r.login_id)}
-                    disabled={unlocking === r.login_id}
-                    className="flex items-center gap-1.5 bg-[#d4af37] text-black font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-[#d4af37]/90 transition-all disabled:opacity-50"
-                  >
-                    {unlocking === r.login_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
-                    Unlock & Notify
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {auditResults[r.login_id] === undefined && (
+                      <button
+                        onClick={() => audit(r)}
+                        className="flex items-center gap-1.5 bg-background border border-border-subtle text-foreground font-bold px-3 py-1.5 rounded-lg text-xs hover:border-accent hover:text-accent transition-all"
+                      >
+                        Audit Request
+                      </button>
+                    )}
+                    {auditResults[r.login_id] === 'eligible' && (
+                      <button
+                        onClick={() => unlock(r.login_id)}
+                        disabled={unlocking === r.login_id}
+                        className="flex items-center gap-1.5 bg-[#d4af37]/10 border border-[#d4af37]/50 text-[#d4af37] font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-[#d4af37] hover:text-black transition-all disabled:opacity-50"
+                      >
+                        {unlocking === r.login_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
+                        Approve & Notify
+                      </button>
+                    )}
+                    {auditResults[r.login_id] === 'ineligible' && (
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-error uppercase tracking-wider">Ineligible</span>
+                        <button
+                          onClick={() => decline(r.login_id)}
+                          disabled={unlocking === r.login_id}
+                          className="flex items-center gap-1.5 bg-error/10 border border-error/30 text-error font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-error hover:text-white transition-all disabled:opacity-50"
+                        >
+                          {unlocking === r.login_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                          Decline Request
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </>
@@ -1694,7 +1751,7 @@ export default function AdminTable({
         )}
 
         {showCertRequests && (platform === 'dip' || platform === 'wrp') && (
-          <CertificateRequests platform={platform as 'dip'|'wrp'} onClose={() => setShowCertRequests(false)} />
+          <CertificateRequests platform={platform as 'dip'|'wrp'} totalPages={totalPages} onClose={() => setShowCertRequests(false)} />
         )}
 
         {platform !== 'supervisors' && platform !== 'invite-links' && platform !== 'onboarding' && <>
