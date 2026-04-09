@@ -440,7 +440,7 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
   ];
 
   const wb = XLSX.utils.book_new();
-  const sheetName = platform === 'dip' ? 'DIP Students' : 'WeThinkCode_ Students';
+  const sheetName = platform === 'dip' ? 'DIP Students' : platform === 'wrp' ? 'WRP Students' : 'WeThinkCode_ Students';
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
   // Summary sheet
@@ -450,7 +450,7 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
     : 0;
   const summaryData = [
     ['Report Generated', new Date().toLocaleString()],
-    ['Platform', platform === 'dip' ? 'IDC SEF / DIP' : 'WeThinkCode_ IDC Curriculum'],
+    ['Platform', platform === 'dip' ? 'IDC SEF / DIP' : platform === 'wrp' ? 'WeThinkCode_ WRP' : 'WeThinkCode_ IDC Curriculum'],
     ['Total Students', users.length],
     ['Total Topics', totalPages],
     ['Avg Completion', `${avgPct}%`],
