@@ -8,8 +8,10 @@ function hashPassword(password: string) {
 
 export async function POST(request: Request) {
   const { username, password } = await request.json();
+  if (!username || !password) {
+    return NextResponse.json({ error: 'Username and password required' }, { status: 400 });
+  }
 
-  // Check DB first
   const { data: admin } = await supabase
     .from('admins')
     .select('id, username, password_hash')
@@ -17,12 +19,7 @@ export async function POST(request: Request) {
     .eq('password_hash', hashPassword(password))
     .maybeSingle();
 
-  // Fallback to env vars if DB has no admins yet
-  const validUser = process.env.ADMIN_USERNAME || 'admin';
-  const validPass = process.env.ADMIN_PASSWORD || 'supersecret';
-  const envMatch = username === validUser && password === validPass;
-
-  if (!admin && !envMatch) {
+  if (!admin) {
     return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
   }
 
