@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, LogIn, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import EmailGate from '@/components/EmailGate';
+import { useSearchParams } from 'next/navigation';
 
 export default function DipLoginPage() {
   const [loginId, setLoginId] = useState('');
@@ -12,6 +13,14 @@ export default function DipLoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailGate, setEmailGate] = useState<{ loginId: string; fullName: string; destination: string } | null>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason === 'expired') setError('Your session has expired. Please log in again.');
+    else if (reason === 'concurrent_session') setError('Your account was logged in from another device. Please log in again.');
+    else if (reason === 'no_session') setError('Session not found. Please log in.');
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +51,17 @@ export default function DipLoginPage() {
 
       localStorage.setItem('ioai_user', data.login_id);
       localStorage.setItem('ioai_name', data.full_name);
+      // Issue session token
+      const sessionRes = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login_id: data.login_id }),
+      });
+      const sessionData = await sessionRes.json();
+      if (sessionData.token) {
+        localStorage.setItem('ioai_session', sessionData.token);
+        localStorage.setItem('ioai_session_expires', sessionData.expires_at);
+      }
       // Check if integrity agreement has been signed
       const agreed = localStorage.getItem(`integrity_agreed_${data.login_id}`);
       if (!agreed) {

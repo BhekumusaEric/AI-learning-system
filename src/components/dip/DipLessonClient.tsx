@@ -47,6 +47,7 @@ export default function DipLessonClient({
   const [envError, setEnvError] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const [testsPassed, setTestsPassed] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [timeReady, setTimeReady] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const { markCompleted, completedPages } = useProgress();
@@ -98,7 +99,7 @@ export default function DipLessonClient({
     initPyodide();
   };
 
-  useEffect(() => { setResults(null); setTestsPassed(false); }, [pageId]);
+  useEffect(() => { setResults(null); setTestsPassed(false); setDuplicateWarning(false); }, [pageId]);
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -163,7 +164,21 @@ export default function DipLessonClient({
       { id: 1, name: 'Output Console', passed: true, error: stdout || 'Program exited normally' },
       ...(testCodeProp ? [{ id: 2, name: 'All Tests Passed', passed: true, error: 'All hidden tests passed!' }] : []),
     ]);
-    if (testCodeProp) setTestsPassed(true);
+    if (testCodeProp) {
+      setTestsPassed(true);
+      // Submit code hash for similarity detection
+      const loginId = localStorage.getItem('ioai_user');
+      if (loginId) {
+        fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login_id: loginId, page_id: pageId, code }),
+        })
+          .then(r => r.json())
+          .then(data => { if (data.duplicate) setDuplicateWarning(true); })
+          .catch(() => {});
+      }
+    }
   };
 
   const navigate = (id: string) => router.push(`/dip/lesson/${id}`);
@@ -202,6 +217,19 @@ export default function DipLessonClient({
                   <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-black transition-all">↗</div>
                 </a>
               ))}
+            </div>
+          </div>
+        )}
+
+        {duplicateWarning && (
+          <div className="mt-8 p-4 rounded-xl bg-error/10 border border-error/30 flex items-start gap-3 not-prose">
+            <span className="text-error text-lg shrink-0">⚠️</span>
+            <div>
+              <p className="text-error font-bold text-sm mb-1">Identical code detected</p>
+              <p className="text-error/80 text-xs leading-relaxed">
+                Your solution matches another student's submission exactly. This has been flagged for admin review.
+                If you copied this code, please delete it and solve the challenge yourself — your certificate reflects your own skills.
+              </p>
             </div>
           </div>
         )}

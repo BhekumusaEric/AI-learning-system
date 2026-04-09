@@ -1144,6 +1144,40 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   student_deleted: { label: 'Student Deleted',       color: 'text-error' },
 };
 
+function DuplicateSubmissions() {
+  const [flags, setFlags] = useState<{ id: string; target_login_id: string; details: any; created_at: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/submissions')
+      .then(r => r.json())
+      .then(data => { setFlags(data || []); setIsLoading(false); })
+      .catch(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) return <div className="flex items-center gap-2 text-secondary-text text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>;
+  if (!flags.length) return <p className="text-secondary-text text-sm">No duplicate submissions detected.</p>;
+
+  return (
+    <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+      {flags.map(f => (
+        <div key={f.id} className="flex items-start justify-between gap-3 p-3 bg-error/5 border border-error/20 rounded-lg text-xs">
+          <div className="flex flex-col gap-0.5">
+            <span className="font-bold text-error">{f.target_login_id}</span>
+            <span className="text-secondary-text font-mono">Page: {f.details?.page_id}</span>
+            {f.details?.matched_students?.length > 0 && (
+              <span className="text-secondary-text">Matched: {f.details.matched_students.join(', ')}</span>
+            )}
+          </div>
+          <div className="text-secondary-text/60 shrink-0 text-right">
+            {new Date(f.created_at).toLocaleString('en-ZA')}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function AuditLog() {
   const [logs, setLogs] = useState<{ id: string; admin_username: string; action: string; target_login_id: string | null; target_platform: string | null; details: any; created_at: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1424,6 +1458,13 @@ function AdminSettings() {
         <h3 className="text-sm font-bold text-foreground mb-1">Audit Log</h3>
         <p className="text-xs text-secondary-text mb-4">Last 100 admin actions across the platform.</p>
         <AuditLog />
+      </div>
+
+      {/* Duplicate Code Flags */}
+      <div className="mt-8 pt-6 border-t border-border-subtle">
+        <h3 className="text-sm font-bold text-foreground mb-1">Duplicate Code Flags</h3>
+        <p className="text-xs text-secondary-text mb-4">Students whose submitted code matched another student exactly.</p>
+        <DuplicateSubmissions />
       </div>
     </div>
   );

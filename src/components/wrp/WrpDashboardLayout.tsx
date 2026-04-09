@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import WrpHeader from '@/components/wrp/WrpHeader';
 import WrpSidebar from '@/components/wrp/WrpSidebar';
 import { WrpPage } from '@/lib/wrpSyllabus';
+import SessionGuard from '@/components/providers/SessionGuard';
 
 export default function WrpDashboardLayout({ children, pages }: { children: React.ReactNode; pages: WrpPage[] }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <div className="flex flex-col h-screen w-full bg-background overflow-hidden text-foreground">
+      <SessionGuard platform="wrp" />
       <WrpHeader onMenuClick={() => setDrawerOpen(true)} />
 
       <div className="flex flex-1 overflow-hidden">

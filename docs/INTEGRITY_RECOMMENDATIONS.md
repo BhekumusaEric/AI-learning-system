@@ -27,7 +27,7 @@ Nothing stops a student from retrying the exam immediately after failing.
 - Cooldown stored in DB and checked on exam load
 - Admin can override/reset cooldown if needed
 
-### 1.4 ⬜ Code Similarity Detection
+### 1.4 ✅ Code Similarity Detection
 Beyond paste detection, if two students submit identical code flag it for admin review.
 - Hash submitted solutions on pass
 - Compare hashes across students per challenge
@@ -88,7 +88,7 @@ Track every certificate unlock, password reset, and admin action with timestamps
 - Log action, admin username, target student, timestamp
 - Viewable in admin Settings tab
 
-### 4.3 ⬜ Session Timeout & Device Binding
+### 4.3 ✅ Session Timeout & Device Binding
 Students sharing accounts is a real risk. Sessions currently last 8 hours.
 - Reduce session to single active session per login_id
 - Warn on second login from different device
