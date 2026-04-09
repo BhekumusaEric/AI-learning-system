@@ -101,7 +101,14 @@ export default function DipCertificatePage() {
       const pdfW = pdf.internal.pageSize.getWidth();
       const pdfH = pdf.internal.pageSize.getHeight();
       pdf.addImage(canvasRef.current.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
-      pdf.save(`IDC-DIP-Certificate-${(studentName || 'student').replace(/\s+/g, '-')}.pdf`);
+      const fileName = `IDC-DIP-Certificate-${(studentName || 'student').replace(/\s+/g, '-')}.pdf`;
+      pdf.save(fileName);
+      const pdfBase64 = pdf.output('datauristring').split(',')[1];
+      fetch('/api/admin/save-certificate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdfBase64, fileName }),
+      }).catch(() => {});
     } finally {
       setDownloading(false);
     }
