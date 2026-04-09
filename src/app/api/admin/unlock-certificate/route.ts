@@ -243,7 +243,8 @@ export async function GET(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const { data: progress } = await supabase.from(progressTable).select('login_id, completed_pages, exam_passed');
+  const progressSelect = platform === 'dip' ? 'login_id, completed_pages, exam_passed' : 'login_id, completed_pages';
+  const { data: progress } = await supabase.from(progressTable).select(progressSelect);
   const progressMap: Record<string, any> = {};
   (progress || []).forEach((p: any) => { const key = p.login_id || p.username; if (key) progressMap[key] = p; });
 
