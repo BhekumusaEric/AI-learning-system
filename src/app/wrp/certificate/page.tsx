@@ -117,11 +117,12 @@ export default function WrpCertificatePage() {
       pdf.addImage(canvasRef.current.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
       const fileName = `WRP-Certificate-${(studentName || 'student').replace(/\s+/g, '-')}.pdf`;
       pdf.save(fileName);
-      const pdfBase64 = pdf.output('datauristring').split(',')[1];
+      // Send compressed canvas image to server instead of full PDF to avoid 413
+      const imageBase64 = canvasRef.current.toDataURL('image/jpeg', 0.7).split(',')[1];
       const driveRes = await fetch('/api/admin/save-certificate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pdfBase64, fileName }),
+        body: JSON.stringify({ imageBase64, fileName, platform: 'wrp' }),
       });
       const driveData = await driveRes.json();
       if (!driveRes.ok) console.error('Drive upload failed:', driveData);
