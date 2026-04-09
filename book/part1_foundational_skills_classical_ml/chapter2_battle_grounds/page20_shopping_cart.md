@@ -86,7 +86,7 @@ assert cart.get_item_count() == 6
 assert cart.get_total() == 4.5
 
 cart.remove_item("bread")
-assert cart.get_total() == 3.0
+assert cart.get_total() == 2.5
 assert cart.get_item_count() == 5
 
 cart.remove_item("milk")
