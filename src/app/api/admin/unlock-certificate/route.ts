@@ -245,7 +245,7 @@ export async function GET(request: Request) {
 
   const { data: progress } = await supabase.from(progressTable).select('login_id, completed_pages, exam_passed');
   const progressMap: Record<string, any> = {};
-  (progress || []).forEach((p: any) => { progressMap[p.login_id] = p; });
+  (progress || []).forEach((p: any) => { const key = p.login_id || p.username; if (key) progressMap[key] = p; });
 
   const result = (data || []).map((r: any) => {
     const prog = progressMap[r.login_id];
