@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function DipIntegrityPage() {
+function IntegrityContent() {
   const [agreed, setAgreed] = useState(false);
   const [loginId, setLoginId] = useState('');
   const router = useRouter();
@@ -15,7 +15,6 @@ export default function DipIntegrityPage() {
     const id = localStorage.getItem('ioai_user');
     if (!id) { router.replace('/dip/login'); return; }
     setLoginId(id);
-    // Already agreed — skip
     if (localStorage.getItem(`integrity_agreed_${id}`)) {
       router.replace(next);
     }
@@ -77,5 +76,13 @@ export default function DipIntegrityPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function DipIntegrityPage() {
+  return (
+    <Suspense>
+      <IntegrityContent />
+    </Suspense>
   );
 }
