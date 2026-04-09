@@ -1501,8 +1501,24 @@ function OnboardingPipeline() {
   );
 }
 
-export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPages }: { totalSaaioPages: number; totalDipPages: number; totalWrpPages: number }) {
-  const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp' | 'supervisors' | 'invite-links' | 'onboarding'>('saaio');
+export type PlatformTab = 'saaio' | 'dip' | 'wrp' | 'supervisors' | 'invite-links' | 'onboarding';
+
+interface AdminTableProps {
+  totalSaaioPages?: number;
+  totalDipPages?: number;
+  totalWrpPages?: number;
+  allowedTabs?: PlatformTab[];
+  defaultTab?: PlatformTab;
+}
+
+export default function AdminTable({ 
+  totalSaaioPages = 0, 
+  totalDipPages = 0, 
+  totalWrpPages = 0,
+  allowedTabs = ['saaio', 'dip', 'wrp', 'onboarding', 'supervisors', 'invite-links'],
+  defaultTab = 'saaio'
+}: AdminTableProps) {
+  const [platform, setPlatform] = useState<PlatformTab>(defaultTab);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -1633,7 +1649,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
       <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
         {/* Platform Tabs */}
         <div id="admin-tabs" className="flex border-b border-border-subtle overflow-x-auto">
-          {(['saaio', 'dip', 'wrp', 'onboarding', 'supervisors', 'invite-links'] as const).map(p => (
+          {allowedTabs.map(p => (
             <button
               key={p}
               onClick={() => setPlatform(p)}
