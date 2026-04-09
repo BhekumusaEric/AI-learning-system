@@ -41,12 +41,15 @@ export async function POST(request: Request) {
     const existing = await drive.files.list({
       q: `name='${fileName}' and '${FOLDER_ID}' in parents and trashed=false`,
       fields: 'files(id)',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     });
     for (const file of existing.data.files || []) {
-      await drive.files.delete({ fileId: file.id! });
+      await drive.files.delete({ fileId: file.id!, supportsAllDrives: true } as any);
     }
 
     const res = await drive.files.create({
+      supportsAllDrives: true,
       requestBody: {
         name: fileName,
         parents: [FOLDER_ID],
