@@ -104,11 +104,13 @@ export default function DipCertificatePage() {
       const fileName = `IDC-DIP-Certificate-${(studentName || 'student').replace(/\s+/g, '-')}.pdf`;
       pdf.save(fileName);
       const pdfBase64 = pdf.output('datauristring').split(',')[1];
-      fetch('/api/admin/save-certificate', {
+      const driveRes = await fetch('/api/admin/save-certificate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pdfBase64, fileName }),
-      }).catch(() => {});
+      });
+      const driveData = await driveRes.json();
+      if (!driveRes.ok) console.error('Drive upload failed:', driveData);
     } finally {
       setDownloading(false);
     }

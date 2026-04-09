@@ -7,7 +7,12 @@ export const dynamic = 'force-dynamic';
 const FOLDER_ID = process.env.GOOGLE_DRIVE_CERT_FOLDER_ID!;
 
 function getDriveClient() {
-  const key = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON!);
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON!;
+  const key = JSON.parse(raw);
+  // Vercel sometimes escapes newlines in env vars — fix the private key
+  if (key.private_key) {
+    key.private_key = key.private_key.replace(/\\n/g, '\n');
+  }
   const auth = new google.auth.GoogleAuth({
     credentials: key,
     scopes: ['https://www.googleapis.com/auth/drive'],
