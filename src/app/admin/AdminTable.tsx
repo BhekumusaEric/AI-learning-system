@@ -1864,6 +1864,7 @@ export default function AdminTable({
                   <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Progress</th>
                   {platform === 'dip' && <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
                   <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Cohort</th>
+                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Registered</th>
                   <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Last Active</th>
                   <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text text-right">Actions</th>
                 </tr>
@@ -1939,8 +1940,11 @@ export default function AdminTable({
                         </select>
                       </td>
                       <td className="py-3 px-5 text-xs text-secondary-text">
+                        {new Date(user.created_at).toLocaleDateString('en-ZA')}
+                      </td>
+                      <td className="py-3 px-5 text-xs text-secondary-text">
                         {user.lastActive ? (
-                          <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(user.lastActive).toLocaleDateString()}</div>
+                          <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(user.lastActive).toLocaleDateString('en-ZA')}</div>
                         ) : '—'}
                       </td>
                       <td className="py-3 px-5 text-right">
