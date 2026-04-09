@@ -2255,6 +2255,7 @@ export default function AdminTable({
   const [selectedCohortId, setSelectedCohortId] = useState<string | null>(null);
   const [examEditing, setExamEditing] = useState<string | null>(null);
   const [examInput, setExamInput] = useState({ score: '', passed: '' });
+  const [search, setSearch] = useState('');
 
   const fetchCohorts = useCallback(async () => {
     if (platform === 'supervisors' || platform === 'invite-links') return;
@@ -2280,7 +2281,7 @@ export default function AdminTable({
     }
   }, [platform, selectedCohortId]);
 
-  useEffect(() => { setSelectedCohortId(null); fetchCohorts(); }, [platform]);
+  useEffect(() => { setSelectedCohortId(null); setSearch(''); fetchCohorts(); }, [platform]);
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -2564,6 +2565,18 @@ export default function AdminTable({
           </div>
         </form>
 
+        {/* Search */}
+
+        <div className="px-4 py-3 border-b border-border-subtle bg-background/30">
+            <input
+              type="text"
+              value={search}
+              onChange={e => { setSearch(e.target.value); }}
+              placeholder="Search by name, login ID or email..."
+              className="w-full max-w-sm bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent placeholder:text-secondary-text/50"
+            />
+        </div>
+
         {/* Table */}
         <div className="overflow-x-auto">
           {isLoading ? (
@@ -2591,11 +2604,21 @@ export default function AdminTable({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
-                {users.length === 0 ? (
-                  <tr><td colSpan={6} className="py-8 text-center text-secondary-text">No students registered yet.</td></tr>
-                ) : users.map(user => {
-                  const perc = totalPages > 0 ? Math.min(100, Math.round((user.completedCount / totalPages) * 100)) : 0;
-                  return (
+                {(() => {
+                  const q = search.trim().toLowerCase();
+                  const filtered = q ? users.filter(u =>
+                    u.full_name.toLowerCase().includes(q) ||
+                    u.login_id.toLowerCase().includes(q) ||
+                    (u.email ?? '').toLowerCase().includes(q)
+                  ) : users;
+                  if (filtered.length === 0) return (
+                    <tr><td colSpan={8} className="py-8 text-center text-secondary-text">
+                      {search.trim() ? `No students match "${search.trim()}"` : 'No students registered yet.'}
+                    </td></tr>
+                  );
+                  return filtered.map(user => {
+                    const perc = totalPages > 0 ? Math.min(100, Math.round((user.completedCount / totalPages) * 100)) : 0;
+                    return (
                     <tr key={user.login_id} className="hover:bg-background/30 transition-colors">
                       <td className="py-3 px-3 font-mono text-accent font-semibold text-xs whitespace-nowrap">{user.login_id}</td>
                       <td className="py-3 px-3 max-w-[160px]">
@@ -2692,13 +2715,13 @@ export default function AdminTable({
                       </td>
                     </tr>
                   );
-                })}
+                  });
+                })()}
               </tbody>
             </table>
           )}
         </div>
-      </>
-      }
+      </>}
       </div>
       <TourWrapper />
     </>
