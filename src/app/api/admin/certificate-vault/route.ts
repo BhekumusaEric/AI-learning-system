@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import JSZip from 'jszip';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,13 +12,15 @@ function requireAdmin(request: Request) {
 }
 
 // GET ?platform=wrp — list files
-// GET ?platform=wrp&file=filename.pdf — download a file
+// GET ?platform=wrp&file=filename.pdf — download a single file
+// GET ?platform=wrp&bulk=true — download all as zip
 export async function GET(request: Request) {
   if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const platform = searchParams.get('platform') as 'dip' | 'wrp' | null;
   const file = searchParams.get('file');
+  const bulk = searchParams.get('bulk') === 'true';
 
   if (!platform) return NextResponse.json({ error: 'platform required' }, { status: 400 });
 
@@ -44,9 +47,28 @@ export async function GET(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const filtered = (data || [])
-    .filter(f => f.name.startsWith(prefix))
-    .map(f => ({ name: f.name, updated_at: f.updated_at }));
+  const filtered = (data || []).filter(f => f.name.startsWith(prefix));
 
-  return NextResponse.json(filtered);
+  // Bulk download as zip
+  if (bulk) {
+    const zip = new JSZip();
+    await Promise.all(
+      filtered.map(async f => {
+        const { data: fileData, error: fileError } = await supabase.storage.from('certificates').download(f.name);
+        if (!fileError && fileData) {
+          zip.file(f.name, await fileData.arrayBuffer());
+        }
+      })
+    );
+    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+    const zipName = `${platform.toUpperCase()}-Certificates-${new Date().toISOString().slice(0, 10)}.zip`;
+    return new Response(zipBuffer, {
+      headers: {
+        'Content-Type': 'application/zip',
+        'Content-Disposition': `attachment; filename="${zipName}"`,
+      },
+    });
+  }
+
+  return NextResponse.json(filtered.map(f => ({ name: f.name, updated_at: f.updated_at })));
 }

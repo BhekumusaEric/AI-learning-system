@@ -1075,9 +1075,9 @@ function CertificateVault({ platform, onClose }: { platform: 'dip' | 'wrp'; onCl
   const [files, setFiles] = useState<{ name: string; updated_at: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [bulkDownloading, setBulkDownloading] = useState(false);
 
   useEffect(() => {
-    const prefix = platform === 'wrp' ? 'WRP-Certificate-' : 'IDC-DIP-Certificate-';
     fetch(`/api/admin/certificate-vault?platform=${platform}`)
       .then(r => r.json())
       .then(data => { setFiles(data || []); setIsLoading(false); })
@@ -1100,6 +1100,22 @@ function CertificateVault({ platform, onClose }: { platform: 'dip' | 'wrp'; onCl
     }
   };
 
+  const handleBulkDownload = async () => {
+    setBulkDownloading(true);
+    try {
+      const res = await fetch(`/api/admin/certificate-vault?platform=${platform}&bulk=true`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${platform.toUpperCase()}-Certificates-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setBulkDownloading(false);
+    }
+  };
+
   return (
     <div className="bg-secondary border border-[#d4af37]/20 rounded-2xl p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
@@ -1108,7 +1124,19 @@ function CertificateVault({ platform, onClose }: { platform: 'dip' | 'wrp'; onCl
           <span className="text-sm font-bold text-foreground">Certificate Vault — {platform.toUpperCase()}</span>
           <span className="text-xs text-secondary-text">({files.length} stored)</span>
         </div>
-        <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
+        <div className="flex items-center gap-2">
+          {files.length > 0 && (
+            <button
+              onClick={handleBulkDownload}
+              disabled={bulkDownloading}
+              className="flex items-center gap-1.5 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold px-3 py-1.5 rounded-lg text-xs transition-all disabled:opacity-50"
+            >
+              {bulkDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              {bulkDownloading ? 'Zipping...' : `Download All (${files.length})`}
+            </button>
+          )}
+          <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
+        </div>
       </div>
       {isLoading ? (
         <div className="flex items-center gap-2 text-secondary-text text-sm py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>
