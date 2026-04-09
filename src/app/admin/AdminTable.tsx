@@ -469,25 +469,41 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
   XLSX.writeFile(wb, `${platform}_students_report_${date}.xlsx`);
 }
 
-function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
+function CongratulatePanel({ platform, onClose, preselectedIds }: { platform: 'dip' | 'wrp'; onClose: () => void; preselectedIds?: string[] }) {
   const [isSending, setIsSending] = useState(false);
   const [result, setResult] = useState<{ sent: number; failed: number; total: number; errors?: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cohortId, setCohortId] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [cohorts, setCohorts] = useState<{ id: string; name: string }[]>([]);
 
   const platformName = platform === 'dip' ? 'IDC SEF Digital Inclusion Program' : 'WeThinkCode_ Work Readiness Program';
   const certUrl = platform === 'dip'
     ? 'https://ai-learning-system-ten.vercel.app/dip/certificate'
     : 'https://ai-learning-system-ten.vercel.app/wrp/certificate';
 
+  useEffect(() => {
+    fetch(`/api/admin/cohorts?platform=${platform}`)
+      .then(r => r.json())
+      .then(data => setCohorts((data || []).filter((c: any) => !c.archived)))
+      .catch(() => {});
+  }, [platform]);
+
   const send = async () => {
     setIsSending(true);
     setError(null);
     setResult(null);
     try {
+      const body: any = { platform };
+      if (preselectedIds?.length) body.login_ids = preselectedIds;
+      if (cohortId) body.cohort_id = cohortId;
+      if (dateFrom) body.date_from = dateFrom;
+      if (dateTo) body.date_to = dateTo;
       const res = await fetch('/api/admin/congratulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok) setResult(data);
@@ -505,23 +521,46 @@ function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onC
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 text-[#d4af37]" />
           <span className="text-sm font-bold text-foreground">Send Congratulations & Certificate</span>
-          <span className="text-xs text-secondary-text">(emails all {platformName} students with email addresses)</span>
+          {preselectedIds?.length
+            ? <span className="text-xs text-accent">({preselectedIds.length} selected students)</span>
+            : <span className="text-xs text-secondary-text">(all {platformName} students)</span>}
         </div>
         <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
       </div>
 
+      {/* Filters — only show when no preselected */}
+      {!preselectedIds?.length && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 p-3 bg-[#0d0d0d] border border-border-subtle rounded-xl">
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Filter by Cohort</label>
+            <select value={cohortId} onChange={e => setCohortId(e.target.value)}
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent">
+              <option value="">All cohorts</option>
+              {cohorts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Registered From</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent" />
+          </div>
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Registered To</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent" />
+          </div>
+        </div>
+      )}
+
       <div className="bg-[#0d0d0d] border border-[#d4af37]/30 rounded-xl p-4 mb-4">
-        <p className="text-sm text-secondary-text leading-relaxed mb-2">
-          Each student will receive a personalised congratulatory email that includes:
-        </p>
+        <p className="text-sm text-secondary-text leading-relaxed mb-2">Each student will receive a personalised email with:</p>
         <ul className="text-sm text-secondary-text space-y-1 list-disc list-inside">
-          <li><span className="text-foreground">A warm congratulations</span> addressed to them by first name</li>
-          <li><span className="text-foreground">A list of skills</span> they've earned through the program</li>
-          <li><span className="text-foreground">A direct link</span> to download their Certificate of Completion</li>
+          <li><span className="text-foreground">A warm congratulations</span> addressed by first name</li>
+          <li><span className="text-foreground">Skills earned</span> through the program</li>
+          <li><span className="text-foreground">A direct link</span> to download their Certificate</li>
+          <li><span className="text-foreground">A feedback form link</span> to share their experience</li>
         </ul>
-        <p className="text-xs text-secondary-text mt-3">
-          Certificate link: <span className="text-accent font-mono">{certUrl}</span>
-        </p>
+        <p className="text-xs text-secondary-text mt-3">Certificate link: <span className="text-accent font-mono">{certUrl}</span></p>
       </div>
 
       {error && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2 mb-3">{error}</p>}
@@ -531,22 +570,18 @@ function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onC
           <div className="flex items-center gap-4 text-sm mb-2">
             <span className="text-[#d4af37] font-bold">{result.sent} sent</span>
             {result.failed > 0 && <span className="text-error font-bold">{result.failed} failed</span>}
-            <span className="text-secondary-text">out of {result.total} students with emails</span>
+            <span className="text-secondary-text">out of {result.total} students</span>
           </div>
           {result.errors && result.errors.length > 0 && (
             <div className="bg-error/10 border border-error/30 p-2 rounded-lg break-words text-[10px] text-error font-mono max-h-32 overflow-y-auto">
-              <p className="font-bold">Error Logs:</p>
               {result.errors.map((e, i) => <div key={i}>{e}</div>)}
             </div>
           )}
         </div>
       )}
 
-      <button
-        onClick={send}
-        disabled={isSending}
-        className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <button onClick={send} disabled={isSending}
+        className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
         {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         {isSending ? 'Sending...' : 'Send Congratulatory Emails'}
       </button>
@@ -1316,6 +1351,8 @@ function AdminSettings() {
 function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wrp'; mandatoryPages: number }) {
   const [students, setStudents] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showCongratsPanel, setShowCongratsPanel] = useState(false);
   const threshold = Math.ceil(mandatoryPages * 0.8);
 
   useEffect(() => {
@@ -1331,6 +1368,18 @@ function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wr
       .catch(() => setIsLoading(false));
   }, [platform, threshold]);
 
+  const toggleSelect = (id: string) => setSelected(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const toggleAll = () => setSelected(
+    selected.size === students.length ? new Set() : new Set(students.map(s => s.login_id))
+  );
+
+  const selectedIds = Array.from(selected);
+
   if (isLoading) return (
     <div className="flex items-center justify-center py-16 gap-2 text-secondary-text">
       <Loader2 className="w-5 h-5 animate-spin" /> Loading...
@@ -1339,6 +1388,15 @@ function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wr
 
   return (
     <div className="p-6">
+      {/* Congratulate panel */}
+      {showCongratsPanel && (
+        <CongratulatePanel
+          platform={platform}
+          preselectedIds={selectedIds.length ? selectedIds : undefined}
+          onClose={() => setShowCongratsPanel(false)}
+        />
+      )}
+
       {/* Stats bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="bg-background border border-border-subtle rounded-xl p-4">
@@ -1374,50 +1432,78 @@ function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wr
       {students.length === 0 ? (
         <p className="text-secondary-text text-sm text-center py-8">No completed students yet.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[700px]">
-            <thead>
-              <tr className="bg-background/30 border-b border-border-subtle">
-                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Login ID</th>
-                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
-                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Email</th>
-                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Modules</th>
-                {platform === 'dip' && <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
-                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Cert Status</th>
-                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Registered</th>
-                <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Last Active</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {students.map(s => (
-                <tr key={s.login_id} className="hover:bg-background/30 transition-colors">
-                  <td className="py-3 px-3 font-mono text-accent font-semibold text-xs whitespace-nowrap">{s.login_id}</td>
-                  <td className="py-3 px-3 max-w-[150px]">
-                    <div className="font-semibold text-foreground text-sm truncate">{s.full_name}</div>
-                  </td>
-                  <td className="py-3 px-3 text-xs text-secondary-text max-w-[180px] truncate">{s.email || '—'}</td>
-                  <td className="py-3 px-3 text-xs font-bold text-accent whitespace-nowrap">{s.completedCount}/{mandatoryPages}</td>
-                  {platform === 'dip' && (
-                    <td className="py-3 px-3 text-xs whitespace-nowrap">
-                      {s.examScore !== null
-                        ? <span className={`font-bold ${s.examPassed ? 'text-emerald-400' : 'text-error'}`}>{s.examScore}% — {s.examPassed ? 'Pass' : 'Fail'}</span>
-                        : <span className="text-secondary-text">—</span>}
-                    </td>
-                  )}
-                  <td className="py-3 px-3 text-xs whitespace-nowrap">
-                    {s.certificate_unlocked
-                      ? <span className="text-emerald-400 font-bold">✓ Unlocked</span>
-                      : s.certificate_requested
-                      ? <span className="text-[#d4af37] font-bold">⏳ Requested</span>
-                      : <span className="text-secondary-text">Not requested</span>}
-                  </td>
-                  <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">{new Date(s.created_at).toLocaleDateString('en-ZA')}</td>
-                  <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">{s.lastActive ? new Date(s.lastActive).toLocaleDateString('en-ZA') : '—'}</td>
+        <>
+          {/* Toolbar */}
+          <div className="flex items-center gap-3 mb-4">
+            <button onClick={toggleAll}
+              className="text-xs text-secondary-text hover:text-foreground border border-border-subtle hover:border-accent/50 px-3 py-1.5 rounded-lg transition-all">
+              {selected.size === students.length ? 'Deselect All' : 'Select All'}
+            </button>
+            {selected.size > 0 && (
+              <span className="text-xs text-accent font-semibold">{selected.size} selected</span>
+            )}
+            <button
+              onClick={() => setShowCongratsPanel(v => !v)}
+              className="ml-auto flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            >
+              <Send className="w-3.5 h-3.5" />
+              {selected.size > 0 ? `Congratulate ${selected.size} selected` : 'Congratulate all'}
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead>
+                <tr className="bg-background/30 border-b border-border-subtle">
+                  <th className="py-3 px-3 w-8"></th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Login ID</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Email</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Modules</th>
+                  {platform === 'dip' && <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Cert Status</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Registered</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Last Active</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border-subtle">
+                {students.map(s => (
+                  <tr key={s.login_id} onClick={() => toggleSelect(s.login_id)}
+                    className={`hover:bg-background/30 transition-colors cursor-pointer ${
+                      selected.has(s.login_id) ? 'bg-accent/5 border-l-2 border-accent' : ''
+                    }`}>
+                    <td className="py-3 px-3">
+                      <input type="checkbox" checked={selected.has(s.login_id)} onChange={() => toggleSelect(s.login_id)}
+                        className="accent-accent" onClick={e => e.stopPropagation()} />
+                    </td>
+                    <td className="py-3 px-3 font-mono text-accent font-semibold text-xs whitespace-nowrap">{s.login_id}</td>
+                    <td className="py-3 px-3 max-w-[150px]">
+                      <div className="font-semibold text-foreground text-sm truncate">{s.full_name}</div>
+                    </td>
+                    <td className="py-3 px-3 text-xs text-secondary-text max-w-[180px] truncate">{s.email || '—'}</td>
+                    <td className="py-3 px-3 text-xs font-bold text-accent whitespace-nowrap">{s.completedCount}/{mandatoryPages}</td>
+                    {platform === 'dip' && (
+                      <td className="py-3 px-3 text-xs whitespace-nowrap">
+                        {s.examScore !== null
+                          ? <span className={`font-bold ${s.examPassed ? 'text-emerald-400' : 'text-error'}`}>{s.examScore}% — {s.examPassed ? 'Pass' : 'Fail'}</span>
+                          : <span className="text-secondary-text">—</span>}
+                      </td>
+                    )}
+                    <td className="py-3 px-3 text-xs whitespace-nowrap">
+                      {s.certificate_unlocked
+                        ? <span className="text-emerald-400 font-bold">✓ Unlocked</span>
+                        : s.certificate_requested
+                        ? <span className="text-[#d4af37] font-bold">⏳ Requested</span>
+                        : <span className="text-secondary-text">Not requested</span>}
+                    </td>
+                    <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">{new Date(s.created_at).toLocaleDateString('en-ZA')}</td>
+                    <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">{s.lastActive ? new Date(s.lastActive).toLocaleDateString('en-ZA') : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
@@ -2038,6 +2124,7 @@ export default function AdminTable({
   const [showBulk, setShowBulk] = useState(false);
   const [showNotify, setShowNotify] = useState(false);
   const [showCongratulate, setShowCongratulate] = useState(false);
+  const congratulatePanelRef = React.useRef<HTMLDivElement>(null);
   const [showCertRequests, setShowCertRequests] = useState(false);
   const [showCertVault, setShowCertVault] = useState(false);
   const [showCommsMenu, setShowCommsMenu] = useState(false);
@@ -2215,7 +2302,9 @@ export default function AdminTable({
 
         {/* Congratulate Panel — DIP and WRP only */}
         {platform !== 'supervisors' && platform !== 'invite-links' && showCongratulate && (platform === 'dip' || platform === 'wrp') && (
-          <CongratulatePanel platform={platform as 'dip'|'wrp'} onClose={() => setShowCongratulate(false)} />
+          <div ref={congratulatePanelRef}>
+            <CongratulatePanel platform={platform as 'dip'|'wrp'} onClose={() => setShowCongratulate(false)} />
+          </div>
         )}
 
         {showCertRequests && (platform === 'dip' || platform === 'wrp') && (
@@ -2296,7 +2385,7 @@ export default function AdminTable({
                   {(platform === 'dip' || platform === 'wrp') && (
                     <button
                       type="button"
-                      onClick={() => { setShowCongratulate(v => !v); setShowCommsMenu(false); }}
+                      onClick={() => { setShowCongratulate(v => !v); setShowCommsMenu(false); setTimeout(() => congratulatePanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
                       className="flex items-center gap-2 px-4 py-3 text-xs text-secondary-text hover:text-[#d4af37] hover:bg-background transition-all"
                     >
                       <Award className="w-3.5 h-3.5" /> Send Certificates
