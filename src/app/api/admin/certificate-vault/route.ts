@@ -60,7 +60,7 @@ export async function GET(request: Request) {
         }
       })
     );
-    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+    const zipBuffer = await zip.generateAsync({ type: 'uint8array' });
     const zipName = `${platform.toUpperCase()}-Certificates-${new Date().toISOString().slice(0, 10)}.zip`;
     return new Response(zipBuffer, {
       headers: {
