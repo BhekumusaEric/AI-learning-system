@@ -72,6 +72,25 @@ function buildCongratulationsEmail(full_name: string, platform: 'dip' | 'wrp') {
         </a>
       </div>
 
+      <!-- Feedback CTA -->
+      <div style="background:linear-gradient(135deg,#f0f7ff 0%,#e8f4ff 100%);border:1px solid #bfdbfe;border-radius:12px;padding:28px;margin-bottom:28px;">
+        <p style="color:#1e40af;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 10px 0;font-weight:bold;">One Last Thing, ${firstName_cap} 🙏</p>
+        <p style="color:#1e3a5f;font-size:15px;font-weight:bold;margin:0 0 12px 0;line-height:1.5;">Would you take 2 minutes to share your experience?</p>
+        <p style="color:#334155;font-size:13px;margin:0 0 8px 0;line-height:1.8;">
+          Your journey through this program matters — not just to you, but to every student who comes after you.
+          Your honest feedback directly shapes how we improve the program, what we keep, what we fix, and how we can better support future learners.
+        </p>
+        <p style="color:#334155;font-size:13px;margin:0 0 20px 0;line-height:1.8;">
+          It takes less than 2 minutes, and it would mean the world to us. 💙
+        </p>
+        <div style="text-align:center;">
+          <a href="https://forms.gle/kTtTVPpFeAHWawi28" style="display:inline-block;background:#0047AB;color:#ffffff;padding:14px 36px;border-radius:8px;font-weight:bold;font-size:15px;text-decoration:none;letter-spacing:1px;">
+            Share My Feedback →
+          </a>
+          <p style="color:#64748b;font-size:11px;margin:12px 0 0 0;">Anonymous &amp; takes less than 2 minutes</p>
+        </div>
+      </div>
+
       <p style="color:#64748b;font-size:13px;line-height:1.8;margin:0;">
         Thank you for being part of this program. We hope this is just the beginning of your journey in tech. Keep building, keep learning, and keep going.
       </p>
@@ -103,27 +122,33 @@ function requireAdmin(request: Request) {
 }
 
 // POST /api/admin/congratulate
-// Body: { platform: 'dip' | 'wrp' }
+// Body: { platform, login_ids?: string[], cohort_id?: string, date_from?: string, date_to?: string }
 export async function POST(request: Request) {
   if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { platform } = await request.json();
+  const { platform, login_ids, cohort_id, date_from, date_to } = await request.json();
   if (!platform || !PLATFORM_META[platform as 'dip' | 'wrp']) {
     return NextResponse.json({ error: 'platform must be dip or wrp' }, { status: 400 });
   }
 
   const meta = PLATFORM_META[platform as 'dip' | 'wrp'];
 
-  const { data: students, error } = await supabase
+  let query = supabase
     .from(meta.table)
-    .select('full_name, email')
+    .select('login_id, full_name, email, created_at, cohort_id')
     .not('email', 'is', null);
 
+  if (login_ids?.length) query = query.in('login_id', login_ids);
+  if (cohort_id) query = query.eq('cohort_id', cohort_id);
+  if (date_from) query = query.gte('created_at', date_from);
+  if (date_to) query = query.lte('created_at', date_to + 'T23:59:59Z');
+
+  const { data: students, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const recipients = (students || []).filter(s => s.email?.trim());
   if (recipients.length === 0) {
-    return NextResponse.json({ sent: 0, failed: 0, message: 'No students with email addresses found' });
+    return NextResponse.json({ sent: 0, failed: 0, total: 0, message: 'No students match the selected filters' });
   }
 
   const from = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
