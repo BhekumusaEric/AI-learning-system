@@ -1073,6 +1073,59 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function BulkResetButton({ platform }: { platform: string }) {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [result, setResult] = useState<{ updated: number; emailed: number } | null>(null);
+
+  const handleReset = async (onlyMissing: boolean) => {
+    if (!confirm(`This will generate new passwords for ${onlyMissing ? 'students without a password' : 'ALL students'} on ${platform.toUpperCase()} and email them. Continue?`)) return;
+    setStatus('loading');
+    try {
+      const res = await fetch('/api/admin/students/bulk-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform, only_missing: onlyMissing }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setStatus('error'); return; }
+      setResult(data);
+      setStatus('done');
+    } catch { setStatus('error'); }
+  };
+
+  return (
+    <div className="bg-background border border-border-subtle rounded-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <span className="font-semibold text-sm text-foreground">{platform.toUpperCase()} Students</span>
+          {status === 'done' && result && (
+            <span className="ml-2 text-xs text-accent">{result.updated} passwords set · {result.emailed} emails sent</span>
+          )}
+          {status === 'error' && <span className="ml-2 text-xs text-error">Failed — try again</span>}
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => handleReset(true)}
+          disabled={status === 'loading'}
+          className="flex items-center gap-1.5 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+        >
+          {status === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+          Set passwords for new students
+        </button>
+        <button
+          onClick={() => handleReset(false)}
+          disabled={status === 'loading'}
+          className="flex items-center gap-1.5 bg-background border border-error/30 text-error hover:bg-error hover:text-white px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+        >
+          {status === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          Reset ALL passwords
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AdminSettings() {
   const [admins, setAdmins] = useState<{ id: string; username: string; full_name: string; created_at: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1245,6 +1298,17 @@ function AdminSettings() {
           <UserPlus className="w-4 h-4" /> Add New Admin
         </button>
       )}
+
+      {/* Bulk Password Reset */}
+      <div className="mt-8 pt-6 border-t border-border-subtle">
+        <h3 className="text-sm font-bold text-foreground mb-1">Bulk Password Reset</h3>
+        <p className="text-xs text-secondary-text mb-4">Generate and email passwords to students who don't have one yet. This enforces password login for all students.</p>
+        <div className="flex flex-col gap-3">
+          {['dip', 'wrp'].map(p => (
+            <BulkResetButton key={p} platform={p} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
