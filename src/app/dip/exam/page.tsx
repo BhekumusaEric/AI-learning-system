@@ -399,7 +399,7 @@ export default function DipExamPage() {
         )}
 
         {/* ── Questions ── */}
-        {examQuestions.map((q) => {
+        {examQuestions.map((q, qIndex) => {
           const userAnswer = answers[q.id];
           const isCorrect = userAnswer === q.correct;
           return (
@@ -413,7 +413,7 @@ export default function DipExamPage() {
             >
               {/* Question text */}
               <p className="font-semibold mb-3 leading-relaxed">
-                <span className="text-accent mr-2">{q.id}.</span>{q.question}
+                <span className="text-accent mr-2">{qIndex + 1}.</span>{q.question}
               </p>
 
               {/* Code snippet */}
