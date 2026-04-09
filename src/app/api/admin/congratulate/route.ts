@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 const PLATFORM_META = {
   dip: {
     name: 'IDC SEF Digital Inclusion Program',
-    programTitle: 'Python Programming Fundamentals',
+    programTitle: 'Digital Inclusion Program',
     certUrl: 'https://ai-learning-system-ten.vercel.app/dip/certificate',
     competencies: ['Variables & Data Types', 'Lists & Loops', 'Functions', 'Dictionaries', 'String Methods', 'Problem Solving'],
     table: 'dip_students',
@@ -48,8 +48,7 @@ function buildCongratulationsEmail(full_name: string, platform: 'dip' | 'wrp') {
     <div style="padding:36px 32px;">
 
       <p style="color:#334155;font-size:15px;line-height:1.8;margin:0 0 24px 0;">
-        You've done it! You have successfully completed the
-        <strong style="color:#0047AB;">${meta.programTitle}</strong> — and that is something to be genuinely proud of.
+        You've done it! You have successfully completed the <strong style="color:#0047AB;">${meta.programTitle}</strong> — and that is something to be genuinely proud of.
       </p>
 
       <p style="color:#475569;font-size:14px;line-height:1.8;margin:0 0 28px 0;">
