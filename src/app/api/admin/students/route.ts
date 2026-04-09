@@ -49,9 +49,11 @@ export async function GET(request: Request) {
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   const progressTable = platform === 'dip' ? 'dip_progress' : platform === 'wrp' ? 'wrp_progress' : 'user_progress';
 
+  const certFields = (platform === 'dip' || platform === 'wrp') ? ', certificate_requested, certificate_unlocked' : '';
+
   let query = supabase
     .from(table)
-    .select('id, login_id, full_name, email, created_at, cohort_id, certificate_requested, certificate_unlocked')
+    .select(`id, login_id, full_name, email, created_at, cohort_id${certFields}`)
     .order('created_at', { ascending: false });
 
   if (cohortId === 'unassigned') query = query.is('cohort_id', null);
@@ -82,8 +84,7 @@ export async function GET(request: Request) {
       examPassed: prog?.exam_passed ?? null,
       cohortId: s.cohort_id ?? null,
       certificate_requested: s.certificate_requested ?? false,
-      certificate_unlocked: s.certificate_unlocked ?? false,
-    };
+      certificate_unlocked: s.certificate_unlocked ?? false,    };
   });
 
   return NextResponse.json(result);
