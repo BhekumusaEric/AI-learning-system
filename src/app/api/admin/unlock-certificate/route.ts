@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { sendEmail } from '@/lib/email';
+import { logAudit } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -223,6 +224,7 @@ export async function POST(request: Request) {
     }
   }
 
+  await logAudit({ request, action: action === 'decline' ? 'cert_declined' : 'cert_unlocked', target_login_id: login_id, target_platform: platform, details: { emailSent, full_name: student.full_name } });
   return NextResponse.json({ success: true, emailSent, full_name: student.full_name });
 }
 

@@ -1137,6 +1137,51 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+  cert_unlocked:   { label: 'Certificate Unlocked', color: 'text-emerald-400' },
+  cert_declined:   { label: 'Certificate Declined', color: 'text-error' },
+  password_reset:  { label: 'Password Reset',        color: 'text-warning' },
+  student_deleted: { label: 'Student Deleted',       color: 'text-error' },
+};
+
+function AuditLog() {
+  const [logs, setLogs] = useState<{ id: string; admin_username: string; action: string; target_login_id: string | null; target_platform: string | null; details: any; created_at: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/audit-log')
+      .then(r => r.json())
+      .then(data => { setLogs(data || []); setIsLoading(false); })
+      .catch(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) return <div className="flex items-center gap-2 text-secondary-text text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>;
+  if (!logs.length) return <p className="text-secondary-text text-sm">No actions logged yet.</p>;
+
+  return (
+    <div className="flex flex-col gap-2 max-h-96 overflow-y-auto">
+      {logs.map(log => {
+        const meta = ACTION_LABELS[log.action] || { label: log.action, color: 'text-secondary-text' };
+        return (
+          <div key={log.id} className="flex items-start justify-between gap-3 p-3 bg-background border border-border-subtle rounded-lg text-xs">
+            <div className="flex flex-col gap-0.5">
+              <span className={`font-bold ${meta.color}`}>{meta.label}</span>
+              {log.target_login_id && (
+                <span className="text-secondary-text font-mono">{log.target_login_id}{log.target_platform ? ` · ${log.target_platform.toUpperCase()}` : ''}</span>
+              )}
+              {log.details?.full_name && <span className="text-foreground">{log.details.full_name}</span>}
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-secondary-text">{log.admin_username}</div>
+              <div className="text-secondary-text/60">{new Date(log.created_at).toLocaleString('en-ZA')}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function BulkResetButton({ platform }: { platform: string }) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [result, setResult] = useState<{ updated: number; emailed: number } | null>(null);
@@ -1373,11 +1418,16 @@ function AdminSettings() {
           ))}
         </div>
       </div>
+
+      {/* Audit Log */}
+      <div className="mt-8 pt-6 border-t border-border-subtle">
+        <h3 className="text-sm font-bold text-foreground mb-1">Audit Log</h3>
+        <p className="text-xs text-secondary-text mb-4">Last 100 admin actions across the platform.</p>
+        <AuditLog />
+      </div>
     </div>
   );
-}
-
-function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wrp'; mandatoryPages: number }) {
+}({ platform, mandatoryPages }: { platform: 'dip' | 'wrp'; mandatoryPages: number }) {
   const [students, setStudents] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());

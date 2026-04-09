@@ -82,7 +82,7 @@ A checkbox students must agree to on first login.
 - Stored in DB with timestamp
 - Cannot access content until agreed
 
-### 4.2 ⬜ Admin Audit Log
+### 4.2 ✅ Admin Audit Log
 Track every certificate unlock, password reset, and admin action with timestamps.
 - New `admin_audit_log` table in Supabase
 - Log action, admin username, target student, timestamp

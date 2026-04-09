@@ -4,6 +4,7 @@ import { createHash } from 'crypto';
 import { nextUniqueLoginId } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
 import { sendEmail } from '@/lib/email';
+import { logAudit } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -169,6 +170,7 @@ export async function PATCH(request: Request) {
     }
   }
 
+  await logAudit({ request, action: 'password_reset', target_login_id: login_id, target_platform: platform, details: { emailSent } });
   return NextResponse.json({ plainPassword, emailSent });
 }
 
@@ -183,6 +185,6 @@ export async function DELETE(request: Request) {
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   const { error } = await supabase.from(table).delete().eq('login_id', login_id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
+  await logAudit({ request, action: 'student_deleted', target_login_id: login_id, target_platform: platform });
   return NextResponse.json({ success: true });
 }
