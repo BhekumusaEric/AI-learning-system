@@ -232,14 +232,30 @@ export async function GET(request: Request) {
   const platform = searchParams.get('platform') as 'dip' | 'wrp' | null;
   if (!platform || !PLATFORM_META[platform]) return NextResponse.json({ error: 'platform required' }, { status: 400 });
 
+  const meta = PLATFORM_META[platform];
+  const progressTable = platform === 'dip' ? 'dip_progress' : 'wrp_progress';
+
   const { data, error } = await supabase
-    .from(PLATFORM_META[platform].table)
-    .select('login_id, full_name, email, certificate_requested, certificate_unlocked, name_change_requested, certificate_name, completedCount, examPassed')
+    .from(meta.table)
+    .select('login_id, full_name, email, certificate_requested, certificate_unlocked, name_change_requested, certificate_name')
     .or('certificate_requested.eq.true,name_change_requested.eq.true')
     .order('full_name');
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || []);
+
+  const { data: progress } = await supabase.from(progressTable).select('login_id, completed_pages, exam_passed');
+  const progressMap: Record<string, any> = {};
+  (progress || []).forEach((p: any) => { progressMap[p.login_id] = p; });
+
+  const result = (data || []).map((r: any) => {
+    const prog = progressMap[r.login_id];
+    const completedCount = prog
+      ? Object.keys(prog.completed_pages || {}).filter((k: string) => prog.completed_pages[k]).length
+      : 0;
+    return { ...r, completedCount, examPassed: prog?.exam_passed ?? null };
+  });
+
+  return NextResponse.json(result);
 }
 
 // PATCH /api/admin/unlock-certificate — approve name change
