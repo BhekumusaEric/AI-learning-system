@@ -1699,61 +1699,65 @@ export default function AdminTable({
 
         {platform !== 'supervisors' && platform !== 'invite-links' && platform !== 'onboarding' && <>
         {/* Register Form */}
-        <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
+        <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-4">
           {addError && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2">{addError}</p>}
-          <div className="flex flex-col sm:flex-row gap-3 items-end">
-          <div className="flex-1">
-            <label className="block text-xs text-secondary-text mb-1">Full Name *</label>
-            <input
-              type="text"
-              placeholder="e.g. Alice Smith"
-              value={fullName}
-              onChange={e => setFullName(e.target.value)}
-              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
-              required
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs text-secondary-text mb-1">Email (optional)</label>
-            <input
-              type="email"
-              placeholder="alice@school.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
-            />
-          </div>
+          <div className="flex flex-col sm:flex-row gap-3 items-end w-full">
+            <div className="flex-1 w-full">
+              <label className="block text-xs text-secondary-text mb-1">Full Name *</label>
+              <input
+                type="text"
+                placeholder="e.g. Alice Smith"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
+                required
+              />
+            </div>
+            <div className="flex-1 w-full">
+              <label className="block text-xs text-secondary-text mb-1">Email (optional)</label>
+              <input
+                type="email"
+                placeholder="alice@school.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
+              />
+            </div>
             <button
               type="submit"
               disabled={isAdding || !fullName.trim()}
-              className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="flex items-center justify-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-6 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap w-full sm:w-auto"
             >
               {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               Register Student
             </button>
+          </div>
+          
+          {/* Secondary Actions Row */}
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border-subtle/30">
             <button
               type="button"
               onClick={() => setShowBulk(v => !v)}
-              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
             >
-              <FileSpreadsheet className="w-4 h-4" />
+              <FileSpreadsheet className="w-3.5 h-3.5" />
               Bulk Import
             </button>
             <button
               type="button"
               onClick={() => setShowNotify(v => !v)}
-              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-3.5 h-3.5" />
               Notify Students
             </button>
             {(platform === 'dip' || platform === 'wrp') && (
               <button
                 type="button"
                 onClick={() => setShowCongratulate(v => !v)}
-                className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-[#d4af37] hover:border-[#d4af37]/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-[#d4af37] hover:border-[#d4af37]/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
               >
-                <Award className="w-4 h-4" />
+                <Award className="w-3.5 h-3.5" />
                 Send Certificates
               </button>
             )}
@@ -1761,20 +1765,20 @@ export default function AdminTable({
               <button
                 type="button"
                 onClick={() => setShowCertRequests(v => !v)}
-                className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
               >
-                <Award className="w-4 h-4" />
+                <Award className="w-3.5 h-3.5" />
                 Certificate Requests
               </button>
             )}
             <button
               type="button"
-              onClick={() => downloadReport(users, platform, totalPages)}
+              onClick={() => downloadReport(users, platform as any, totalPages)}
               disabled={users.length === 0}
-              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download Excel report"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               Export Report
             </button>
           </div>
