@@ -1071,7 +1071,7 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function CertificateRequests({ platform, totalPages, onClose }: { platform: 'dip' | 'wrp'; totalPages: number; onClose: () => void }) {
+function CertificateRequests({ platform, mandatoryPages, onClose }: { platform: 'dip' | 'wrp'; mandatoryPages: number; onClose: () => void }) {
   const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_requested: boolean; certificate_unlocked: boolean; name_change_requested: boolean; certificate_name: string | null; completedCount: number; examPassed: boolean | null }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unlocking, setUnlocking] = useState<string | null>(null);
@@ -1087,7 +1087,7 @@ function CertificateRequests({ platform, totalPages, onClose }: { platform: 'dip
   }, [platform]);
 
   const audit = (r: typeof requests[0]) => {
-    const isEligible = r.completedCount >= totalPages && (platform === 'wrp' || r.examPassed === true);
+    const isEligible = r.completedCount >= Math.ceil(mandatoryPages * 0.8) && (platform === 'wrp' || r.examPassed === true);
     setAuditResults(prev => ({ ...prev, [r.login_id]: isEligible ? 'eligible' : 'ineligible' }));
   };
 
@@ -1183,7 +1183,7 @@ function CertificateRequests({ platform, totalPages, onClose }: { platform: 'dip
                     <div className="text-xs text-secondary-text font-mono">
                       {r.login_id}{r.email ? ` · ${r.email}` : ' · no email'}
                       <span className="ml-2 text-accent/70 font-bold tracking-widest gap-2">
-                        [{r.completedCount}/{totalPages} MODS]
+                        [{r.completedCount}/{mandatoryPages} MODS]
                         {platform === 'dip' && (r.examPassed ? ' [EXAM ✅]' : ' [EXAM ❌]')}
                       </span>
                     </div>
@@ -1564,6 +1564,7 @@ interface AdminTableProps {
   totalSaaioPages?: number;
   totalDipPages?: number;
   totalWrpPages?: number;
+  mandatoryWrpPages?: number;
   allowedTabs?: PlatformTab[];
   defaultTab?: PlatformTab;
 }
@@ -1572,6 +1573,7 @@ export default function AdminTable({
   totalSaaioPages = 0, 
   totalDipPages = 0, 
   totalWrpPages = 0,
+  mandatoryWrpPages = 0,
   allowedTabs = ['saaio', 'dip', 'wrp', 'onboarding', 'supervisors', 'invite-links'],
   defaultTab = 'saaio'
 }: AdminTableProps) {
@@ -1751,7 +1753,7 @@ export default function AdminTable({
         )}
 
         {showCertRequests && (platform === 'dip' || platform === 'wrp') && (
-          <CertificateRequests platform={platform as 'dip'|'wrp'} totalPages={totalPages} onClose={() => setShowCertRequests(false)} />
+          <CertificateRequests platform={platform as 'dip'|'wrp'} mandatoryPages={platform === 'wrp' ? mandatoryWrpPages : totalDipPages} onClose={() => setShowCertRequests(false)} />
         )}
 
         {platform !== 'supervisors' && platform !== 'invite-links' && platform !== 'onboarding' && <>

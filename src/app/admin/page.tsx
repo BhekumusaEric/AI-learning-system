@@ -25,9 +25,11 @@ export default async function AdminDashboard() {
   const part1 = syllabus.find(p => p.id === 'part1_foundational_skills_classical_ml');
   const ch1 = part1?.chapters.find(c => c.id === 'chapter1_python_programming_fundamentals');
   const ch2 = part1?.chapters.find(c => c.id === 'chapter2_battle_grounds');
-  const totalDipPages = (ch1?.pages.length || 0) + (ch2?.pages.length || 0);
+  const totalDipPages = ch1?.pages.length || 0;
 
-  const totalWrpPages = getWrpSyllabus().length;
+  const wrpSyllabus = getWrpSyllabus();
+  const totalWrpPages = wrpSyllabus.length;
+  const mandatoryWrpPages = wrpSyllabus.filter(p => p.type === 'read' || p.type === 'interview').length;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center py-10 px-6">
@@ -76,7 +78,8 @@ export default async function AdminDashboard() {
         <AdminTable 
           totalSaaioPages={0} 
           totalDipPages={totalDipPages} 
-          totalWrpPages={totalWrpPages} 
+          totalWrpPages={totalWrpPages}
+          mandatoryWrpPages={mandatoryWrpPages}
           allowedTabs={['dip', 'wrp', 'onboarding', 'supervisors', 'invite-links']}
           defaultTab="dip"
         />
