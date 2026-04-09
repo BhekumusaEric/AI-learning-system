@@ -42,7 +42,13 @@ export default function DipLoginPage() {
 
       localStorage.setItem('ioai_user', data.login_id);
       localStorage.setItem('ioai_name', data.full_name);
-      window.location.href = '/dip/lesson/page1_your_first_python_program';
+      // Check if integrity agreement has been signed
+      const agreed = localStorage.getItem(`integrity_agreed_${data.login_id}`);
+      if (!agreed) {
+        window.location.href = `/dip/integrity?next=/dip/lesson/page1_your_first_python_program`;
+      } else {
+        window.location.href = '/dip/lesson/page1_your_first_python_program';
+      }
     } catch {
       setError('Something went wrong. Please try again.');
       setIsLoading(false);

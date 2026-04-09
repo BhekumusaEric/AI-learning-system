@@ -47,7 +47,24 @@ export default function DipLessonClient({
   const [envError, setEnvError] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const [testsPassed, setTestsPassed] = useState(false);
+  const [timeReady, setTimeReady] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
   const { markCompleted, completedPages } = useProgress();
+
+  // Minimum read time based on content length (1 second per 200 chars, min 30s, max 120s)
+  useEffect(() => {
+    if (isPractice) { setTimeReady(true); return; } // code pages don't need timer
+    const minTime = Math.min(120, Math.max(30, Math.floor(content.length / 200)));
+    setTimeLeft(minTime);
+    setTimeReady(false);
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) { clearInterval(interval); setTimeReady(true); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [pageId, isPractice, content]);
   const router = useRouter();
 
   const initPyodide = () => {
@@ -203,20 +220,20 @@ export default function DipLessonClient({
 
           {isLastPage ? (
             <button onClick={() => { markCompleted(pageId); router.push('/dip/exam'); }}
-              disabled={isPractice && !!testCodeProp && !testsPassed}
-              title={isPractice && !!testCodeProp && !testsPassed ? 'Pass all tests to continue' : ''}
+              disabled={isPractice && !!testCodeProp && !testsPassed || !timeReady}
+              title={!timeReady ? `Read for ${timeLeft}s more to unlock` : isPractice && !!testCodeProp && !testsPassed ? 'Pass all tests to continue' : ''}
               className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
               <Award className="w-5 h-5" />
-              {isPractice && !!testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Go to Final Exam'}
+              {!timeReady ? `Read ${timeLeft}s more...` : isPractice && !!testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Go to Final Exam'}
             </button>
           ) : nextPageId ? (
             <button onClick={() => { markCompleted(pageId); navigate(nextPageId); }}
-              disabled={isPractice && !!testCodeProp && !testsPassed}
-              title={isPractice && !!testCodeProp && !testsPassed ? 'Pass all tests to continue' : ''}
+              disabled={isPractice && !!testCodeProp && !testsPassed || !timeReady}
+              title={!timeReady ? `Read for ${timeLeft}s more to unlock` : isPractice && !!testCodeProp && !testsPassed ? 'Pass all tests to continue' : ''}
               className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group disabled:opacity-40 disabled:cursor-not-allowed">
               <div className="flex flex-col items-center sm:items-end px-2">
                 <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">
-                  {isPractice && !!testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Mark Complete & Next'}
+                  {!timeReady ? `Read ${timeLeft}s more...` : isPractice && !!testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Mark Complete & Next'}
                 </span>
                 <span className="text-sm font-medium">{nextPageTitle}</span>
               </div>
@@ -224,10 +241,10 @@ export default function DipLessonClient({
             </button>
           ) : (
             <button onClick={() => markCompleted(pageId)}
-              disabled={isPractice && !!testCodeProp && !testsPassed}
+              disabled={isPractice && !!testCodeProp && !testsPassed || !timeReady}
               className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
               <CheckCircle2 className="w-4 h-4" />
-              {isPractice && !!testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Finish Module'}
+              {!timeReady ? `Read ${timeLeft}s more...` : isPractice && !!testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Finish Module'}
             </button>
           )}
         </div>

@@ -182,20 +182,57 @@ const EXAM_QUESTIONS: Question[] = [
 ];
 
 const PASS_THRESHOLD = 0.7;
-const TOTAL = EXAM_QUESTIONS.length;
+const DRAW = 30; // draw 30 random questions per attempt
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildExam(): Question[] {
+  return shuffleArray(EXAM_QUESTIONS).slice(0, DRAW).map(q => ({
+    ...q,
+    // Shuffle options while keeping correct answer tracking
+    options: (() => {
+      const indexed = q.options.map((opt, i) => ({ opt, isCorrect: i === q.correct }));
+      const shuffled = shuffleArray(indexed);
+      return shuffled.map(o => o.opt);
+    })(),
+    correct: (() => {
+      const indexed = q.options.map((opt, i) => ({ opt, isCorrect: i === q.correct }));
+      const shuffled = shuffleArray(indexed);
+      return shuffled.findIndex(o => o.isCorrect);
+    })(),
+  }));
+}
 
 export default function DipExamPage() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [alreadyPassed, setAlreadyPassed] = useState(false);
+  const [examQuestions, setExamQuestions] = useState<Question[]>(() => buildExam());
+  const [cooldownUntil, setCooldownUntil] = useState<Date | null>(null);
+  const [cooldownRemaining, setCooldownRemaining] = useState('');
   const router = useRouter();
+  const TOTAL = examQuestions.length;
 
   useEffect(() => {
     // Check localStorage first
     if (localStorage.getItem('dip_exam_passed') === 'true') {
       setAlreadyPassed(true);
       return;
+    }
+    // Check cooldown
+    const cooldownStr = localStorage.getItem('dip_exam_cooldown');
+    if (cooldownStr) {
+      const until = new Date(cooldownStr);
+      if (until > new Date()) setCooldownUntil(until);
+      else localStorage.removeItem('dip_exam_cooldown');
     }
     // Verify from DB
     const loginId = localStorage.getItem('ioai_user');
@@ -211,13 +248,29 @@ export default function DipExamPage() {
       .catch(() => {});
   }, []);
 
+  // Cooldown countdown ticker
+  useEffect(() => {
+    if (!cooldownUntil) return;
+    const tick = () => {
+      const diff = cooldownUntil.getTime() - Date.now();
+      if (diff <= 0) { setCooldownUntil(null); setCooldownRemaining(''); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setCooldownRemaining(`${h}h ${m}m ${s}s`);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownUntil]);
+
   const handleSelect = (questionId: number, optionIndex: number) => {
     if (submitted) return;
     setAnswers(prev => ({ ...prev, [questionId]: optionIndex }));
   };
 
   const handleSubmit = () => {
-    const correct = EXAM_QUESTIONS.filter(q => answers[q.id] === q.correct).length;
+    const correct = examQuestions.filter(q => answers[q.id] === q.correct).length;
     setScore(correct);
     setSubmitted(true);
     const passed = correct / TOTAL >= PASS_THRESHOLD;
@@ -226,8 +279,13 @@ export default function DipExamPage() {
       localStorage.setItem('dip_exam_passed', 'true');
       localStorage.setItem('dip_exam_score', String(correct));
       localStorage.setItem('dip_exam_total', String(TOTAL));
+      localStorage.removeItem('dip_exam_cooldown');
     } else {
       localStorage.removeItem('dip_exam_passed');
+      // Set 24-hour cooldown
+      const until = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      localStorage.setItem('dip_exam_cooldown', until.toISOString());
+      setCooldownUntil(until);
     }
     // Persist to DB
     const username = localStorage.getItem('ioai_user');
@@ -245,6 +303,7 @@ export default function DipExamPage() {
     setSubmitted(false);
     setAnswers({});
     setScore(0);
+    setExamQuestions(buildExam());
     localStorage.removeItem('dip_exam_passed');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -280,8 +339,19 @@ export default function DipExamPage() {
           </div>
         )}
 
-        {/* Hide exam content if already passed and not retaking */}
-        {!alreadyPassed && <>
+        {/* ── Cooldown banner ── */}
+        {cooldownUntil && !alreadyPassed && (
+          <div className="mb-8 p-6 rounded-2xl border bg-error/10 border-error/30 text-center">
+            <XCircle className="w-12 h-12 text-error mx-auto mb-3" />
+            <h1 className="text-2xl font-bold mb-1">Exam Locked</h1>
+            <p className="text-secondary-text text-sm mb-2">You did not pass the last attempt. Please take time to review the material before trying again.</p>
+            <p className="text-error font-bold text-lg">{cooldownRemaining}</p>
+            <p className="text-secondary-text text-xs mt-1">remaining before you can retake the exam</p>
+          </div>
+        )}
+
+        {/* Hide exam if on cooldown */}
+        {!cooldownUntil && !alreadyPassed && <>
         {submitted && (
           <div className={`mb-8 p-6 rounded-2xl border text-center ${passed ? 'bg-accent/10 border-accent/30' : 'bg-error/10 border-error/30'}`}>
             {passed
@@ -329,7 +399,7 @@ export default function DipExamPage() {
         )}
 
         {/* ── Questions ── */}
-        {EXAM_QUESTIONS.map((q) => {
+        {examQuestions.map((q) => {
           const userAnswer = answers[q.id];
           const isCorrect = userAnswer === q.correct;
           return (
