@@ -188,7 +188,28 @@ export default function DipExamPage() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
+  const [alreadyPassed, setAlreadyPassed] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    // Check localStorage first
+    if (localStorage.getItem('dip_exam_passed') === 'true') {
+      setAlreadyPassed(true);
+      return;
+    }
+    // Verify from DB
+    const loginId = localStorage.getItem('ioai_user');
+    if (!loginId) return;
+    fetch(`/api/progress?username=${loginId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.examPassed === true) {
+          setAlreadyPassed(true);
+          localStorage.setItem('dip_exam_passed', 'true');
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSelect = (questionId: number, optionIndex: number) => {
     if (submitted) return;
@@ -236,7 +257,31 @@ export default function DipExamPage() {
     <div className="h-full overflow-y-auto">
       <div className="max-w-2xl mx-auto w-full p-8">
 
-        {/* ── Result banner ── */}
+        {/* ── Already passed banner ── */}
+        {alreadyPassed && (
+          <div className="mb-8 p-6 rounded-2xl border bg-accent/10 border-accent/30 text-center">
+            <Award className="w-12 h-12 text-accent mx-auto mb-3" />
+            <h1 className="text-2xl font-bold mb-1">You already passed! 🎉</h1>
+            <p className="text-secondary-text text-sm mb-5">You have successfully completed the Final Exam. Your certificate is ready.</p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <button
+                onClick={() => router.push('/dip/certificate')}
+                className="flex items-center gap-2 px-6 py-3 bg-accent text-black font-bold rounded-xl hover:bg-accent/90 transition-all"
+              >
+                <Award className="w-5 h-5" /> Go to My Certificate
+              </button>
+              <button
+                onClick={() => setAlreadyPassed(false)}
+                className="px-6 py-3 bg-secondary border border-border-subtle text-foreground font-bold rounded-xl hover:border-accent transition-all"
+              >
+                Retake Exam Anyway
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Hide exam content if already passed and not retaking */}
+        {!alreadyPassed && <>
         {submitted && (
           <div className={`mb-8 p-6 rounded-2xl border text-center ${passed ? 'bg-accent/10 border-accent/30' : 'bg-error/10 border-error/30'}`}>
             {passed
@@ -378,6 +423,7 @@ export default function DipExamPage() {
             </button>
           </div>
         )}
+        </>}
       </div>
     </div>
   );
