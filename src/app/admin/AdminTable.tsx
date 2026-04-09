@@ -590,27 +590,41 @@ function CongratulatePanel({ platform, onClose, preselectedIds }: { platform: 'd
 }
 
 function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp'; onClose: () => void }) {
-  const [type, setType] = useState<'reminder' | 'mark_done' | 'kaggle'>('reminder');
+  const [types, setTypes] = useState<{ type: string; label: string; desc: string }[]>([]);
+  const [type, setType] = useState('');
   const [customMessage, setCustomMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [result, setResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cohortId, setCohortId] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [cohorts, setCohorts] = useState<{ id: string; name: string }[]>([]);
 
-  const BUTTONS: { type: 'reminder' | 'mark_done' | 'kaggle'; label: string; desc: string }[] = [
-    { type: 'reminder', label: 'Course Reminder', desc: 'Nudge students to continue their course content' },
-    { type: 'mark_done', label: 'Mark Done Reminder', desc: 'Remind students to click Mark as Done to save progress' },
-    { type: 'kaggle', label: 'Kaggle Challenges', desc: 'Announce new Kaggle challenges have been added' },
-  ];
+  useEffect(() => {
+    fetch(`/api/admin/notify?platform=${platform}`)
+      .then(r => r.json())
+      .then(data => { setTypes(data || []); if (data?.length) setType(data[0].type); })
+      .catch(() => {});
+    fetch(`/api/admin/cohorts?platform=${platform}`)
+      .then(r => r.json())
+      .then(data => setCohorts((data || []).filter((c: any) => !c.archived)))
+      .catch(() => {});
+  }, [platform]);
 
   const send = async () => {
     setIsSending(true);
     setError(null);
     setResult(null);
     try {
+      const body: any = { type, platform, message: customMessage.trim() || undefined };
+      if (cohortId) body.cohort_id = cohortId;
+      if (dateFrom) body.date_from = dateFrom;
+      if (dateTo) body.date_to = dateTo;
       const res = await fetch('/api/admin/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, platform, message: customMessage.trim() || undefined }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok) setResult(data);
@@ -628,17 +642,15 @@ function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp';
         <div className="flex items-center gap-2">
           <Bell className="w-4 h-4 text-accent" />
           <span className="text-sm font-bold text-foreground">Notify Students</span>
-          <span className="text-xs text-secondary-text">(sends to all {platform.toUpperCase()} students with email addresses)</span>
+          <span className="text-xs text-secondary-text capitalize">({platform.toUpperCase()})</span>
         </div>
         <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
       </div>
 
-      {/* Type selector */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-        {BUTTONS.map(b => (
-          <button
-            key={b.type}
-            onClick={() => setType(b.type)}
+      {/* Notification type selector */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+        {types.map(b => (
+          <button key={b.type} onClick={() => setType(b.type)}
             className={`text-left p-3 rounded-lg border text-sm transition-all ${
               type === b.type
                 ? 'border-accent bg-accent/10 text-foreground'
@@ -651,14 +663,33 @@ function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp';
         ))}
       </div>
 
+      {/* Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 p-3 bg-[#0d0d0d] border border-border-subtle rounded-xl">
+        <div>
+          <label className="block text-xs text-secondary-text mb-1">Filter by Cohort</label>
+          <select value={cohortId} onChange={e => setCohortId(e.target.value)}
+            className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent">
+            <option value="">All cohorts</option>
+            {cohorts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-secondary-text mb-1">Registered From</label>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent" />
+        </div>
+        <div>
+          <label className="block text-xs text-secondary-text mb-1">Registered To</label>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+            className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent" />
+        </div>
+      </div>
+
       {/* Optional custom message */}
       <div className="mb-4">
         <label className="block text-xs text-secondary-text mb-1">Custom message (optional — overrides the default email body)</label>
-        <textarea
-          rows={3}
-          placeholder="Leave blank to use the default message for the selected type..."
-          value={customMessage}
-          onChange={e => setCustomMessage(e.target.value)}
+        <textarea rows={3} placeholder="Leave blank to use the default message for the selected type..."
+          value={customMessage} onChange={e => setCustomMessage(e.target.value)}
           className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent resize-none font-mono"
         />
       </div>
@@ -669,13 +700,11 @@ function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp';
         <div className="flex items-center gap-4 mb-3 text-sm">
           <span className="text-accent font-bold">{result.sent} sent</span>
           {result.failed > 0 && <span className="text-error font-bold">{result.failed} failed</span>}
-          <span className="text-secondary-text">out of {result.total} students with emails</span>
+          <span className="text-secondary-text">out of {result.total} students</span>
         </div>
       )}
 
-      <button
-        onClick={send}
-        disabled={isSending}
+      <button onClick={send} disabled={isSending || !type}
         className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
