@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { BookOpen, LogIn, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import EmailGate from '@/components/EmailGate';
 import { useSearchParams } from 'next/navigation';
 
-export default function DipLoginPage() {
+function DipLoginContent() {
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -51,7 +51,6 @@ export default function DipLoginPage() {
 
       localStorage.setItem('ioai_user', data.login_id);
       localStorage.setItem('ioai_name', data.full_name);
-      // Issue session token
       const sessionRes = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,7 +61,6 @@ export default function DipLoginPage() {
         localStorage.setItem('ioai_session', sessionData.token);
         localStorage.setItem('ioai_session_expires', sessionData.expires_at);
       }
-      // Check if integrity agreement has been signed
       const agreed = localStorage.getItem(`integrity_agreed_${data.login_id}`);
       if (!agreed) {
         window.location.href = `/dip/integrity?next=/dip/lesson/page1_your_first_python_program`;
@@ -155,5 +153,13 @@ export default function DipLoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function DipLoginPage() {
+  return (
+    <Suspense>
+      <DipLoginContent />
+    </Suspense>
   );
 }

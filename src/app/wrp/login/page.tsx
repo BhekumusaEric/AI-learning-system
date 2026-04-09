@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Briefcase, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import EmailGate from '@/components/EmailGate';
 import { useSearchParams } from 'next/navigation';
 
-export default function WrpLoginPage() {
+function WrpLoginContent() {
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -42,7 +42,6 @@ export default function WrpLoginPage() {
 
       localStorage.setItem('ioai_user', data.login_id);
       localStorage.setItem('ioai_name', data.full_name);
-      // Issue session token
       const sessionRes = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -127,5 +126,13 @@ export default function WrpLoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function WrpLoginPage() {
+  return (
+    <Suspense>
+      <WrpLoginContent />
+    </Suspense>
   );
 }
