@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ completedPages: data?.completed_pages || {} });
+  return NextResponse.json({ completedPages: data?.completed_pages || {}, examPassed: data?.exam_passed ?? null, examScore: data?.exam_score ?? null });
 }
 
 // POST: Update user progress
