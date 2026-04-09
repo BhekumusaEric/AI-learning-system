@@ -46,6 +46,7 @@ export default function DipLessonClient({
   const [loadingStatus, setLoadingStatus] = useState('Initializing...');
   const [envError, setEnvError] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[] | null>(null);
+  const [testsPassed, setTestsPassed] = useState(false);
   const { markCompleted, completedPages } = useProgress();
   const router = useRouter();
 
@@ -80,7 +81,7 @@ export default function DipLessonClient({
     initPyodide();
   };
 
-  useEffect(() => { setResults(null); }, [pageId]);
+  useEffect(() => { setResults(null); setTestsPassed(false); }, [pageId]);
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -145,6 +146,7 @@ export default function DipLessonClient({
       { id: 1, name: 'Output Console', passed: true, error: stdout || 'Program exited normally' },
       ...(testCodeProp ? [{ id: 2, name: 'All Tests Passed', passed: true, error: 'All hidden tests passed!' }] : []),
     ]);
+    if (testCodeProp) setTestsPassed(true);
   };
 
   const navigate = (id: string) => router.push(`/dip/lesson/${id}`);
@@ -201,24 +203,31 @@ export default function DipLessonClient({
 
           {isLastPage ? (
             <button onClick={() => { markCompleted(pageId); router.push('/dip/exam'); }}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all">
+              disabled={isPractice && testCodeProp && !testsPassed}
+              title={isPractice && testCodeProp && !testsPassed ? 'Pass all tests to continue' : ''}
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
               <Award className="w-5 h-5" />
-              Go to Final Exam
+              {isPractice && testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Go to Final Exam'}
             </button>
           ) : nextPageId ? (
             <button onClick={() => { markCompleted(pageId); navigate(nextPageId); }}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group">
+              disabled={isPractice && testCodeProp && !testsPassed}
+              title={isPractice && testCodeProp && !testsPassed ? 'Pass all tests to continue' : ''}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group disabled:opacity-40 disabled:cursor-not-allowed">
               <div className="flex flex-col items-center sm:items-end px-2">
-                <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Mark Complete & Next</span>
+                <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">
+                  {isPractice && testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Mark Complete & Next'}
+                </span>
                 <span className="text-sm font-medium">{nextPageTitle}</span>
               </div>
               <ChevronRight className="w-4 h-4 shrink-0 group-hover:translate-x-1 transition-transform" />
             </button>
           ) : (
             <button onClick={() => markCompleted(pageId)}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all">
+              disabled={isPractice && testCodeProp && !testsPassed}
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
               <CheckCircle2 className="w-4 h-4" />
-              Finish Module
+              {isPractice && testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Finish Module'}
             </button>
           )}
         </div>
@@ -260,11 +269,13 @@ export default function DipLessonClient({
           <FeedbackPanel
             results={results}
             isRunning={isRunning}
-            onNext={isLastPage
-              ? () => { markCompleted(pageId); router.push('/dip/exam'); }
-              : nextPageId
-                ? () => { markCompleted(pageId); navigate(nextPageId); }
-                : undefined
+            onNext={testsPassed
+              ? (isLastPage
+                ? () => { markCompleted(pageId); router.push('/dip/exam'); }
+                : nextPageId
+                  ? () => { markCompleted(pageId); navigate(nextPageId); }
+                  : undefined)
+              : undefined
             }
             nextLabel={isLastPage ? 'Go to Final Exam' : 'Next Lesson'}
           />
