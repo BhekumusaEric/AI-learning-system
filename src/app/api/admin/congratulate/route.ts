@@ -26,6 +26,7 @@ const PLATFORM_META = {
 function buildCongratulationsEmail(full_name: string, platform: 'dip' | 'wrp') {
   const meta = PLATFORM_META[platform];
   const firstName = full_name.split(' ')[0];
+  const firstName_cap = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
 
   const competencyBadges = meta.competencies
     .map(c => `<span style="display:inline-block;font-size:11px;letter-spacing:1px;text-transform:uppercase;border:1px solid #0047AB;color:#0047AB;background:#e0e7ff;padding:4px 10px;border-radius:12px;margin:3px;font-weight:bold;">${c}</span>`)
