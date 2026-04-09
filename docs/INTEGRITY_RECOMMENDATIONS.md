@@ -53,7 +53,8 @@ Once downloaded, name changes should have a formal admin approval trail.
 
 ## 3. Engagement & Accountability
 
-### 3.1 ⬜ Weekly Progress Emails
+### 3.1 ⏭ Weekly Progress Emails
+*Skipped by request.*
 Automated Sunday email showing each student their % completion and what's left.
 - Cron job every Sunday
 - Personalised email with progress bar, modules left, encouragement
@@ -65,7 +66,7 @@ Anonymous ranking within a cohort drives healthy competition.
 - Anonymous (show initials or first name only)
 - Based on completion % and last active date
 
-### 3.3 ⬜ Supervisor Inactivity Alerts
+### 3.3 ✅ Supervisor Inactivity Alerts
 Supervisors should see when students haven't logged in for 7+ days.
 - Flag inactive students (7+ days) in supervisor dashboard
 - Optional email alert to supervisor when student goes inactive

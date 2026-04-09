@@ -164,6 +164,12 @@ function CohortCard({
     : 0;
 
   const passedExam = students.filter(s => s.examPassed).length;
+  const INACTIVE_DAYS = 7;
+  const inactive = students.filter(s => {
+    if (!s.lastActive) return true;
+    const diff = (Date.now() - new Date(s.lastActive).getTime()) / (1000 * 60 * 60 * 24);
+    return diff >= INACTIVE_DAYS;
+  });
 
   const downloadReport = () => {
     const rows = students.map((s, i) => {
@@ -271,7 +277,7 @@ function CohortCard({
         <div className="border-t border-border-subtle">
           {/* Mini stats */}
           {students.length > 0 && (
-            <div className="grid grid-cols-3 divide-x divide-border-subtle border-b border-border-subtle">
+            <div className="grid grid-cols-4 divide-x divide-border-subtle border-b border-border-subtle">
               <div className="px-4 py-3 text-center">
                 <p className="text-lg font-bold text-accent">{students.length}</p>
                 <p className="text-xs text-secondary-text">Students</p>
@@ -283,6 +289,10 @@ function CohortCard({
               <div className="px-4 py-3 text-center">
                 <p className="text-lg font-bold text-emerald-400">{passedExam}</p>
                 <p className="text-xs text-secondary-text">Passed Exam</p>
+              </div>
+              <div className="px-4 py-3 text-center">
+                <p className={`text-lg font-bold ${inactive.length > 0 ? 'text-warning' : 'text-secondary-text'}`}>{inactive.length}</p>
+                <p className="text-xs text-secondary-text">Inactive 7d+</p>
               </div>
             </div>
           )}
@@ -312,8 +322,10 @@ function CohortCard({
                 <tbody className="divide-y divide-border-subtle">
                   {students.map(s => {
                     const pct = totalPages > 0 ? Math.min(100, Math.round((s.completedCount / totalPages) * 100)) : 0;
+                    const daysSince = s.lastActive ? Math.floor((Date.now() - new Date(s.lastActive).getTime()) / (1000 * 60 * 60 * 24)) : null;
+                    const isInactive = daysSince === null || daysSince >= INACTIVE_DAYS;
                     return (
-                      <tr key={s.login_id} className="hover:bg-background/30 transition-colors">
+                      <tr key={s.login_id} className={`hover:bg-background/30 transition-colors ${isInactive ? 'bg-warning/5' : ''}`}>
                         <td className="py-3 px-4">
                           <p className="font-semibold text-foreground">{s.full_name}</p>
                           {s.email && <p className="text-xs text-secondary-text">{s.email}</p>}
@@ -336,8 +348,16 @@ function CohortCard({
                         )}
                         <td className="py-3 px-4 text-xs text-secondary-text">
                           {s.lastActive ? (
-                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(s.lastActive).toLocaleDateString('en-ZA')}</span>
-                          ) : '—'}
+                            <span className={`flex items-center gap-1 ${isInactive ? 'text-warning font-semibold' : ''}`}>
+                              <Clock className="w-3 h-3" />
+                              {new Date(s.lastActive).toLocaleDateString('en-ZA')}
+                              {isInactive && <span className="ml-1 text-[10px] bg-warning/20 text-warning px-1.5 py-0.5 rounded-full font-bold">{daysSince}d ago</span>}
+                            </span>
+                          ) : (
+                            <span className="text-warning font-semibold flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> Never logged in
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <button onClick={() => resetPassword(s)} disabled={resettingId === s.login_id}
