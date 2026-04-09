@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink, GitPullRequest, MapPin, UserCheck, UserX, Rocket, ChevronDown } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink, GitPullRequest, MapPin, UserCheck, UserX, Rocket, ChevronDown, Settings } from 'lucide-react';
 import UserTour, { TourStep } from '@/components/UserTour';
 import * as XLSX from 'xlsx';
 import { ApplicationGroup, RawApplication } from '@/lib/applications';
@@ -1073,6 +1073,182 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function AdminSettings() {
+  const [admins, setAdmins] = useState<{ id: string; username: string; full_name: string; created_at: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({ username: '', password: '', full_name: '' });
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editData, setEditData] = useState({ username: '', full_name: '', password: '' });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const fetchAdmins = () => {
+    fetch('/api/admin/admins')
+      .then(r => r.json())
+      .then(data => { setAdmins(data || []); setIsLoading(false); })
+      .catch(() => setIsLoading(false));
+  };
+
+  useEffect(() => { fetchAdmins(); }, []);
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(''); setSuccess('');
+    const res = await fetch('/api/admin/admins', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newAdmin),
+    });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error); return; }
+    setSuccess(`Admin "${newAdmin.username}" created successfully`);
+    setNewAdmin({ username: '', password: '', full_name: '' });
+    setAdding(false);
+    fetchAdmins();
+  };
+
+  const handleUpdate = async (id: string) => {
+    setError(''); setSuccess('');
+    const res = await fetch('/api/admin/admins', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...editData }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error); return; }
+    setSuccess('Admin updated successfully');
+    setEditing(null);
+    fetchAdmins();
+  };
+
+  const handleDelete = async (id: string, username: string) => {
+    if (!confirm(`Remove admin "${username}"?`)) return;
+    setError(''); setSuccess('');
+    const res = await fetch(`/api/admin/admins?id=${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error); return; }
+    setSuccess(`Admin "${username}" removed`);
+    fetchAdmins();
+  };
+
+  return (
+    <div className="p-6 max-w-2xl">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="bg-accent/10 p-2.5 rounded-xl"><Settings className="w-5 h-5 text-accent" /></div>
+        <div>
+          <h2 className="text-lg font-bold">Admin Settings</h2>
+          <p className="text-xs text-secondary-text">Manage admin accounts</p>
+        </div>
+      </div>
+
+      {error && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-4 py-2 mb-4">{error}</p>}
+      {success && <p className="text-accent text-xs bg-accent/10 border border-accent/20 rounded-lg px-4 py-2 mb-4">{success}</p>}
+
+      {/* Admin list */}
+      <div className="flex flex-col gap-3 mb-6">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-secondary-text text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>
+        ) : admins.map(a => (
+          <div key={a.id} className="bg-background border border-border-subtle rounded-xl p-4">
+            {editing === a.id ? (
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-secondary-text mb-1">Full Name</label>
+                    <input value={editData.full_name} onChange={e => setEditData(v => ({ ...v, full_name: e.target.value }))}
+                      className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-secondary-text mb-1">Username</label>
+                    <input value={editData.username} onChange={e => setEditData(v => ({ ...v, username: e.target.value }))}
+                      className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-secondary-text mb-1">New Password (leave blank to keep current)</label>
+                  <input type="password" value={editData.password} onChange={e => setEditData(v => ({ ...v, password: e.target.value }))}
+                    placeholder="••••••••"
+                    className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleUpdate(a.id)} className="flex items-center gap-1.5 bg-accent text-black font-bold px-4 py-2 rounded-lg text-xs hover:bg-accent/90 transition-all">
+                    <Check className="w-3.5 h-3.5" /> Save
+                  </button>
+                  <button onClick={() => setEditing(null)} className="flex items-center gap-1.5 bg-background border border-border-subtle text-secondary-text px-4 py-2 rounded-lg text-xs hover:text-foreground transition-all">
+                    <X className="w-3.5 h-3.5" /> Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-foreground">{a.full_name}</div>
+                  <div className="text-xs text-secondary-text font-mono mt-0.5">{a.username} · Added {new Date(a.created_at).toLocaleDateString('en-ZA')}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setEditing(a.id); setEditData({ username: a.username, full_name: a.full_name, password: '' }); }}
+                    className="flex items-center gap-1.5 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(a.id, a.username)}
+                    className="flex items-center gap-1.5 bg-background border border-error/30 text-error hover:bg-error hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Add new admin */}
+      {adding ? (
+        <form onSubmit={handleAdd} className="bg-background border border-accent/20 rounded-xl p-4 flex flex-col gap-3">
+          <p className="text-sm font-bold text-foreground">New Admin</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-secondary-text mb-1">Full Name *</label>
+              <input value={newAdmin.full_name} onChange={e => setNewAdmin(v => ({ ...v, full_name: e.target.value }))}
+                placeholder="Jane Smith" required
+                className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+            </div>
+            <div>
+              <label className="block text-xs text-secondary-text mb-1">Username *</label>
+              <input value={newAdmin.username} onChange={e => setNewAdmin(v => ({ ...v, username: e.target.value }))}
+                placeholder="janesmith" required
+                className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Password *</label>
+            <input type="password" value={newAdmin.password} onChange={e => setNewAdmin(v => ({ ...v, password: e.target.value }))}
+              placeholder="••••••••" required
+              className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" className="flex items-center gap-1.5 bg-accent text-black font-bold px-4 py-2 rounded-lg text-xs hover:bg-accent/90 transition-all">
+              <UserPlus className="w-3.5 h-3.5" /> Add Admin
+            </button>
+            <button type="button" onClick={() => setAdding(false)} className="flex items-center gap-1.5 bg-background border border-border-subtle text-secondary-text px-4 py-2 rounded-lg text-xs hover:text-foreground transition-all">
+              <X className="w-3.5 h-3.5" /> Cancel
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button onClick={() => setAdding(true)}
+          className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2.5 rounded-xl text-sm font-bold transition-all">
+          <UserPlus className="w-4 h-4" /> Add New Admin
+        </button>
+      )}
+    </div>
+  );
+}
+
 function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wrp'; mandatoryPages: number }) {
   const [students, setStudents] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1916,7 +2092,7 @@ export default function AdminTable({
       {newCred && <CredentialModal cred={newCred} isReset={!!newCred.isReset} onClose={() => setNewCred(null)} />}
 
       <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
-        {/* Platform Tabs */}
+        {/* Platform Tabs + Settings */}
         <div id="admin-tabs" className="flex border-b border-border-subtle overflow-x-auto">
           {allowedTabs.map(p => (
             <button
@@ -1929,7 +2105,19 @@ export default function AdminTable({
               {p === 'saaio' ? 'WeThinkCode_ IDC Curriculum' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'completed-dip' ? '✓ Completed DIP' : p === 'completed-wrp' ? '✓ Completed WRP' : p === 'onboarding' ? 'Onboarding' : p === 'supervisors' ? 'Supervisors' : 'Invite Links'}
             </button>
           ))}
+          <button
+            onClick={() => setPlatform('settings' as any)}
+            className={`py-3 px-4 text-sm font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+              platform === ('settings' as any) ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'
+            }`}
+            title="Admin Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
         </div>
+
+        {/* Settings Panel */}
+        {platform === ('settings' as any) && <AdminSettings />}
 
         {/* Onboarding Pipeline */}
         {platform === 'onboarding' && <OnboardingPipeline />}
