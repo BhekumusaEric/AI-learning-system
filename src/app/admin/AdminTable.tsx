@@ -2107,6 +2107,9 @@ export default function AdminTable({
             </div>
           ) : (
             <table className="w-full text-left border-collapse min-w-[800px]">
+              <thead>
+                <tr className="bg-background/30 border-b border-border-subtle">
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Login ID</th>
                   <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
                   <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Progress</th>
                   {platform === 'dip' && <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
