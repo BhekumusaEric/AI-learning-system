@@ -1990,17 +1990,14 @@ export default function AdminTable({
               <p className="text-secondary-text text-xs">The database tables may not exist yet. Run the SQL in <code className="text-accent">scripts/setup-student-auth.sql</code> in your Supabase SQL editor.</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-background/30 border-b border-border-subtle">
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Login ID</th>
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Progress</th>
-                  {platform === 'dip' && <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Cohort</th>
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Registered</th>
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Last Active</th>
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text text-right">Actions</th>
+            <table className="w-full text-left border-collapse min-w-[800px]">
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Progress</th>
+                  {platform === 'dip' && <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Cohort</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Registered</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Last Active</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
@@ -2010,21 +2007,21 @@ export default function AdminTable({
                   const perc = totalPages > 0 ? Math.min(100, Math.round((user.completedCount / totalPages) * 100)) : 0;
                   return (
                     <tr key={user.login_id} className="hover:bg-background/30 transition-colors">
-                      <td className="py-3 px-5 font-mono text-accent font-semibold text-sm">{user.login_id}</td>
-                      <td className="py-3 px-5">
-                        <div className="font-semibold text-foreground text-sm">{user.full_name}</div>
-                        {user.email && <div className="text-xs text-secondary-text">{user.email}</div>}
+                      <td className="py-3 px-3 font-mono text-accent font-semibold text-xs whitespace-nowrap">{user.login_id}</td>
+                      <td className="py-3 px-3 max-w-[160px]">
+                        <div className="font-semibold text-foreground text-sm truncate">{user.full_name}</div>
+                        {user.email && <div className="text-xs text-secondary-text truncate">{user.email}</div>}
                       </td>
-                      <td className="py-3 px-5">
-                        <div className="flex items-center gap-2 w-36">
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-2 w-24">
                           <div className="flex-1 h-1.5 bg-background rounded-full overflow-hidden">
                             <div className="h-full bg-accent" style={{ width: `${perc}%` }} />
                           </div>
-                          <span className="text-xs font-bold text-accent">{perc}%</span>
+                          <span className="text-xs font-bold text-accent whitespace-nowrap">{perc}%</span>
                         </div>
                       </td>
                       {platform === 'dip' && (
-                        <td className="py-3 px-5 text-sm">
+                        <td className="py-3 px-3 text-sm">
                           {examEditing === user.login_id ? (
                             <div className="flex items-center gap-1">
                               <input
@@ -2061,11 +2058,11 @@ export default function AdminTable({
                           )}
                         </td>
                       )}
-                      <td className="py-3 px-5 text-xs">
+                      <td className="py-3 px-3 text-xs">
                         <select
                           value={user.cohortId ?? ''}
                           onChange={e => handleAssignCohort(user.login_id, e.target.value || null)}
-                          className="bg-background border border-border-subtle rounded px-2 py-1 text-xs text-secondary-text focus:outline-none focus:border-accent"
+                          className="bg-background border border-border-subtle rounded px-2 py-1 text-xs text-secondary-text focus:outline-none focus:border-accent max-w-[120px]"
                         >
                           <option value="">Unassigned</option>
                           {cohorts.filter(c => !c.archived).map(c => (
@@ -2073,10 +2070,10 @@ export default function AdminTable({
                           ))}
                         </select>
                       </td>
-                      <td className="py-3 px-5 text-xs text-secondary-text">
+                      <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">
                         {new Date(user.created_at).toLocaleDateString('en-ZA')}
                       </td>
-                      <td className="py-3 px-5 text-xs text-secondary-text">
+                      <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">
                         {user.lastActive ? (
                           <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(user.lastActive).toLocaleDateString('en-ZA')}</div>
                         ) : '—'}
