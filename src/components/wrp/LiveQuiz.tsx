@@ -74,6 +74,34 @@ function ConnectedBadge({ connected }: { connected: boolean }) {
   );
 }
 
+// ── RoomGate ──────────────────────────────────────────────────────────────────
+function RoomGate({ roomCode, setRoomCode, onJoin, title }: { roomCode: string, setRoomCode: (c: string) => void, onJoin: () => void, title: string }) {
+  return (
+    <div className="p-8 flex flex-col items-center justify-center gap-4 text-center">
+      <div className="bg-accent/20 p-4 rounded-full mb-2">
+        <Trophy className="w-8 h-8 text-accent" />
+      </div>
+      <h3 className="text-xl font-bold">{title}</h3>
+      <p className="text-sm text-secondary-text max-w-sm mb-4">Enter the session code provided by your facilitator to join the live quiz with your group.</p>
+      <input
+        type="text"
+        value={roomCode}
+        onChange={e => setRoomCode(e.target.value.toUpperCase())}
+        placeholder="e.g. CLASS-A"
+        className="w-full max-w-xs bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-center font-bold tracking-widest uppercase mb-2"
+        onKeyDown={e => e.key === 'Enter' && roomCode.trim() && onJoin()}
+      />
+      <button
+        onClick={onJoin}
+        disabled={!roomCode.trim()}
+        className="px-8 py-3 bg-accent text-black font-bold rounded-lg hover:bg-accent/90 transition-all disabled:opacity-50"
+      >
+        Join Room
+      </button>
+    </div>
+  );
+}
+
 // ── Leaderboard (persistent) ──────────────────────────────────────────────────
 export function QuizLeaderboard() {
   const [scores, setScores] = useState<any[]>([]);
@@ -114,6 +142,9 @@ export function QuizLeaderboard() {
 
 // ── Main LiveQuiz component ───────────────────────────────────────────────────
 export default function LiveQuiz() {
+  const [roomCode, setRoomCode] = useState('');
+  const [joinedRoom, setJoinedRoom] = useState<string | null>(null);
+
   const myLoginId = useRef<string>('');
   const myName = useRef<string>('');
   const isHost = useRef(false);
@@ -153,7 +184,8 @@ export default function LiveQuiz() {
   }, []);
 
   useEffect(() => {
-    const ch = supabase.channel('live-quiz', { config: { broadcast: { self: true }, presence: { key: myLoginId.current || 'guest' } } });
+    if (!joinedRoom) return;
+    const ch = supabase.channel(`live-quiz-${joinedRoom}`, { config: { broadcast: { self: true }, presence: { key: myLoginId.current || 'guest' } } });
     channelRef.current = ch;
 
     ch.on('broadcast', { event: 'quiz' }, ({ payload }: any) => {
@@ -188,7 +220,7 @@ export default function LiveQuiz() {
       clearTimeout(inactivityRef.current!);
       supabase.removeChannel(ch);
     };
-  }, [resetInactivityTimer]);
+  }, [resetInactivityTimer, joinedRoom]);
 
   // Host timer
   const advanceQuestion = useCallback((prev: GameState) => {
@@ -298,6 +330,8 @@ export default function LiveQuiz() {
   const q = gameState.questions[gameState.questionIdx];
   const sortedScores = Object.values(gameState.scores).sort((a, b) => b.score - a.score);
   const answeredCount = Object.values(gameState.selectedAnswer).length;
+
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Live Quiz" />;
 
   // ── LOBBY ──
   if (gameState.phase === 'lobby') return (
