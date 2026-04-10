@@ -380,13 +380,7 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
 
   React.useEffect(() => {
     const loginId = localStorage.getItem('ioai_user');
-    const fullName = localStorage.getItem('ioai_name') || '';
     if (!loginId) { router.replace('/wrp/login'); return; }
-    fetch('/api/auth/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login_id: loginId, platform: 'wrp' }),
-    }).catch(() => { });
   }, []);
 
   const handleNext = () => {
