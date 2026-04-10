@@ -22,18 +22,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'login_id, page_id and code required' }, { status: 400 });
   }
 
-  const code_hash = createHash('sha256').update(normaliseCode(code)).digest('hex');
+  const normCode = normaliseCode(code);
+  const code_hash = createHash('sha256').update(normCode).digest('hex');
 
-  // Check if any OTHER student submitted identical code for this page
-  const { data: matches } = await supabase
-    .from('dip_submissions')
-    .select('login_id')
-    .eq('page_id', page_id)
-    .eq('code_hash', code_hash)
-    .neq('login_id', login_id);
+  // Skip duplicate detection for simple challenges that are meant to be identical
+  // (e.g. less than 150 non-whitespace chars) or specifically the hello world
+  const isTrivial = page_id.includes('hello_world') || normCode.length < 150;
 
-  const duplicate = !!(matches && matches.length > 0);
-  const matchedStudents = matches?.map(m => m.login_id) || [];
+  let duplicate = false;
+  let matchedStudents: string[] = [];
+
+  if (!isTrivial) {
+    // Check if any OTHER student submitted identical code for this page
+    const { data: matches } = await supabase
+      .from('dip_submissions')
+      .select('login_id')
+      .eq('page_id', page_id)
+      .eq('code_hash', code_hash)
+      .neq('login_id', login_id);
+
+    duplicate = !!(matches && matches.length > 0);
+    matchedStudents = matches?.map(m => m.login_id) || [];
+  }
 
   // Upsert this student's submission
   await supabase.from('dip_submissions').upsert(
