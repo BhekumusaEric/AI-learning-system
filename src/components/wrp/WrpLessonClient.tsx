@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChevronLeft, ChevronRight, Award, CheckCircle2, Send, RotateCcw, Video, FileText, Lightbulb, BookOpen } from 'lucide-react';
@@ -8,10 +9,20 @@ import { useProgress } from '@/components/providers/ProgressProvider';
 import { useRouter } from 'next/navigation';
 import { WrpPage } from '@/lib/wrpSyllabus';
 import CvBuilder from '@/components/wrp/CvBuilder';
-import { SpotTheMistakeGame, SpinTheWheelGame, BuzzwordBingoGame, SpeedNetworkingGame, WorkplaceAdventureGame, RoastMyPitchGame } from '@/components/wrp/WrpGames';
-import LiveQuiz, { QuizLeaderboard } from '@/components/wrp/LiveQuiz';
 import EmailGate from '@/components/EmailGate';
-import LiveChatPanel from './LiveChatPanel';
+
+// Dynamically import all game/realtime components with ssr:false to prevent hydration mismatch
+const { SpotTheMistakeGame, SpinTheWheelGame, BuzzwordBingoGame, SpeedNetworkingGame, WorkplaceAdventureGame, RoastMyPitchGame } = {
+  SpotTheMistakeGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.SpotTheMistakeGame })), { ssr: false }),
+  SpinTheWheelGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.SpinTheWheelGame })), { ssr: false }),
+  BuzzwordBingoGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.BuzzwordBingoGame })), { ssr: false }),
+  SpeedNetworkingGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.SpeedNetworkingGame })), { ssr: false }),
+  WorkplaceAdventureGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.WorkplaceAdventureGame })), { ssr: false }),
+  RoastMyPitchGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.RoastMyPitchGame })), { ssr: false }),
+};
+const LiveQuiz = dynamic(() => import('@/components/wrp/LiveQuiz'), { ssr: false });
+const QuizLeaderboard = dynamic(() => import('@/components/wrp/LiveQuiz').then(m => ({ default: m.QuizLeaderboard })), { ssr: false });
+const LiveChatPanel = dynamic(() => import('./LiveChatPanel'), { ssr: false });
 
 // ── Mock Interview Bot ────────────────────────────────────────────────────────
 
