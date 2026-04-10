@@ -27,7 +27,9 @@ export default function SessionGuard({ platform }: { platform: 'dip' | 'wrp' }) 
     const token = localStorage.getItem('ioai_session');
     const expires = localStorage.getItem('ioai_session_expires');
 
-    if (!loginId || !token) { logout('no_session'); return; }
+    if (!loginId) { logout('no_session'); return; }
+    // If no token yet (logged in before session feature), let them through
+    if (!token) return;
 
     // Client-side expiry check first (fast)
     if (expires && new Date(expires) < new Date()) { logout('expired'); return; }

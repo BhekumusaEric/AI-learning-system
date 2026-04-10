@@ -1,13 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import { MessageCircle, X, Send, Users, Pin } from 'lucide-react';
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 interface ChatMessage {
     id: string;

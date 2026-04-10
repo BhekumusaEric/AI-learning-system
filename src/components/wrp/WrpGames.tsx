@@ -1,14 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import { RotateCcw, Trophy, Clock, Users, Wifi, WifiOff, Send } from 'lucide-react';
-
-// ── Supabase realtime client (anon key is fine for broadcast) ─────────────────
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // ── Confetti ──────────────────────────────────────────────────────────────────
 function Confetti({ active }: { active: boolean }) {
