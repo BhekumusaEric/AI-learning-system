@@ -194,20 +194,15 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 function buildExam(): Question[] {
-  return shuffleArray(EXAM_QUESTIONS).slice(0, DRAW).map(q => ({
-    ...q,
-    // Shuffle options while keeping correct answer tracking
-    options: (() => {
-      const indexed = q.options.map((opt, i) => ({ opt, isCorrect: i === q.correct }));
-      const shuffled = shuffleArray(indexed);
-      return shuffled.map(o => o.opt);
-    })(),
-    correct: (() => {
-      const indexed = q.options.map((opt, i) => ({ opt, isCorrect: i === q.correct }));
-      const shuffled = shuffleArray(indexed);
-      return shuffled.findIndex(o => o.isCorrect);
-    })(),
-  }));
+  return shuffleArray(EXAM_QUESTIONS).slice(0, DRAW).map(q => {
+    const indexed = q.options.map((opt, i) => ({ opt, isCorrect: i === q.correct }));
+    const shuffled = shuffleArray(indexed);
+    return {
+      ...q,
+      options: shuffled.map(o => o.opt),
+      correct: shuffled.findIndex(o => o.isCorrect),
+    };
+  });
 }
 
 export default function DipExamPage() {
