@@ -769,6 +769,380 @@ function BuzzwordBingo() {
   );
 }
 
+
+// ── SPEED NETWORKING / PEER PAIRING ──────────────────────────────────────────
+
+function PrivateChat({ roomId, partnerName, onLeave }: { roomId: string, partnerName: string, onLeave: () => void }) {
+  const [messages, setMessages] = useState<{ sender: string, text: string }[]>([]);
+  const [inputVal, setInputVal] = useState('');
+  const myName = typeof window !== 'undefined' ? localStorage.getItem('ioai_name') || 'Me' : 'Me';
+
+  const handleState = useCallback((payload: { sender: string, text: string }) => {
+    setMessages(prev => [...prev, payload]);
+  }, []);
+
+  const { broadcast } = useRealtime(`private-chat-${roomId}`, handleState);
+
+  const send = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputVal.trim()) return;
+    broadcast({ sender: myName, text: inputVal.trim() });
+    setInputVal('');
+  };
+
+  return (
+    <div className="p-5 flex flex-col h-[500px]">
+      <div className="flex items-center justify-between pb-3 border-b border-border-subtle mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+          <span className="font-bold">Chatting with {partnerName}</span>
+        </div>
+        <button onClick={onLeave} className="text-sm border border-border-subtle px-3 py-1 rounded hover:bg-error/20 hover:text-error hover:border-error transition-all">
+          Leave Room
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto flex flex-col gap-3 mb-4 pr-2">
+        {messages.length === 0 && <p className="text-secondary-text text-sm text-center my-auto">Say hi, introduce yourself, or practice your elevator pitch!</p>}
+        {messages.map((m, i) => {
+          const isMe = m.sender === myName;
+          return (
+            <div key={i} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-full`}>
+              <span className="text-[10px] text-secondary-text mb-0.5 px-1">{m.sender}</span>
+              <div className={`px-4 py-2 rounded-xl text-sm max-w-[85%] ${isMe ? 'bg-accent text-black rounded-tr-none' : 'bg-secondary border border-border-subtle rounded-tl-none'}`}>
+                {m.text}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <form onSubmit={send} className="flex gap-2">
+        <input 
+          value={inputVal} onChange={e => setInputVal(e.target.value)} 
+          placeholder="Message..." className="flex-1 bg-secondary border border-border-subtle rounded-lg px-3 text-sm text-foreground focus:border-accent outline-none" 
+        />
+        <button type="submit" disabled={!inputVal.trim()} className="p-2.5 bg-accent text-black rounded-lg disabled:opacity-50">
+          <Send className="w-4 h-4" />
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function SpeedNetworking() {
+  const [roomCode, setRoomCode] = useState('');
+  const [joinedRoom, setJoinedRoom] = useState<string | null>(null);
+
+  const [myName] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('ioai_name') || 'You' : 'You');
+  const [myLoginId] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('ioai_user') || 'guest-' + Math.random().toString(36).slice(2) : 'guest');
+
+  const [activeChat, setActiveChat] = useState<{ roomId: string, partnerName: string } | null>(null);
+  const [invites, setInvites] = useState<{fromId: string, fromName: string}[]>([]);
+
+  const handleState = useCallback((payload: any) => {
+    if (payload.type === 'invite' && payload.toId === myLoginId) {
+      setInvites(prev => {
+        if (prev.find(i => i.fromId === payload.fromId)) return prev;
+        return [...prev, { fromId: payload.fromId, fromName: payload.fromName }];
+      });
+    }
+    if (payload.type === 'accept' && payload.fromId === myLoginId) {
+       setActiveChat({ roomId: payload.roomId, partnerName: payload.toName });
+    }
+  }, [myLoginId]);
+
+  const { broadcast, connected, onlinePlayers } = useRealtime<any>(joinedRoom && !activeChat ? `speed-networking-${joinedRoom}` : null, handleState);
+
+  const sendInvite = (partnerId: string) => {
+    broadcast({ type: 'invite', fromId: myLoginId, fromName: myName, toId: partnerId });
+    alert("Invite sent!");
+  };
+
+  const acceptInvite = (inviterId: string, inviterName: string) => {
+    const roomId = [myLoginId, inviterId].sort().join('-');
+    broadcast({ type: 'accept', roomId, fromId: inviterId, toName: myName });
+    setActiveChat({ roomId, partnerName: inviterName });
+    setInvites(prev => prev.filter(i => i.fromId !== inviterId));
+  };
+
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Speed Networking" />;
+
+  // Clear invites from people who left
+  const currentInvites = invites.filter(i => onlinePlayers[i.fromId]);
+
+  if (activeChat) {
+    return <PrivateChat roomId={activeChat.roomId} partnerName={activeChat.partnerName} onLeave={() => setActiveChat(null)} />;
+  }
+
+  const peers = Object.entries(onlinePlayers).filter(([id]) => id !== myLoginId);
+
+  return (
+    <div className="p-5 flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-secondary-text">Match up manually for private 1-on-1 peer reviews.</p>
+        <ConnectedBadge connected={connected} />
+      </div>
+
+      {currentInvites.length > 0 && (
+        <div className="mb-4">
+          <p className="text-xs font-bold text-accent uppercase tracking-wider mb-2">Pending Invites</p>
+          <div className="flex flex-col gap-2">
+            {currentInvites.map(i => (
+              <div key={i.fromId} className="flex items-center justify-between bg-accent/10 border border-accent/30 p-3 rounded-lg">
+                <span className="text-sm text-accent font-bold">{i.fromName} wants to network!</span>
+                <button onClick={() => acceptInvite(i.fromId, i.fromName)} className="bg-accent text-black text-xs px-3 py-1.5 font-bold rounded hover:bg-accent/90">
+                  Accept
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <p className="text-xs font-bold uppercase tracking-wider text-secondary-text mb-1 border-b border-border-subtle pb-2">Online Peers ({peers.length})</p>
+      {peers.length === 0 ? (
+        <p className="text-secondary-text text-sm py-4 text-center">No other peers online right now.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {peers.map(([id, p]) => (
+            <div key={id} className="flex flex-wrap sm:flex-nowrap items-center justify-between p-3 rounded-lg border border-border-subtle bg-secondary">
+              <span className="font-semibold text-sm mb-2 sm:mb-0 w-full sm:w-auto">{p.name}</span>
+              <button onClick={() => sendInvite(id)} className="w-full sm:w-auto text-xs px-4 py-1.5 border border-accent text-accent rounded hover:bg-accent/20 transition-all font-bold">
+                Send Invite
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── CHOOSE YOUR OWN ADVENTURE ────────────────────────────────────────────────
+
+const ADVENTURES = [
+  {
+    title: "Scenario: The Idea Thief",
+    scenes: [
+      {
+        text: "You are in a team meeting. Your manager presents an idea that you came up with entirely on your own yesterday, framing it as their own brilliant thought. They don't mention your name at all. What do you do?",
+        choices: [
+           { text: "Interrupt immediately: 'Actually, that was my idea!'", desc: "Aggressive but direct." },
+           { text: "Wait until after the meeting to speak privately.", desc: "Professional and measured." },
+           { text: "Say nothing and let it slide.", desc: "Passive." },
+           { text: "Send a follow-up email to the team 'clarifying' your contribution.", desc: "Passive-aggressive." }
+        ]
+      },
+      {
+        text: "The room chose choice 2: You wait and speak to your manager privately. They act surprised and say 'Oh, it's a team effort, don't be so sensitive. We all win together.' What now?",
+        choices: [
+           { text: "Demand formal credit in writing or HR escalation.", desc: "Escalation." },
+           { text: "Drop it, but document everything you do going forward.", desc: "Cautious." },
+           { text: "Start looking for another job.", desc: "Flight." }
+        ]
+      }
+    ]
+  }
+];
+
+interface CYOAState {
+  sceneIdx: number;
+  votes: Record<string, number>;
+}
+
+function ChooseYourOwnAdventure() {
+  const [roomCode, setRoomCode] = useState('');
+  const [joinedRoom, setJoinedRoom] = useState<string | null>(null);
+
+  const [myLoginId] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('ioai_user') || 'guest-' + Math.random().toString(36).slice(2) : 'guest');
+  const isHost = useRef(false);
+
+  const [gameState, setGameState] = useState<CYOAState>({ sceneIdx: 0, votes: {} });
+  const [myVote, setMyVote] = useState<number | null>(null);
+
+  const handleState = useCallback((payload: any) => {
+    if (payload.type === 'sync') setGameState(payload.state);
+    if (payload.type === 'vote') {
+       setGameState(prev => ({ ...prev, votes: { ...prev.votes, [payload.id]: payload.choice } }));
+    }
+  }, []);
+
+  const { broadcast, connected } = useRealtime<any>(joinedRoom ? `adventure-${joinedRoom}` : null, handleState);
+
+  const castVote = (choiceIndex: number) => {
+    setMyVote(choiceIndex);
+    broadcast({ type: 'vote', id: myLoginId, choice: choiceIndex });
+    setGameState(prev => ({ ...prev, votes: { ...prev.votes, [myLoginId]: choiceIndex } }));
+  };
+
+  const advance = () => {
+    isHost.current = true;
+    const nextState = { sceneIdx: gameState.sceneIdx + 1, votes: {} };
+    setGameState(nextState);
+    setMyVote(null);
+    broadcast({ type: 'sync', state: nextState });
+  };
+
+  const rewind = () => {
+    isHost.current = true;
+    const nextState = { sceneIdx: 0, votes: {} };
+    setGameState(nextState);
+    setMyVote(null);
+    broadcast({ type: 'sync', state: nextState });
+  };
+
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Workplace Scenarios" />;
+
+  const adv = ADVENTURES[0];
+  const scene = adv.scenes[gameState.sceneIdx];
+  const totalVotes = Object.values(gameState.votes).length;
+
+  return (
+    <div className="p-5 flex flex-col gap-4">
+      <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
+        <div>
+          <span className="text-xs font-bold text-accent uppercase tracking-wider">{adv.title}</span>
+          <p className="text-sm font-semibold text-secondary-text">Live Polling • Scene {gameState.sceneIdx + 1} of {adv.scenes.length}</p>
+        </div>
+        <ConnectedBadge connected={connected} />
+      </div>
+
+      {scene ? (
+        <>
+          <p className="text-lg text-foreground font-medium leading-relaxed my-2">{scene.text}</p>
+          <div className="flex flex-col gap-3">
+            {scene.choices.map((c, i) => {
+              const voteCount = Object.values(gameState.votes).filter(v => v === i).length;
+              const pct = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+              const isMyVote = myVote === i;
+
+              return (
+                <button
+                  key={i} onClick={() => castVote(i)} disabled={myVote !== null}
+                  className={`relative text-left p-4 pr-16 rounded-xl border transition-all overflow-hidden ${
+                    isMyVote ? 'bg-accent/20 border-accent' : 
+                    myVote !== null ? 'bg-secondary border-border-subtle opacity-70' : 
+                    'bg-secondary border-border-subtle hover:border-accent/50'
+                  }`}
+                >
+                  <div className="absolute top-0 left-0 h-full bg-accent/20 transition-all duration-500" style={{ width: `${pct}%` }} />
+                  <div className="relative z-10 font-semibold mb-1 text-foreground">{c.text}</div>
+                  <div className="relative z-10 text-xs text-secondary-text">{c.desc}</div>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 font-bold text-accent">{pct}%</div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-center text-secondary-text mt-2">{totalVotes} vote{totalVotes !== 1 ? 's' : ''} cast</p>
+          {isHost.current && (
+            <button onClick={advance} className="mt-4 px-6 py-2.5 bg-accent text-black font-bold rounded-lg w-full">Advance Scene</button>
+          )}
+        </>
+      ) : (
+        <div className="text-center py-6">
+          <p className="text-2xl font-bold text-foreground mb-4">Adventure Completed!</p>
+          <button onClick={rewind} className="px-6 py-2 border border-border-subtle rounded-lg text-secondary-text hover:text-foreground">Restart Scenario</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── ROAST MY PITCH / PEER FEEDBACK ───────────────────────────────────────────
+
+interface Annotation {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  author: string;
+}
+
+function RoastMyPitch() {
+  const [roomCode, setRoomCode] = useState('');
+  const [joinedRoom, setJoinedRoom] = useState<string | null>(null);
+
+  const [myName] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('ioai_name') || 'You' : 'You');
+  
+  const [pitch, setPitch] = useState<string>('');
+  const [draftPitch, setDraftPitch] = useState('');
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+
+  const handleState = useCallback((payload: any) => {
+    if (payload.type === 'pitch') { setPitch(payload.text); setAnnotations([]); }
+    if (payload.type === 'anno') { setAnnotations(prev => [...prev, payload.data]); }
+  }, []);
+
+  const { broadcast, connected } = useRealtime<any>(joinedRoom ? `roast-${joinedRoom}` : null, handleState);
+
+  const submitPitch = () => {
+    if (!draftPitch.trim()) return;
+    setPitch(draftPitch);
+    setAnnotations([]);
+    broadcast({ type: 'pitch', text: draftPitch });
+  };
+
+  const handleBoardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!pitch) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    const text = prompt("Drop a piece of feedback here:");
+    if (!text?.trim()) return;
+
+    const data: Annotation = { id: Math.random().toString(36), x, y, text: text.trim(), author: myName };
+    setAnnotations(prev => [...prev, data]);
+    broadcast({ type: 'anno', data });
+  };
+
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Roast My Pitch" />;
+
+  return (
+    <div className="p-5 flex flex-col gap-4">
+      <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
+        <p className="text-sm font-semibold text-secondary-text">Submit an elevator pitch for anonymous peer review.</p>
+        <ConnectedBadge connected={connected} />
+      </div>
+
+      {!pitch ? (
+        <div className="flex flex-col gap-3">
+          <textarea 
+            value={draftPitch} onChange={e => setDraftPitch(e.target.value)}
+            placeholder="Type or paste your elevator pitch here..."
+            className="w-full h-32 bg-secondary border border-border-subtle rounded-xl p-4 text-sm text-foreground focus:outline-none focus:border-accent font-mono"
+          />
+          <button onClick={submitPitch} disabled={draftPitch.length < 10} className="w-full bg-accent text-black font-bold py-3 rounded-lg disabled:opacity-50">Submit for Roasting</button>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-between items-center bg-accent/10 px-3 py-2 rounded-t-lg border border-accent/20 border-b-0">
+            <span className="text-xs font-bold text-accent">Active Pitch on Board</span>
+            <button onClick={() => { setPitch(''); setDraftPitch(''); }} className="text-xs text-secondary-text hover:text-foreground">Submit New</button>
+          </div>
+          <div className="relative bg-secondary border border-accent/20 rounded-b-lg p-6 min-h-[200px] cursor-crosshair overflow-hidden" onClick={handleBoardClick}>
+            <p className="text-lg leading-loose text-foreground">{pitch}</p>
+            {annotations.map(a => (
+              <div 
+                key={a.id} 
+                className="absolute shadow-xl -translate-x-1/2 -translate-y-1/2 bg-yellow-200/90 backdrop-blur text-yellow-900 border border-yellow-400 p-2 text-xs font-medium max-w-[150px] transform hover:scale-110 transition-transform hover:z-50"
+                style={{ left: `${a.x}%`, top: `${a.y}%` }}
+              >
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-500 rounded-full shadow-sm" />
+                <span className="block mt-1 font-bold text-[9px] uppercase border-b border-yellow-400/50 mb-1 pb-0.5">{a.author}</span>
+                {a.text}
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-secondary-text animate-pulse">Click anywhere on the pitch to drop a sticky note</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+
 // ── Exports ───────────────────────────────────────────────────────────────────
 export function SpotTheMistakeGame() {
   return (
@@ -802,6 +1176,42 @@ export function BuzzwordBingoGame() {
         <span className="text-sm font-bold">Buzzword Bingo</span>
       </div>
       <BuzzwordBingo />
+    </div>
+  );
+}
+
+export function SpeedNetworkingGame() {
+  return (
+    <div className="my-6 border border-border-subtle rounded-xl overflow-hidden bg-[#0d0d0d]">
+      <div className="px-4 py-3 bg-secondary border-b border-border-subtle flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-[#00b0f0]" />
+        <span className="text-sm font-bold">Speed Networking</span>
+      </div>
+      <SpeedNetworking />
+    </div>
+  );
+}
+
+export function WorkplaceAdventureGame() {
+  return (
+    <div className="my-6 border border-border-subtle rounded-xl overflow-hidden bg-[#0d0d0d]">
+      <div className="px-4 py-3 bg-secondary border-b border-border-subtle flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-[#ffb86b]" />
+        <span className="text-sm font-bold">Interactive Scenario</span>
+      </div>
+      <ChooseYourOwnAdventure />
+    </div>
+  );
+}
+
+export function RoastMyPitchGame() {
+  return (
+    <div className="my-6 border border-border-subtle rounded-xl overflow-hidden bg-[#0d0d0d]">
+      <div className="px-4 py-3 bg-secondary border-b border-border-subtle flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-error" />
+        <span className="text-sm font-bold">Roast My Pitch</span>
+      </div>
+      <RoastMyPitch />
     </div>
   );
 }

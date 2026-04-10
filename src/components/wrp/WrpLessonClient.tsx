@@ -8,9 +8,10 @@ import { useProgress } from '@/components/providers/ProgressProvider';
 import { useRouter } from 'next/navigation';
 import { WrpPage } from '@/lib/wrpSyllabus';
 import CvBuilder from '@/components/wrp/CvBuilder';
-import { SpotTheMistakeGame, SpinTheWheelGame, BuzzwordBingoGame } from '@/components/wrp/WrpGames';
+import { SpotTheMistakeGame, SpinTheWheelGame, BuzzwordBingoGame, SpeedNetworkingGame, WorkplaceAdventureGame, RoastMyPitchGame } from '@/components/wrp/WrpGames';
 import LiveQuiz, { QuizLeaderboard } from '@/components/wrp/LiveQuiz';
 import EmailGate from '@/components/EmailGate';
+import LiveChatPanel from './LiveChatPanel';
 
 // ── Mock Interview Bot ────────────────────────────────────────────────────────
 
@@ -85,8 +86,8 @@ function MockInterviewBot() {
         {chat.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === 'user'
-                ? 'bg-accent text-black font-medium rounded-br-sm'
-                : 'bg-secondary text-foreground rounded-bl-sm border border-border-subtle'
+              ? 'bg-accent text-black font-medium rounded-br-sm'
+              : 'bg-secondary text-foreground rounded-bl-sm border border-border-subtle'
               }`}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
             </div>
@@ -292,7 +293,7 @@ function BreathingTimer() {
 
 export function WrpContent({ content, video }: { content: string; video?: string | null }) {
   // Split content on custom tags and render each segment
-  const segments = content.split(/(<video-embed[^>]*\/?>|<mock-interview-bot\s*\/>|<email-practice[^>]*\/>|<cv-builder\s*\/>|<img-block[^>]*\/>|<spot-the-mistake\s*\/>|<spin-the-wheel\s*\/>|<buzzword-bingo\s*\/>|<live-quiz\s*\/>|<quiz-leaderboard\s*\/>)/g);
+  const segments = content.split(/(<video-embed[^>]*\/?>|<mock-interview-bot\s*\/>|<email-practice[^>]*\/>|<cv-builder\s*\/>|<img-block[^>]*\/>|<spot-the-mistake\s*\/>|<spin-the-wheel\s*\/>|<buzzword-bingo\s*\/>|<live-quiz\s*\/>|<quiz-leaderboard\s*\/>|<speed-networking\s*\/>|<workplace-adventure\s*\/>|<roast-my-pitch\s*\/>)/g);
 
   return (
     <div className="flex flex-col">
@@ -314,6 +315,9 @@ export function WrpContent({ content, video }: { content: string; video?: string
         if (seg.startsWith('<spot-the-mistake')) return <SpotTheMistakeGame key={i} />;
         if (seg.startsWith('<spin-the-wheel')) return <SpinTheWheelGame key={i} />;
         if (seg.startsWith('<buzzword-bingo')) return <BuzzwordBingoGame key={i} />;
+        if (seg.startsWith('<speed-networking')) return <SpeedNetworkingGame key={i} />;
+        if (seg.startsWith('<workplace-adventure')) return <WorkplaceAdventureGame key={i} />;
+        if (seg.startsWith('<roast-my-pitch')) return <RoastMyPitchGame key={i} />;
         if (seg.startsWith('<live-quiz')) return <LiveQuiz key={i} />;
         if (seg.startsWith('<quiz-leaderboard')) return <QuizLeaderboard key={i} />;
         if (seg.startsWith('<img-block')) {
@@ -396,7 +400,8 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
   };
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto w-full relative">
+      <LiveChatPanel />
       {emailGate && (
         <EmailGate
           loginId={emailGate.loginId}
@@ -435,8 +440,8 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
           <button
             onClick={handleNext}
             className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${isLast
-                ? 'bg-accent text-black hover:bg-accent/90'
-                : 'bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent'
+              ? 'bg-accent text-black hover:bg-accent/90'
+              : 'bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent'
               }`}
           >
             {isCompleted && !isLast ? <CheckCircle2 className="w-4 h-4" /> : null}
