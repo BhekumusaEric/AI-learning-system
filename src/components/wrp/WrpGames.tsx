@@ -141,6 +141,17 @@ function ConnectedBadge({ connected }: { connected: boolean }) {
   );
 }
 
+function RoomBanner({ roomCode, onSwitch }: { roomCode: string; onSwitch: () => void }) {
+  return (
+    <div className="flex items-center justify-between bg-accent/10 border-b border-accent/20 px-4 py-1.5 text-xs">
+      <span className="text-accent font-mono font-bold tracking-widest">Room: {roomCode}</span>
+      <button onClick={onSwitch} className="text-secondary-text hover:text-foreground underline transition-colors">
+        Wrong room? Switch
+      </button>
+    </div>
+  );
+}
+
 // ── GAME 1: Spot the Mistake ──────────────────────────────────────────────────
 const SCENARIOS = [
   {
@@ -236,6 +247,8 @@ function SpotTheMistake() {
 
   if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Spot the Mistake" />;
 
+  const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
+
   const update = (patch: Partial<SpotState>) => {
     const next = { ...gameState, ...patch };
     setGameState(next);
@@ -310,6 +323,7 @@ function SpotTheMistake() {
 
   if (gameState.phase === 'setup') return (
     <div className="p-5 flex flex-col gap-4">
+      <RoomBanner roomCode={joinedRoom!} onSwitch={leaveRoom} />
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 text-sm text-secondary-text">
           <Users className="w-4 h-4" />
@@ -477,6 +491,8 @@ function SpinTheWheel() {
 
   if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Spin the Wheel" />;
 
+  const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
+
   const drawWheel = useCallback((angle: number) => {
     const canvas = canvasRef.current;
     if (!canvas || names.length === 0) return;
@@ -574,6 +590,7 @@ function SpinTheWheel() {
 
   return (
     <div className="p-5 flex flex-col gap-4">
+      <RoomBanner roomCode={joinedRoom!} onSwitch={leaveRoom} />
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 text-sm text-secondary-text">
           <Users className="w-4 h-4" />
@@ -690,6 +707,8 @@ function BuzzwordBingo() {
 
   if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Buzzword Bingo" />;
 
+  const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
+
   const toggle = (i: number) => {
     const next = new Set(marked);
     if (next.has(i)) next.delete(i); else next.add(i);
@@ -711,6 +730,7 @@ function BuzzwordBingo() {
 
   return (
     <div className="p-5 flex flex-col gap-4 relative overflow-hidden">
+      <RoomBanner roomCode={joinedRoom!} onSwitch={leaveRoom} />
       <Confetti active={showConfetti} />
       <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-sm text-secondary-text">Mark off each buzzword as you hear it. Complete a row, column, or diagonal to win.</p>
@@ -868,6 +888,8 @@ function SpeedNetworking() {
 
   if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Speed Networking" />;
 
+  const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
+
   // Clear invites from people who left
   const currentInvites = invites.filter(i => onlinePlayers[i.fromId]);
 
@@ -879,6 +901,7 @@ function SpeedNetworking() {
 
   return (
     <div className="p-5 flex flex-col gap-4">
+      <RoomBanner roomCode={joinedRoom!} onSwitch={leaveRoom} />
       <div className="flex items-center justify-between">
         <p className="text-sm text-secondary-text">Match up manually for private 1-on-1 peer reviews.</p>
         <ConnectedBadge connected={connected} />
@@ -994,12 +1017,15 @@ function ChooseYourOwnAdventure() {
 
   if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Workplace Scenarios" />;
 
+  const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
+
   const adv = ADVENTURES[0];
   const scene = adv.scenes[gameState.sceneIdx];
   const totalVotes = Object.values(gameState.votes).length;
 
   return (
     <div className="p-5 flex flex-col gap-4">
+      <RoomBanner roomCode={joinedRoom!} onSwitch={leaveRoom} />
       <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
         <div>
           <span className="text-xs font-bold text-accent uppercase tracking-wider">{adv.title}</span>
@@ -1021,8 +1047,8 @@ function ChooseYourOwnAdventure() {
                 <button
                   key={i} onClick={() => castVote(i)} disabled={myVote !== null}
                   className={`relative text-left p-4 pr-16 rounded-xl border transition-all overflow-hidden ${isMyVote ? 'bg-accent/20 border-accent' :
-                      myVote !== null ? 'bg-secondary border-border-subtle opacity-70' :
-                        'bg-secondary border-border-subtle hover:border-accent/50'
+                    myVote !== null ? 'bg-secondary border-border-subtle opacity-70' :
+                      'bg-secondary border-border-subtle hover:border-accent/50'
                     }`}
                 >
                   <div className="absolute top-0 left-0 h-full bg-accent/20 transition-all duration-500" style={{ width: `${pct}%` }} />
@@ -1098,8 +1124,11 @@ function RoastMyPitch() {
 
   if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Roast My Pitch" />;
 
+  const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
+
   return (
     <div className="p-5 flex flex-col gap-4">
+      <RoomBanner roomCode={joinedRoom!} onSwitch={leaveRoom} />
       <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
         <p className="text-sm font-semibold text-secondary-text">Submit an elevator pitch for anonymous peer review.</p>
         <ConnectedBadge connected={connected} />

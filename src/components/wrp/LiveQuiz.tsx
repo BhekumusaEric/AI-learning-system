@@ -193,27 +193,27 @@ export default function LiveQuiz() {
       setMyAnswer(null);
       resetInactivityTimer();
     })
-    .on('presence', { event: 'sync' }, () => {
-      const state = ch.presenceState<{ name: string; joinedAt: number }>();
-      const players: Record<string, { name: string; joinedAt: number }> = {};
-      Object.entries(state).forEach(([key, presences]) => {
-        const p = (presences as any[])[0];
-        if (p) players[key] = { name: p.name, joinedAt: p.joinedAt };
-      });
-      setOnlinePlayers(players);
-    })
-    .subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        setConnected(true);
-        // Track presence
-        await ch.track({ name: myName.current || 'Guest', joinedAt: Date.now() });
-        // Heartbeat every 60s to stay alive
-        heartbeatRef.current = setInterval(async () => {
+      .on('presence', { event: 'sync' }, () => {
+        const state = ch.presenceState<{ name: string; joinedAt: number }>();
+        const players: Record<string, { name: string; joinedAt: number }> = {};
+        Object.entries(state).forEach(([key, presences]) => {
+          const p = (presences as any[])[0];
+          if (p) players[key] = { name: p.name, joinedAt: p.joinedAt };
+        });
+        setOnlinePlayers(players);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          setConnected(true);
+          // Track presence
           await ch.track({ name: myName.current || 'Guest', joinedAt: Date.now() });
-        }, 60_000);
-        resetInactivityTimer();
-      }
-    });
+          // Heartbeat every 60s to stay alive
+          heartbeatRef.current = setInterval(async () => {
+            await ch.track({ name: myName.current || 'Guest', joinedAt: Date.now() });
+          }, 60_000);
+          resetInactivityTimer();
+        }
+      });
 
     return () => {
       clearInterval(heartbeatRef.current!);
@@ -332,6 +332,7 @@ export default function LiveQuiz() {
   const answeredCount = Object.values(gameState.selectedAnswer).length;
 
   if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Live Quiz" />;
+  const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); reset(); };
 
   // ── LOBBY ──
   if (gameState.phase === 'lobby') return (
@@ -350,9 +351,8 @@ export default function LiveQuiz() {
           <p className="text-xs font-bold uppercase tracking-wider text-secondary-text mb-2">Online Now ({Object.keys(onlinePlayers).length})</p>
           <div className="flex flex-wrap gap-2">
             {Object.entries(onlinePlayers).map(([key, p]) => (
-              <span key={key} className={`text-xs px-2 py-1 rounded-full border ${
-                key === myLoginId.current ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-background border-border-subtle text-secondary-text'
-              }`}>
+              <span key={key} className={`text-xs px-2 py-1 rounded-full border ${key === myLoginId.current ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-background border-border-subtle text-secondary-text'
+                }`}>
                 {p.name.split(' ')[0]}{key === myLoginId.current ? ' (you)' : ''}
               </span>
             ))}
@@ -399,11 +399,10 @@ export default function LiveQuiz() {
           const chosen = myAnswer === i;
           return (
             <button key={i} onClick={() => submitAnswer(i)} disabled={myAnswer !== null}
-              className={`text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
-                chosen ? 'bg-accent/20 border-accent text-accent' :
-                myAnswer !== null ? 'border-border-subtle text-secondary-text/50 cursor-not-allowed' :
-                'border-border-subtle text-foreground hover:border-accent/50 hover:bg-secondary'
-              }`}>
+              className={`text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all ${chosen ? 'bg-accent/20 border-accent text-accent' :
+                  myAnswer !== null ? 'border-border-subtle text-secondary-text/50 cursor-not-allowed' :
+                    'border-border-subtle text-foreground hover:border-accent/50 hover:bg-secondary'
+                }`}>
               <span className="font-bold mr-2 text-secondary-text">{String.fromCharCode(65 + i)}.</span>{opt}
             </button>
           );
