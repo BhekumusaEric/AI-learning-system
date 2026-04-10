@@ -89,7 +89,16 @@ function buildTestRunner(tests) {
     if (!trimmed.startsWith('assert ')) { out.push(line); continue; }
     const body = stripMessage(trimmed.slice(7));
     const eqIdx = body.indexOf(' == ');
-    if (eqIdx === -1) { out.push(line); continue; }
+
+    // Skip transformation for complex assertions containing boolean operators or other comparators
+    if (eqIdx === -1 ||
+      body.match(/\b(and|or|not|in|is)\b/) ||
+      body.indexOf(' == ', eqIdx + 4) !== -1 ||
+      body.includes('!=') || body.includes('<') || body.includes('>')) {
+      out.push(line);
+      continue;
+    }
+
     const lhs = body.slice(0, eqIdx).trim();
     const rhs = body.slice(eqIdx + 4).trim();
     const indent = line.match(/^(\s*)/)[1];
