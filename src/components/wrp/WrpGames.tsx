@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { RotateCcw, Trophy, Clock, Users, Wifi, WifiOff } from 'lucide-react';
+import { RotateCcw, Trophy, Clock, Users, Wifi, WifiOff, Send } from 'lucide-react';
 
 // ── Supabase realtime client (anon key is fine for broadcast) ─────────────────
 const supabase = createClient(
@@ -818,9 +818,9 @@ function PrivateChat({ roomId, partnerName, onLeave }: { roomId: string, partner
       </div>
 
       <form onSubmit={send} className="flex gap-2">
-        <input 
-          value={inputVal} onChange={e => setInputVal(e.target.value)} 
-          placeholder="Message..." className="flex-1 bg-secondary border border-border-subtle rounded-lg px-3 text-sm text-foreground focus:border-accent outline-none" 
+        <input
+          value={inputVal} onChange={e => setInputVal(e.target.value)}
+          placeholder="Message..." className="flex-1 bg-secondary border border-border-subtle rounded-lg px-3 text-sm text-foreground focus:border-accent outline-none"
         />
         <button type="submit" disabled={!inputVal.trim()} className="p-2.5 bg-accent text-black rounded-lg disabled:opacity-50">
           <Send className="w-4 h-4" />
@@ -838,7 +838,7 @@ function SpeedNetworking() {
   const [myLoginId] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('ioai_user') || 'guest-' + Math.random().toString(36).slice(2) : 'guest');
 
   const [activeChat, setActiveChat] = useState<{ roomId: string, partnerName: string } | null>(null);
-  const [invites, setInvites] = useState<{fromId: string, fromName: string}[]>([]);
+  const [invites, setInvites] = useState<{ fromId: string, fromName: string }[]>([]);
 
   const handleState = useCallback((payload: any) => {
     if (payload.type === 'invite' && payload.toId === myLoginId) {
@@ -848,7 +848,7 @@ function SpeedNetworking() {
       });
     }
     if (payload.type === 'accept' && payload.fromId === myLoginId) {
-       setActiveChat({ roomId: payload.roomId, partnerName: payload.toName });
+      setActiveChat({ roomId: payload.roomId, partnerName: payload.toName });
     }
   }, [myLoginId]);
 
@@ -928,18 +928,18 @@ const ADVENTURES = [
       {
         text: "You are in a team meeting. Your manager presents an idea that you came up with entirely on your own yesterday, framing it as their own brilliant thought. They don't mention your name at all. What do you do?",
         choices: [
-           { text: "Interrupt immediately: 'Actually, that was my idea!'", desc: "Aggressive but direct." },
-           { text: "Wait until after the meeting to speak privately.", desc: "Professional and measured." },
-           { text: "Say nothing and let it slide.", desc: "Passive." },
-           { text: "Send a follow-up email to the team 'clarifying' your contribution.", desc: "Passive-aggressive." }
+          { text: "Interrupt immediately: 'Actually, that was my idea!'", desc: "Aggressive but direct." },
+          { text: "Wait until after the meeting to speak privately.", desc: "Professional and measured." },
+          { text: "Say nothing and let it slide.", desc: "Passive." },
+          { text: "Send a follow-up email to the team 'clarifying' your contribution.", desc: "Passive-aggressive." }
         ]
       },
       {
         text: "The room chose choice 2: You wait and speak to your manager privately. They act surprised and say 'Oh, it's a team effort, don't be so sensitive. We all win together.' What now?",
         choices: [
-           { text: "Demand formal credit in writing or HR escalation.", desc: "Escalation." },
-           { text: "Drop it, but document everything you do going forward.", desc: "Cautious." },
-           { text: "Start looking for another job.", desc: "Flight." }
+          { text: "Demand formal credit in writing or HR escalation.", desc: "Escalation." },
+          { text: "Drop it, but document everything you do going forward.", desc: "Cautious." },
+          { text: "Start looking for another job.", desc: "Flight." }
         ]
       }
     ]
@@ -964,7 +964,7 @@ function ChooseYourOwnAdventure() {
   const handleState = useCallback((payload: any) => {
     if (payload.type === 'sync') setGameState(payload.state);
     if (payload.type === 'vote') {
-       setGameState(prev => ({ ...prev, votes: { ...prev.votes, [payload.id]: payload.choice } }));
+      setGameState(prev => ({ ...prev, votes: { ...prev.votes, [payload.id]: payload.choice } }));
     }
   }, []);
 
@@ -1020,11 +1020,10 @@ function ChooseYourOwnAdventure() {
               return (
                 <button
                   key={i} onClick={() => castVote(i)} disabled={myVote !== null}
-                  className={`relative text-left p-4 pr-16 rounded-xl border transition-all overflow-hidden ${
-                    isMyVote ? 'bg-accent/20 border-accent' : 
-                    myVote !== null ? 'bg-secondary border-border-subtle opacity-70' : 
-                    'bg-secondary border-border-subtle hover:border-accent/50'
-                  }`}
+                  className={`relative text-left p-4 pr-16 rounded-xl border transition-all overflow-hidden ${isMyVote ? 'bg-accent/20 border-accent' :
+                      myVote !== null ? 'bg-secondary border-border-subtle opacity-70' :
+                        'bg-secondary border-border-subtle hover:border-accent/50'
+                    }`}
                 >
                   <div className="absolute top-0 left-0 h-full bg-accent/20 transition-all duration-500" style={{ width: `${pct}%` }} />
                   <div className="relative z-10 font-semibold mb-1 text-foreground">{c.text}</div>
@@ -1064,7 +1063,7 @@ function RoastMyPitch() {
   const [joinedRoom, setJoinedRoom] = useState<string | null>(null);
 
   const [myName] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('ioai_name') || 'You' : 'You');
-  
+
   const [pitch, setPitch] = useState<string>('');
   const [draftPitch, setDraftPitch] = useState('');
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
@@ -1088,7 +1087,7 @@ function RoastMyPitch() {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    
+
     const text = prompt("Drop a piece of feedback here:");
     if (!text?.trim()) return;
 
@@ -1108,7 +1107,7 @@ function RoastMyPitch() {
 
       {!pitch ? (
         <div className="flex flex-col gap-3">
-          <textarea 
+          <textarea
             value={draftPitch} onChange={e => setDraftPitch(e.target.value)}
             placeholder="Type or paste your elevator pitch here..."
             className="w-full h-32 bg-secondary border border-border-subtle rounded-xl p-4 text-sm text-foreground focus:outline-none focus:border-accent font-mono"
@@ -1124,8 +1123,8 @@ function RoastMyPitch() {
           <div className="relative bg-secondary border border-accent/20 rounded-b-lg p-6 min-h-[200px] cursor-crosshair overflow-hidden" onClick={handleBoardClick}>
             <p className="text-lg leading-loose text-foreground">{pitch}</p>
             {annotations.map(a => (
-              <div 
-                key={a.id} 
+              <div
+                key={a.id}
                 className="absolute shadow-xl -translate-x-1/2 -translate-y-1/2 bg-yellow-200/90 backdrop-blur text-yellow-900 border border-yellow-400 p-2 text-xs font-medium max-w-[150px] transform hover:scale-110 transition-transform hover:z-50"
                 style={{ left: `${a.x}%`, top: `${a.y}%` }}
               >
