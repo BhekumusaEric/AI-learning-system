@@ -34,12 +34,6 @@ function WrpLoginContent() {
       const data = await res.json();
       if (!res.ok) { setError('Invalid credentials. Please contact your administrator.'); setIsLoading(false); return; }
 
-      if (!data.has_email) {
-        setEmailGate({ loginId: data.login_id, fullName: data.full_name, destination: '/wrp/lesson/page1_welcome_and_mindfulness' });
-        setIsLoading(false);
-        return;
-      }
-
       localStorage.setItem('ioai_user', data.login_id);
       localStorage.setItem('ioai_name', data.full_name);
       const sessionRes = await fetch('/api/auth/session', {

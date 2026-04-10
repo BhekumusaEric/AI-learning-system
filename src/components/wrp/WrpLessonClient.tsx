@@ -84,11 +84,10 @@ function MockInterviewBot() {
       <div className="h-80 overflow-y-auto p-4 flex flex-col gap-3">
         {chat.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-              msg.role === 'user'
+            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === 'user'
                 ? 'bg-accent text-black font-medium rounded-br-sm'
                 : 'bg-secondary text-foreground rounded-bl-sm border border-border-subtle'
-            }`}>
+              }`}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
             </div>
           </div>
@@ -169,9 +168,8 @@ function EmailPractice({ scenario }: { scenario: string }) {
                 <label key={i} className="flex items-center gap-3 cursor-pointer group">
                   <div
                     onClick={() => toggle(i)}
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
-                      checked[i] ? 'bg-accent border-accent' : 'border-border-subtle group-hover:border-accent/50'
-                    }`}
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${checked[i] ? 'bg-accent border-accent' : 'border-border-subtle group-hover:border-accent/50'
+                      }`}
                   >
                     {checked[i] && <CheckCircle2 className="w-3.5 h-3.5 text-black" />}
                   </div>
@@ -179,17 +177,16 @@ function EmailPractice({ scenario }: { scenario: string }) {
                 </label>
               ))}
             </div>
-            <div className={`p-4 rounded-lg border text-center ${
-              score >= 8 ? 'bg-accent/10 border-accent/30' : score >= 5 ? 'bg-warning/10 border-warning/30' : 'bg-error/10 border-error/30'
-            }`}>
+            <div className={`p-4 rounded-lg border text-center ${score >= 8 ? 'bg-accent/10 border-accent/30' : score >= 5 ? 'bg-warning/10 border-warning/30' : 'bg-error/10 border-error/30'
+              }`}>
               <p className={`text-2xl font-bold mb-1 ${score >= 8 ? 'text-accent' : score >= 5 ? 'text-warning' : 'text-error'}`}>
                 {score}/9
               </p>
               <p className="text-sm text-secondary-text">
                 {score === 9 ? 'Perfect! Your email is professional and complete.' :
-                 score >= 7 ? 'Great work! Review the unchecked items and revise.' :
-                 score >= 5 ? 'Good effort. Focus on the missing elements and rewrite.' :
-                 'Keep practising. Review the email etiquette module and try again.'}
+                  score >= 7 ? 'Great work! Review the unchecked items and revise.' :
+                    score >= 5 ? 'Good effort. Focus on the missing elements and rewrite.' :
+                      'Keep practising. Review the email etiquette module and try again.'}
               </p>
             </div>
             <button onClick={() => { setSubmitted(false); setChecked(new Array(EMAIL_CHECKLIST.length).fill(false)); }}
@@ -385,10 +382,7 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ login_id: loginId, platform: 'wrp' }),
-    })
-      .then(r => r.json())
-      .then(data => { if (!data.has_email) setEmailGate({ loginId, fullName }); })
-      .catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const handleNext = () => {
@@ -440,11 +434,10 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
 
           <button
             onClick={handleNext}
-            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
-              isLast
+            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${isLast
                 ? 'bg-accent text-black hover:bg-accent/90'
                 : 'bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent'
-            }`}
+              }`}
           >
             {isCompleted && !isLast ? <CheckCircle2 className="w-4 h-4" /> : null}
             {isLast ? <><Award className="w-5 h-5" /> Get Certificate</> : (
