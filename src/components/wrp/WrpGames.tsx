@@ -52,33 +52,111 @@ function Confetti({ active }: { active: boolean }) {
 }
 
 // ── RoomGate ──────────────────────────────────────────────────────────────────
-function RoomGate({ roomCode, setRoomCode, onJoin, title }: { roomCode: string, setRoomCode: (c: string) => void, onJoin: () => void, title: string }) {
+function RoomGate({ roomCode, setRoomCode, onJoin, title, gameType }: { roomCode: string, setRoomCode: (c: string) => void, onJoin: () => void, title: string, gameType: string }) {
+  const [rooms, setRooms] = useState<{ room_code: string; host_name: string; player_count: number }[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(true);
+
+  useEffect(() => {
+    // Fetch active rooms for this game type (active in last 2 hours)
+    const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    supabase
+      .from('wrp_game_rooms')
+      .select('room_code, host_name, player_count')
+      .eq('game_type', gameType)
+      .gte('last_active', since)
+      .order('last_active', { ascending: false })
+      .limit(10)
+      .then(({ data }) => { setRooms(data || []); setLoadingRooms(false); });
+  }, [gameType]);
+
+  const handleJoin = (code: string) => {
+    setRoomCode(code);
+    // Small delay so state updates before onJoin fires
+    setTimeout(onJoin, 50);
+  };
+
   return (
-    <div className="p-8 flex flex-col items-center justify-center gap-4 text-center">
-      <Users className="w-12 h-12 text-accent mb-2" />
-      <h3 className="text-xl font-bold">{title}</h3>
-      <p className="text-sm text-secondary-text max-w-sm mb-4">Enter the session code provided by your facilitator to join the live game with your group.</p>
-      <input
-        type="text"
-        value={roomCode}
-        onChange={e => setRoomCode(e.target.value.toUpperCase())}
-        placeholder="e.g. CLASS-A"
-        className="w-full max-w-xs bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-center font-bold tracking-widest uppercase mb-2"
-        onKeyDown={e => e.key === 'Enter' && roomCode.trim() && onJoin()}
-      />
-      <button
-        onClick={onJoin}
-        disabled={!roomCode.trim()}
-        className="px-8 py-3 bg-accent text-black font-bold rounded-lg hover:bg-accent/90 transition-all disabled:opacity-50"
-      >
-        Join Room
-      </button>
+    <div className="p-6 flex flex-col gap-6 max-w-md mx-auto">
+      <div className="text-center">
+        <Users className="w-8 h-8 text-accent mx-auto mb-2" />
+        <h3 className="text-lg font-bold">{title}</h3>
+        <p className="text-xs text-secondary-text mt-1">Join a live room or enter a code from your facilitator</p>
+      </div>
+
+      {/* Active rooms */}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-secondary-text mb-2">Open Rooms</p>
+        {loadingRooms ? (
+          <p className="text-xs text-secondary-text">Looking for rooms...</p>
+        ) : rooms.length === 0 ? (
+          <p className="text-xs text-secondary-text italic">No open rooms right now — create one by entering a code below.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {rooms.map(r => (
+              <button
+                key={r.room_code}
+                onClick={() => handleJoin(r.room_code)}
+                className="flex items-center justify-between px-4 py-3 bg-background border border-border-subtle rounded-xl hover:border-accent/50 hover:bg-accent/5 transition-all text-left group"
+              >
+                <div>
+                  <span className="font-mono font-bold text-accent text-sm tracking-widest">{r.room_code}</span>
+                  <span className="text-xs text-secondary-text ml-2">hosted by {r.host_name}</span>
+                </div>
+                <span className="text-xs text-secondary-text group-hover:text-accent transition-colors">
+                  {r.player_count} online · Join →
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-border-subtle" />
+        <span className="text-xs text-secondary-text">or enter a code</span>
+        <div className="flex-1 h-px bg-border-subtle" />
+      </div>
+
+      {/* Manual code entry */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={roomCode}
+          onChange={e => setRoomCode(e.target.value.toUpperCase())}
+          placeholder="e.g. CLASS-A"
+          className="flex-1 bg-background border border-border-subtle rounded-lg px-4 py-2.5 text-foreground focus:outline-none focus:border-accent text-center font-bold tracking-widest uppercase text-sm"
+          onKeyDown={e => e.key === 'Enter' && roomCode.trim() && onJoin()}
+        />
+        <button
+          onClick={onJoin}
+          disabled={!roomCode.trim()}
+          className="px-5 py-2.5 bg-accent text-black font-bold rounded-lg hover:bg-accent/90 transition-all disabled:opacity-50 text-sm"
+        >
+          Join
+        </button>
+      </div>
     </div>
   );
 }
 
+// ── registerRoom: upsert room into DB so self-paced students can discover it ──
+async function registerRoom(roomCode: string, gameType: string, hostName: string, hostId: string) {
+  await supabase.from('wrp_game_rooms').upsert(
+    { room_code: roomCode, game_type: gameType, host_name: hostName, host_id: hostId, last_active: new Date().toISOString() },
+    { onConflict: 'room_code,game_type' }
+  );
+}
+
+async function updateRoomActivity(roomCode: string, gameType: string, playerCount: number) {
+  await supabase.from('wrp_game_rooms')
+    .update({ last_active: new Date().toISOString(), player_count: playerCount })
+    .eq('room_code', roomCode)
+    .eq('game_type', gameType);
+}
+
 // ── useRealtime: broadcast game state & track presence ────────────────────────
-function useRealtime<T>(channelName: string | null, onEvent: (payload: T) => void) {
+function useRealtime<T>(channelName: string | null, onEvent: (payload: T) => void, gameType?: string) {
   const [connected, setConnected] = useState(false);
   const [onlinePlayers, setOnlinePlayers] = useState<Record<string, { name: string; joinedAt: number }>>({});
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -86,11 +164,8 @@ function useRealtime<T>(channelName: string | null, onEvent: (payload: T) => voi
   const myLoginId = useRef<string>('');
   const myName = useRef<string>('');
 
-  // Store onEvent in a ref so it doesn't trigger channel reconnections
   const eventHandlerRef = useRef(onEvent);
-  useEffect(() => {
-    eventHandlerRef.current = onEvent;
-  }, [onEvent]);
+  useEffect(() => { eventHandlerRef.current = onEvent; }, [onEvent]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -115,11 +190,21 @@ function useRealtime<T>(channelName: string | null, onEvent: (payload: T) => voi
           if (p) players[key] = { name: p.name, joinedAt: p.joinedAt };
         });
         setOnlinePlayers(players);
+        // Update room player count in DB
+        if (gameType && channelName) {
+          const roomCode = channelName.split('-').slice(-1)[0];
+          updateRoomActivity(roomCode, gameType, Object.keys(players).length).catch(() => {});
+        }
       })
       .subscribe(async status => {
         setConnected(status === 'SUBSCRIBED');
         if (status === 'SUBSCRIBED') {
           await ch.track({ name: myName.current || 'Guest', joinedAt: Date.now() });
+          // Register room in DB for discovery
+          if (gameType && channelName) {
+            const roomCode = channelName.split('-').slice(-1)[0];
+            registerRoom(roomCode, gameType, myName.current || 'Guest', myLoginId.current).catch(() => {});
+          }
         }
       });
     return () => { supabase.removeChannel(ch); };
@@ -245,7 +330,7 @@ function SpotTheMistake() {
     .sort((a, b) => a[1].joinedAt - b[1].joinedAt)
     .map(([login_id, p]) => ({ login_id, full_name: p.name }));
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Spot the Mistake" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Spot the Mistake" gameType="spot-the-mistake" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
@@ -489,7 +574,7 @@ function SpinTheWheel() {
     .map(([login_id, p]) => ({ login_id, full_name: p.name }));
   const names = students.map(s => s.full_name);
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Spin the Wheel" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Spin the Wheel" gameType="spin-the-wheel" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
@@ -705,7 +790,7 @@ function BuzzwordBingo() {
     .sort((a, b) => a[1].joinedAt - b[1].joinedAt)
     .map(([login_id, p]) => ({ login_id, full_name: p.name }));
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Buzzword Bingo" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Buzzword Bingo" gameType="buzzword-bingo" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
@@ -886,7 +971,7 @@ function SpeedNetworking() {
     setInvites(prev => prev.filter(i => i.fromId !== inviterId));
   };
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Speed Networking" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Speed Networking" gameType="speed-networking" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
@@ -1015,7 +1100,7 @@ function ChooseYourOwnAdventure() {
     broadcast({ type: 'sync', state: nextState });
   };
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Workplace Scenarios" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Workplace Scenarios" gameType="workplace-scenarios" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
@@ -1122,7 +1207,7 @@ function RoastMyPitch() {
     broadcast({ type: 'anno', data });
   };
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Roast My Pitch" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Roast My Pitch" gameType="roast-my-pitch" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
