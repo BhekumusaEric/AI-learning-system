@@ -72,7 +72,7 @@ LinkedIn has over **1 billion users**. Recruiters actively search it daily. A st
 
 ## 📺 Watch: How to Build a LinkedIn Profile That Gets You Hired
 
-<video-embed src="https://www.youtube.com/embed/BcfGWi8-0rg" title="LinkedIn Profile Tips" />
+<video-embed src="https://www.youtube.com/embed/hNzpEeU3a4I" title="How to Set Up Your LinkedIn Profile (Ultimate Guide)" />
 
 ---
 
