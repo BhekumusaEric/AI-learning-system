@@ -105,8 +105,8 @@ function useRealtime<T>(channelName: string | null, onEvent: (payload: T) => voi
     channelRef.current = ch;
 
     ch.on('broadcast', { event: 'state' }, ({ payload }: any) => {
-        if (eventHandlerRef.current) eventHandlerRef.current(payload as T);
-      })
+      if (eventHandlerRef.current) eventHandlerRef.current(payload as T);
+    })
       .on('presence', { event: 'sync' }, () => {
         const state = ch.presenceState<{ name: string; joinedAt: number }>();
         const players: Record<string, { name: string; joinedAt: number }> = {};
@@ -616,7 +616,7 @@ function SpinTheWheel() {
         </div>
       ) : (
         <p className="text-secondary-text text-sm text-center py-4">
-          {loading ? 'Loading students...' : 'Waiting for students to join...'}
+          Waiting for students to join...
         </p>
       )}
     </div>
@@ -746,9 +746,8 @@ function BuzzwordBingo() {
       <div className="grid grid-cols-5 gap-1.5">
         {grid.map((word, i) => (
           <button key={i} onClick={() => toggle(i)}
-            className={`aspect-square flex items-center justify-center text-center text-[10px] sm:text-xs font-semibold rounded-lg border transition-all leading-tight p-1 ${
-              marked.has(i) ? 'bg-accent text-black border-accent' : 'bg-secondary border-border-subtle text-secondary-text hover:border-accent/50 hover:text-foreground'
-            }`}>
+            className={`aspect-square flex items-center justify-center text-center text-[10px] sm:text-xs font-semibold rounded-lg border transition-all leading-tight p-1 ${marked.has(i) ? 'bg-accent text-black border-accent' : 'bg-secondary border-border-subtle text-secondary-text hover:border-accent/50 hover:text-foreground'
+              }`}>
             {word}
           </button>
         ))}
