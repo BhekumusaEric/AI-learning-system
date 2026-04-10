@@ -52,12 +52,11 @@ function Confetti({ active }: { active: boolean }) {
 }
 
 // ── RoomGate ──────────────────────────────────────────────────────────────────
-function RoomGate({ roomCode, setRoomCode, onJoin, title, gameType }: { roomCode: string, setRoomCode: (c: string) => void, onJoin: () => void, title: string, gameType: string }) {
+function RoomGate({ roomCode, setRoomCode, onJoin, title, gameType }: { roomCode: string, setRoomCode: (c: string) => void, onJoin: (code?: string) => void, title: string, gameType: string }) {
   const [rooms, setRooms] = useState<{ room_code: string; host_name: string; player_count: number }[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
 
   useEffect(() => {
-    // Fetch active rooms for this game type (active in last 2 hours)
     const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
     supabase
       .from('wrp_game_rooms')
@@ -68,12 +67,6 @@ function RoomGate({ roomCode, setRoomCode, onJoin, title, gameType }: { roomCode
       .limit(10)
       .then(({ data }) => { setRooms(data || []); setLoadingRooms(false); });
   }, [gameType]);
-
-  const handleJoin = (code: string) => {
-    setRoomCode(code);
-    // Small delay so state updates before onJoin fires
-    setTimeout(onJoin, 50);
-  };
 
   return (
     <div className="p-6 flex flex-col gap-6 max-w-md mx-auto">
@@ -95,7 +88,7 @@ function RoomGate({ roomCode, setRoomCode, onJoin, title, gameType }: { roomCode
             {rooms.map(r => (
               <button
                 key={r.room_code}
-                onClick={() => handleJoin(r.room_code)}
+                onClick={() => { setRoomCode(r.room_code); onJoin(r.room_code); }}
                 className="flex items-center justify-between px-4 py-3 bg-background border border-border-subtle rounded-xl hover:border-accent/50 hover:bg-accent/5 transition-all text-left group"
               >
                 <div>
@@ -129,7 +122,7 @@ function RoomGate({ roomCode, setRoomCode, onJoin, title, gameType }: { roomCode
           onKeyDown={e => e.key === 'Enter' && roomCode.trim() && onJoin()}
         />
         <button
-          onClick={onJoin}
+          onClick={() => onJoin()}
           disabled={!roomCode.trim()}
           className="px-5 py-2.5 bg-accent text-black font-bold rounded-lg hover:bg-accent/90 transition-all disabled:opacity-50 text-sm"
         >
@@ -192,7 +185,8 @@ function useRealtime<T>(channelName: string | null, onEvent: (payload: T) => voi
         setOnlinePlayers(players);
         // Update room player count in DB
         if (gameType && channelName) {
-          const roomCode = channelName.split('-').slice(-1)[0];
+          const prefix = gameType + '-';
+          const roomCode = channelName.startsWith(prefix) ? channelName.slice(prefix.length) : channelName;
           updateRoomActivity(roomCode, gameType, Object.keys(players).length).catch(() => {});
         }
       })
@@ -202,7 +196,8 @@ function useRealtime<T>(channelName: string | null, onEvent: (payload: T) => voi
           await ch.track({ name: myName.current || 'Guest', joinedAt: Date.now() });
           // Register room in DB for discovery
           if (gameType && channelName) {
-            const roomCode = channelName.split('-').slice(-1)[0];
+            const prefix = gameType + '-';
+            const roomCode = channelName.startsWith(prefix) ? channelName.slice(prefix.length) : channelName;
             registerRoom(roomCode, gameType, myName.current || 'Guest', myLoginId.current).catch(() => {});
           }
         }
@@ -330,7 +325,7 @@ function SpotTheMistake() {
     .sort((a, b) => a[1].joinedAt - b[1].joinedAt)
     .map(([login_id, p]) => ({ login_id, full_name: p.name }));
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Spot the Mistake" gameType="spot-the-mistake" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={(code) => setJoinedRoom((code || roomCode).trim())} title="Spot the Mistake" gameType="spot-the-mistake" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
@@ -574,7 +569,7 @@ function SpinTheWheel() {
     .map(([login_id, p]) => ({ login_id, full_name: p.name }));
   const names = students.map(s => s.full_name);
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Spin the Wheel" gameType="spin-the-wheel" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={(code) => setJoinedRoom((code || roomCode).trim())} title="Spin the Wheel" gameType="spin-the-wheel" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
@@ -790,7 +785,7 @@ function BuzzwordBingo() {
     .sort((a, b) => a[1].joinedAt - b[1].joinedAt)
     .map(([login_id, p]) => ({ login_id, full_name: p.name }));
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Buzzword Bingo" gameType="buzzword-bingo" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={(code) => setJoinedRoom((code || roomCode).trim())} title="Buzzword Bingo" gameType="buzzword-bingo" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
@@ -971,7 +966,7 @@ function SpeedNetworking() {
     setInvites(prev => prev.filter(i => i.fromId !== inviterId));
   };
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Speed Networking" gameType="speed-networking" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={(code) => setJoinedRoom((code || roomCode).trim())} title="Speed Networking" gameType="speed-networking" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
@@ -1100,7 +1095,7 @@ function ChooseYourOwnAdventure() {
     broadcast({ type: 'sync', state: nextState });
   };
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Workplace Scenarios" gameType="workplace-scenarios" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={(code) => setJoinedRoom((code || roomCode).trim())} title="Workplace Scenarios" gameType="workplace-scenarios" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
@@ -1207,7 +1202,7 @@ function RoastMyPitch() {
     broadcast({ type: 'anno', data });
   };
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Roast My Pitch" gameType="roast-my-pitch" />;
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={(code) => setJoinedRoom((code || roomCode).trim())} title="Roast My Pitch" gameType="roast-my-pitch" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
