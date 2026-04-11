@@ -319,23 +319,12 @@ function SpotTheMistake() {
     .sort((a, b) => a[1].joinedAt - b[1].joinedAt)
     .map(([login_id, p]) => ({ login_id, full_name: p.name }));
 
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={(code) => setJoinedRoom((code || roomCode).trim())} title="Spot the Mistake" gameType="spot-the-mistake" />;
-
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
-
-  const update = (patch: Partial<SpotState>) => {
-    const next = { ...gameState, ...patch };
-    setGameState(next);
-    broadcast(next);
-  };
-
-  const scenario = SCENARIOS[gameState.scenarioIdx];
   const playerNames = students.map(s => s.full_name);
-  const currentName = playerNames[gameState.currentPlayerIdx] ?? '';
 
-  // Host-side timer
+  // Host-side timer — must be before early return
   useEffect(() => {
-    if (gameState.phase !== 'playing' || !isHost.current) return;
+    if (!joinedRoom || gameState.phase !== 'playing' || !isHost.current) return;
     timerRef.current = setInterval(() => {
       setGameState(prev => {
         if (prev.timeLeft <= 1) {
@@ -349,7 +338,18 @@ function SpotTheMistake() {
       });
     }, 1000);
     return () => clearInterval(timerRef.current!);
-  }, [gameState.phase, gameState.currentPlayerIdx]);
+  }, [gameState.phase, gameState.currentPlayerIdx, joinedRoom]);
+
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={(code) => setJoinedRoom((code || roomCode).trim())} title="Spot the Mistake" gameType="spot-the-mistake" />;
+
+  const update = (patch: Partial<SpotState>) => {
+    const next = { ...gameState, ...patch };
+    setGameState(next);
+    broadcast(next);
+  };
+
+  const scenario = SCENARIOS[gameState.scenarioIdx];
+  const currentName = playerNames[gameState.currentPlayerIdx] ?? '';
 
   const advancePlayer = (prev: SpotState) => {
     if (prev.currentPlayerIdx < playerNames.length - 1) {
@@ -562,8 +562,6 @@ function SpinTheWheel() {
     .sort((a, b) => a[1].joinedAt - b[1].joinedAt)
     .map(([login_id, p]) => ({ login_id, full_name: p.name }));
   const names = students.map(s => s.full_name);
-
-  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={(code) => setJoinedRoom((code || roomCode).trim())} title="Spin the Wheel" gameType="spin-the-wheel" />;
 
   const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); };
 
