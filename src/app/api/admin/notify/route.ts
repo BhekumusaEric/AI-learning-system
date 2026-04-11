@@ -165,11 +165,11 @@ export const PLATFORM_NOTIFICATION_TYPES: Record<Platform, string[]> = {
 };
 
 const TYPE_LABELS: Record<string, { label: string; desc: string }> = {
-  reminder:      { label: 'Course Reminder',        desc: 'Nudge students to continue their course content' },
+  reminder:      { label: 'Course Reminder',        desc: 'Nudge students who are < 80% complete' },
   mark_done:     { label: 'Mark Done Reminder',     desc: 'Remind students to mark lessons as complete' },
-  exam_reminder: { label: 'Exam Reminder',          desc: 'Encourage eligible students to take the final exam' },
+  exam_reminder: { label: 'Exam Reminder',          desc: 'Students ≥ 80% complete who haven\'t passed the exam yet' },
   kaggle:        { label: 'Kaggle Challenges',      desc: 'Announce new Kaggle challenges (SAAIO only)' },
-  cert_reminder: { label: 'Certificate Reminder',   desc: 'Remind unlocked students to download their certificate' },
+  cert_reminder: { label: 'Certificate Reminder',   desc: 'Students whose certificate is unlocked but not downloaded' },
 };
 
 function buildNotificationEmail(type: string, platform: Platform, customMessage?: string) {
@@ -234,8 +234,12 @@ export async function POST(request: Request) {
   }
 
   const config = PLATFORM_CONFIG[platform as Platform] || PLATFORM_CONFIG.saaio;
+  const progressTable = platform === 'dip' ? 'dip_progress' : platform === 'wrp' ? 'wrp_progress' : null;
 
-  let query = supabase.from(config.table).select('full_name, email, cohort_id, created_at').not('email', 'is', null);
+  // Fetch students with base filters
+  let query = supabase.from(config.table)
+    .select('login_id, full_name, email, cohort_id, created_at, certificate_unlocked')
+    .not('email', 'is', null);
   if (cohort_id) query = query.eq('cohort_id', cohort_id);
   if (date_from) query = query.gte('created_at', date_from);
   if (date_to) query = query.lte('created_at', date_to + 'T23:59:59Z');
@@ -243,9 +247,42 @@ export async function POST(request: Request) {
   const { data: students, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const recipients = (students || []).filter(s => s.email?.trim());
+  let recipients = (students || []).filter(s => s.email?.trim());
+
+  // Apply smart filtering based on notification type
+  if (progressTable && ['reminder', 'exam_reminder', 'cert_reminder'].includes(type)) {
+    const loginIds = recipients.map(s => s.login_id);
+    const { data: progress } = await supabase
+      .from(progressTable)
+      .select('login_id, completed_pages, exam_passed')
+      .in('login_id', loginIds);
+
+    const progressMap: Record<string, any> = {};
+    (progress || []).forEach(p => { progressMap[p.login_id] = p; });
+
+    // Mandatory page thresholds
+    const DIP_MANDATORY = 38; // ch1 pages
+    const WRP_MANDATORY = 7;  // read + interview pages
+    const mandatory = platform === 'dip' ? DIP_MANDATORY : WRP_MANDATORY;
+    const threshold = Math.ceil(mandatory * 0.8);
+
+    recipients = recipients.filter(s => {
+      const prog = progressMap[s.login_id];
+      const completedCount = prog
+        ? Object.keys(prog.completed_pages || {}).filter((k: string) => prog.completed_pages[k]).length
+        : 0;
+      const examPassed = prog?.exam_passed ?? false;
+      const pct = mandatory > 0 ? completedCount / mandatory : 0;
+
+      if (type === 'reminder') return pct < 0.8;  // < 80% — needs nudge
+      if (type === 'exam_reminder') return pct >= 0.8 && !examPassed; // ≥ 80% but not passed
+      if (type === 'cert_reminder') return s.certificate_unlocked === true; // cert unlocked
+      return true;
+    });
+  }
+
   if (recipients.length === 0) {
-    return NextResponse.json({ sent: 0, failed: 0, total: 0, message: 'No students match the selected filters' });
+    return NextResponse.json({ sent: 0, failed: 0, total: 0, message: 'No students match the criteria for this notification type' });
   }
 
   const { subject, html } = buildNotificationEmail(type, platform as Platform, message?.trim() || undefined);
