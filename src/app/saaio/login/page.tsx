@@ -65,8 +65,8 @@ export default function SaaioLoginPage() {
           <div className="bg-accent/20 p-4 rounded-2xl mb-4">
             <Brain className="w-10 h-10 text-accent" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight mb-1">WeThinkCode_ IDC Curriculum</h1>
-          <p className="text-accent text-sm font-semibold mb-3">International Olympiad in AI</p>
+          <h1 className="text-2xl font-bold tracking-tight mb-1">SAAIO Training Grounds</h1>
+          <p className="text-accent text-sm font-semibold mb-3">South African AI Olympiad</p>
           <p className="text-secondary-text text-center text-sm">Enter your student ID to access the platform.</p>
         </div>
 

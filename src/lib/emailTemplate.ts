@@ -5,9 +5,9 @@ const PLATFORM_META: Record<string, { name: string; loginUrl: string; descriptio
     description: 'an AI-powered learning platform designed to build your digital skills',
   },
   saaio: {
-    name: 'WeThinkCode_ IDC Curriculum',
+    name: 'SAAIO Training Grounds',
     loginUrl: 'https://ai-learning-system-ten.vercel.app/saaio/login',
-    description: 'a training platform for the International Olympiad in Artificial Intelligence',
+    description: 'a training platform for the South African AI Olympiad',
   },
   wrp: {
     name: 'WeThinkCode_ Work Readiness Program',

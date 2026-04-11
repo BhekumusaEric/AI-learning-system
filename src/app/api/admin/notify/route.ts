@@ -8,7 +8,7 @@ const PLATFORM_CONFIG = {
   saaio: {
     table: 'saaio_students',
     loginUrl: 'https://ai-learning-system-ten.vercel.app/saaio/login',
-    label: 'WeThinkCode_ IDC Curriculum',
+    label: 'SAAIO Training Grounds',
   },
   dip: {
     table: 'dip_students',
@@ -27,9 +27,9 @@ type Platform = keyof typeof PLATFORM_CONFIG;
 const TEMPLATES: Record<string, Record<Platform, { subject: string; heading: string; body: string; cta: string }>> = {
   reminder: {
     saaio: {
-      subject: 'Keep going — your WeThinkCode_ training is waiting',
+      subject: 'Keep going — your SAAIO training is waiting',
       heading: "Don't lose your momentum!",
-      body: `You're registered on the WeThinkCode_ IDC Curriculum but there's still course content waiting for you.<br/><br/>
+      body: `You're registered on the <strong>SAAIO Training Grounds</strong> but there's still course content waiting for you.<br/><br/>
 Every chapter you complete brings you one step closer to your final certification.<br/><br/>
 Log in now and pick up where you left off.`,
       cta: 'Continue Learning →',

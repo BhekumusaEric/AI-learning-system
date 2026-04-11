@@ -29,7 +29,7 @@ export default async function SaaioAdminDashboard() {
           </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">SAAIO Admin Dashboard</h1>
-            <p className="text-secondary-text mt-1">Manage WeThinkCode_ IDC Curriculum students.</p>
+            <p className="text-secondary-text mt-1">Manage South African AI Olympiad students.</p>
           </div>
         </div>
 
