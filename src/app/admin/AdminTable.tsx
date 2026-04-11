@@ -1636,6 +1636,7 @@ function CertificateVault({ platform, onClose }: { platform: 'dip' | 'wrp'; onCl
   const [isLoading, setIsLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [bulkDownloading, setBulkDownloading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/certificate-vault?platform=${platform}`)
@@ -1677,15 +1678,19 @@ function CertificateVault({ platform, onClose }: { platform: 'dip' | 'wrp'; onCl
   };
 
   return (
-    <div className="bg-secondary border border-[#d4af37]/20 rounded-2xl p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-secondary border border-[#d4af37]/20 rounded-2xl mb-6 overflow-hidden">
+      {/* Header — click to expand/collapse */}
+      <div
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#d4af37]/5 transition-colors"
+        onClick={() => setExpanded(v => !v)}
+      >
         <div className="flex items-center gap-2">
           <Download className="w-4 h-4 text-[#d4af37]" />
           <span className="text-sm font-bold text-foreground">Certificate Vault — {platform.toUpperCase()}</span>
-          <span className="text-xs text-secondary-text">({files.length} stored)</span>
+          <span className="text-xs text-secondary-text">({isLoading ? '...' : files.length} stored)</span>
         </div>
-        <div className="flex items-center gap-2">
-          {files.length > 0 && (
+        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+          {expanded && files.length > 0 && (
             <button
               onClick={handleBulkDownload}
               disabled={bulkDownloading}
@@ -1695,31 +1700,38 @@ function CertificateVault({ platform, onClose }: { platform: 'dip' | 'wrp'; onCl
               {bulkDownloading ? 'Zipping...' : `Download All (${files.length})`}
             </button>
           )}
+          <ChevronDown className={`w-4 h-4 text-secondary-text transition-transform ${expanded ? 'rotate-180' : ''}`} />
           <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
         </div>
       </div>
-      {isLoading ? (
-        <div className="flex items-center gap-2 text-secondary-text text-sm py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>
-      ) : files.length === 0 ? (
-        <p className="text-secondary-text text-sm py-4">No certificates stored yet.</p>
-      ) : (
-        <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
-          {files.map(f => (
-            <div key={f.name} className="flex items-center justify-between p-3 bg-[#0d0d0d] border border-[#d4af37]/20 rounded-lg">
-              <div>
-                <div className="text-sm font-semibold text-foreground">{f.name.replace(/\.(pdf)$/i, '').replace(/-/g, ' ')}</div>
-                <div className="text-xs text-secondary-text">{new Date(f.updated_at).toLocaleDateString('en-ZA')}</div>
-              </div>
-              <button
-                onClick={() => handleDownload(f.name)}
-                disabled={downloading === f.name}
-                className="flex items-center gap-1.5 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 font-bold px-3 py-1.5 rounded-lg text-xs transition-all disabled:opacity-50"
-              >
-                {downloading === f.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                Download
-              </button>
+
+      {/* Collapsible list */}
+      {expanded && (
+        <div className="px-4 pb-4 border-t border-[#d4af37]/10">
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-secondary-text text-sm py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>
+          ) : files.length === 0 ? (
+            <p className="text-secondary-text text-sm py-4">No certificates stored yet.</p>
+          ) : (
+            <div className="flex flex-col gap-2 mt-3 max-h-64 overflow-y-auto">
+              {files.map(f => (
+                <div key={f.name} className="flex items-center justify-between p-3 bg-[#0d0d0d] border border-[#d4af37]/20 rounded-lg">
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">{f.name.replace(/\.(pdf)$/i, '').replace(/-/g, ' ')}</div>
+                    <div className="text-xs text-secondary-text">{new Date(f.updated_at).toLocaleDateString('en-ZA')}</div>
+                  </div>
+                  <button
+                    onClick={() => handleDownload(f.name)}
+                    disabled={downloading === f.name}
+                    className="flex items-center gap-1.5 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 font-bold px-3 py-1.5 rounded-lg text-xs transition-all disabled:opacity-50"
+                  >
+                    {downloading === f.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                    Download
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
