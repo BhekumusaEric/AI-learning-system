@@ -24,13 +24,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Student ID not found' }, { status: 401 });
   }
 
-  // Verify password if one is set on the account
-  if (data.password_hash && password) {
+  // Verify password if one is set on the account (not enforced for SAAIO)
+  if (platform !== 'saaio' && data.password_hash && password) {
     const hash = createHash('sha256').update(password).digest('hex');
     if (hash !== data.password_hash) {
       return NextResponse.json({ error: 'Incorrect password' }, { status: 401 });
     }
-  } else if (data.password_hash && !password) {
+  } else if (platform !== 'saaio' && data.password_hash && !password) {
     return NextResponse.json({ error: 'Password required' }, { status: 401 });
   }
 
