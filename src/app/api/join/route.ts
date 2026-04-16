@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,15 +44,16 @@ export async function POST(request: Request) {
   if (cohort.platform !== platform) return NextResponse.json({ error: 'Platform mismatch' }, { status: 400 });
 
   const table = platform === 'wrp' ? 'wrp_students' : 'dip_students';
-  const login_id = await nextUniqueLoginId(platform);
   const plainPassword = generatePassword();
   const password_hash = createHash('sha256').update(plainPassword).digest('hex');
 
-  const { data, error } = await supabase
-    .from(table)
-    .insert({ login_id, password_hash, full_name: full_name.trim(), email: email?.trim() || null, cohort_id })
-    .select('id, login_id, full_name')
-    .single();
+  const { data, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+    return await supabase
+      .from(table)
+      .insert({ login_id: generated_id, password_hash, full_name: full_name.trim(), email: email?.trim() || null, cohort_id })
+      .select('id, login_id, full_name')
+      .single();
+  });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ...data, plainPassword });

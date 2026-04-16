@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,20 +52,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     const { full_name, email, platform } = body;
     if (!full_name?.trim() || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
-    // Auto-generate supervisor login ID
-    const year = new Date().getFullYear();
-    const { data: existing } = await supabase.from('supervisors').select('login_id').like('login_id', `SUP-${year}-%`);
-    const ids = (existing || []).map((r: any) => r.login_id as string);
-    let max = 0;
-    for (const id of ids) { const n = parseInt(id.split('-').pop() || '0', 10); if (n > max) max = n; }
-    const login_id = `SUP-${year}-${String(max + 1).padStart(3, '0')}`;
-
     const plainPassword = generatePassword();
-    const { data, error } = await supabase
-      .from('supervisors')
-      .insert({ login_id, password_hash: hashPassword(plainPassword), full_name: full_name.trim(), email: email?.trim() || null, platform })
-      .select('id, login_id, full_name')
-      .single();
+    const { data, error, login_id } = await withUniqueLoginIdRetry('supervisor', async (generated_id) => {
+      return await supabase
+        .from('supervisors')
+        .insert({ login_id: generated_id, password_hash: hashPassword(plainPassword), full_name: full_name.trim(), email: email?.trim() || null, platform })
+        .select('id, login_id, full_name')
+        .single();
+    });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -84,14 +78,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     }
 
     const table = platform === 'wrp' ? 'wrp_students' : platform === 'dip' ? 'dip_students' : 'saaio_students';
-    const login_id = await nextUniqueLoginId(platform);
     const plainPassword = generatePassword();
 
-    const { data, error } = await supabase
-      .from(table)
-      .insert({ login_id, password_hash: hashPassword(plainPassword), full_name: full_name.trim(), email: email?.trim() || null })
-      .select('id, login_id, full_name')
-      .single();
+    const { data, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+      return await supabase
+        .from(table)
+        .insert({ login_id: generated_id, password_hash: hashPassword(plainPassword), full_name: full_name.trim(), email: email?.trim() || null })
+        .select('id, login_id, full_name')
+        .single();
+    });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

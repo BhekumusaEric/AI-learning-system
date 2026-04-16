@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
 import { sendEmail } from '@/lib/email';
 
@@ -52,14 +52,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ already_registered: true, login_id: existing.login_id, full_name: existing.full_name });
   }
 
-  // Create new student
-  const login_id = await nextUniqueLoginId(platform);
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 
-  const { error: insertError } = await supabase
-    .from(table)
-    .insert({ login_id, password_hash, full_name: full_name.trim(), email: normalizedEmail });
+  const { error: insertError, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+    return await supabase
+      .from(table)
+      .insert({ login_id: generated_id, password_hash, full_name: full_name.trim(), email: normalizedEmail });
+  });
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
 

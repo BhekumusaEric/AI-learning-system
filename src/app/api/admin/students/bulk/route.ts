@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
 import { sendEmail } from '@/lib/email';
 
@@ -61,13 +61,14 @@ export async function POST(request: Request) {
     }
 
     // Get a unique ID fresh for each student — accounts for concurrent inserts
-    const login_id = await nextUniqueLoginId(platform);
     const plainPassword = generatePassword();
     const password_hash = hashPassword(plainPassword);
 
-    const { error: insertError } = await supabase
-      .from(table)
-      .insert({ login_id, password_hash, full_name, email });
+    const { error: insertError, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+      return await supabase
+        .from(table)
+        .insert({ login_id: generated_id, password_hash, full_name, email });
+    });
 
     if (insertError) {
       results.push({ full_name, login_id, plainPassword: '', email, success: false, error: insertError.message });

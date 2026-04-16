@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
 import { sendEmail } from '@/lib/email';
 import { logAudit } from '@/lib/audit';
@@ -98,18 +98,19 @@ export async function POST(request: Request) {
   if (!full_name || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
-  const login_id = await nextUniqueLoginId(platform);
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 
-  const insertData: any = { login_id, password_hash, full_name, email: email || null };
+  const insertData: any = { password_hash, full_name, email: email || null };
   if (cohort_id) insertData.cohort_id = cohort_id;
 
-  const { data, error } = await supabase
-    .from(table)
-    .insert(insertData)
-    .select('id, login_id, full_name, email, created_at')
-    .single();
+  const { data, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+    return await supabase
+      .from(table)
+      .insert({ ...insertData, login_id: generated_id })
+      .select('id, login_id, full_name, email, created_at')
+      .single();
+  });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
