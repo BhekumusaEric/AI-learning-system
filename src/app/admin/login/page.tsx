@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
             <ShieldCheck className="w-10 h-10 text-accent" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight mb-1">Admin Access</h1>
-          <p className="text-secondary-text text-sm text-center">SAAIO Training Grounds</p>
+          <p className="text-secondary-text text-sm text-center">WeThinkCode_ IDC Curriculum</p>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">

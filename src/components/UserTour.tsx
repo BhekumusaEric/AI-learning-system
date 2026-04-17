@@ -141,7 +141,7 @@ export default function UserTour({ tourId, steps, autoStart = true }: UserTourPr
       >
         <div className="flex justify-between items-start mb-3">
           <h4 className="text-sm font-black text-accent uppercase tracking-widest">{step.title}</h4>
-          <button onClick={() => setIsOpen(false)} className="text-secondary-text hover:text-foreground">
+          <button onClick={handleComplete} className="text-secondary-text hover:text-foreground">
             <X className="w-4 h-4" />
           </button>
         </div>

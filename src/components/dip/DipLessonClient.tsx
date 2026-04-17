@@ -46,7 +46,26 @@ export default function DipLessonClient({
   const [loadingStatus, setLoadingStatus] = useState('Initializing...');
   const [envError, setEnvError] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[] | null>(null);
+  const [testsPassed, setTestsPassed] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const [timeReady, setTimeReady] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
   const { markCompleted, completedPages } = useProgress();
+
+  // Minimum read time based on content length (1 second per 200 chars, min 30s, max 120s)
+  useEffect(() => {
+    if (isPractice) { setTimeReady(true); return; } // code pages don't need timer
+    const minTime = Math.min(120, Math.max(30, Math.floor(content.length / 200)));
+    setTimeLeft(minTime);
+    setTimeReady(false);
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) { clearInterval(interval); setTimeReady(true); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [pageId, isPractice, content]);
   const router = useRouter();
 
   const initPyodide = () => {
@@ -80,7 +99,7 @@ export default function DipLessonClient({
     initPyodide();
   };
 
-  useEffect(() => { setResults(null); }, [pageId]);
+  useEffect(() => { setResults(null); setTestsPassed(false); setDuplicateWarning(false); }, [pageId]);
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -145,6 +164,21 @@ export default function DipLessonClient({
       { id: 1, name: 'Output Console', passed: true, error: stdout || 'Program exited normally' },
       ...(testCodeProp ? [{ id: 2, name: 'All Tests Passed', passed: true, error: 'All hidden tests passed!' }] : []),
     ]);
+    if (testCodeProp) {
+      setTestsPassed(true);
+      // Submit code hash for similarity detection
+      const loginId = localStorage.getItem('ioai_user');
+      if (loginId) {
+        fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login_id: loginId, page_id: pageId, code }),
+        })
+          .then(r => r.json())
+          .then(data => { if (data.duplicate) setDuplicateWarning(true); })
+          .catch(() => {});
+      }
+    }
   };
 
   const navigate = (id: string) => router.push(`/dip/lesson/${id}`);
@@ -187,6 +221,19 @@ export default function DipLessonClient({
           </div>
         )}
 
+        {duplicateWarning && (
+          <div className="mt-8 p-4 rounded-xl bg-error/10 border border-error/30 flex items-start gap-3 not-prose">
+            <span className="text-error text-lg shrink-0">⚠️</span>
+            <div>
+              <p className="text-error font-bold text-sm mb-1">Identical code detected</p>
+              <p className="text-error/80 text-xs leading-relaxed">
+                Your solution matches another student's submission exactly. This has been flagged for admin review.
+                If you copied this code, please delete it and solve the challenge yourself — your certificate reflects your own skills.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="mt-16 pt-8 border-t border-border-subtle flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 not-prose">
           {prevPageId ? (
             <button onClick={() => navigate(prevPageId)}
@@ -201,24 +248,31 @@ export default function DipLessonClient({
 
           {isLastPage ? (
             <button onClick={() => { markCompleted(pageId); router.push('/dip/exam'); }}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all">
+              disabled={isPractice && !!testCodeProp && !testsPassed || !timeReady}
+              title={!timeReady ? `Read for ${timeLeft}s more to unlock` : isPractice && !!testCodeProp && !testsPassed ? 'Pass all tests to continue' : ''}
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-black font-bold hover:bg-accent/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
               <Award className="w-5 h-5" />
-              Go to Final Exam
+              {!timeReady ? `Read ${timeLeft}s more...` : isPractice && !!testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Go to Final Exam'}
             </button>
           ) : nextPageId ? (
             <button onClick={() => { markCompleted(pageId); navigate(nextPageId); }}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group">
+              disabled={isPractice && !!testCodeProp && !testsPassed || !timeReady}
+              title={!timeReady ? `Read for ${timeLeft}s more to unlock` : isPractice && !!testCodeProp && !testsPassed ? 'Pass all tests to continue' : ''}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent transition-all group disabled:opacity-40 disabled:cursor-not-allowed">
               <div className="flex flex-col items-center sm:items-end px-2">
-                <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">Mark Complete & Next</span>
+                <span className="text-[10px] uppercase tracking-wider font-bold mb-0.5">
+                  {!timeReady ? `Read ${timeLeft}s more...` : isPractice && !!testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Mark Complete & Next'}
+                </span>
                 <span className="text-sm font-medium">{nextPageTitle}</span>
               </div>
               <ChevronRight className="w-4 h-4 shrink-0 group-hover:translate-x-1 transition-transform" />
             </button>
           ) : (
             <button onClick={() => markCompleted(pageId)}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all">
+              disabled={isPractice && !!testCodeProp && !testsPassed || !timeReady}
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-accent text-background font-semibold hover:bg-accent/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
               <CheckCircle2 className="w-4 h-4" />
-              Finish Module
+              {!timeReady ? `Read ${timeLeft}s more...` : isPractice && !!testCodeProp && !testsPassed ? 'Pass tests to unlock' : 'Finish Module'}
             </button>
           )}
         </div>
@@ -260,11 +314,13 @@ export default function DipLessonClient({
           <FeedbackPanel
             results={results}
             isRunning={isRunning}
-            onNext={isLastPage
-              ? () => { markCompleted(pageId); router.push('/dip/exam'); }
-              : nextPageId
-                ? () => { markCompleted(pageId); navigate(nextPageId); }
-                : undefined
+            onNext={testsPassed
+              ? (isLastPage
+                ? () => { markCompleted(pageId); router.push('/dip/exam'); }
+                : nextPageId
+                  ? () => { markCompleted(pageId); navigate(nextPageId); }
+                  : undefined)
+              : undefined
             }
             nextLabel={isLastPage ? 'Go to Final Exam' : 'Next Lesson'}
           />

@@ -15,14 +15,16 @@ export async function GET(request: Request) {
   const username = searchParams.get('username') || 'guest';
 
   const table = getTable(username);
-  
   try {
     const result = await sql`
-      SELECT completed_pages FROM ${sql(table)} WHERE login_id = ${username}
+      SELECT * FROM ${sql(table)} WHERE login_id = ${username}
     `;
     
+    const data = result[0];
     return NextResponse.json({ 
-      completedPages: result[0]?.completed_pages || {} 
+      completedPages: data?.completed_pages || {},
+      examPassed: data?.exam_passed ?? null, 
+      examScore: data?.exam_score ?? null 
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

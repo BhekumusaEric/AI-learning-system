@@ -23,6 +23,7 @@ export default function DipCertificatePage() {
   const [nameChangeRequested, setNameChangeRequested] = useState(false);
   const [ready, setReady] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [verifyToken, setVerifyToken] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const router = useRouter();
 
@@ -39,6 +40,7 @@ export default function DipCertificatePage() {
         setAllowed(data.certificate_unlocked ?? false);
         setRequested(data.certificate_requested ?? false);
         setNameChangeRequested(data.name_change_requested ?? false);
+        if (data.verify_token) setVerifyToken(data.verify_token);
         if (data.certificate_name) {
           setStudentName(data.certificate_name);
           setNameLocked(true);
@@ -73,9 +75,18 @@ export default function DipCertificatePage() {
       ctx.textAlign = 'right';
       ctx.textBaseline = 'alphabetic';
       ctx.fillText(date, IMG_W - 110, IMG_H - 88);
+
+      // Verification URL — bottom left
+      if (verifyToken) {
+        ctx.font = '22px Georgia, serif';
+        ctx.fillStyle = '#888888';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(`Verify: ai-learning-system-ten.vercel.app/verify/${verifyToken}`, 110, IMG_H - 88);
+      }
     };
     img.src = '/dip-cert-bg.png';
-  }, [date]);
+  }, [date, verifyToken]);
 
   useEffect(() => {
     if (ready && canvasRef.current) drawCertificate(canvasRef.current, studentName);
@@ -101,7 +112,17 @@ export default function DipCertificatePage() {
       const pdfW = pdf.internal.pageSize.getWidth();
       const pdfH = pdf.internal.pageSize.getHeight();
       pdf.addImage(canvasRef.current.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
-      pdf.save(`IDC-DIP-Certificate-${(studentName || 'student').replace(/\s+/g, '-')}.pdf`);
+      const fileName = `IDC-DIP-Certificate-${(studentName || 'student').replace(/\s+/g, '-')}.pdf`;
+      pdf.save(fileName);
+      // Send compressed canvas image to server instead of full PDF to avoid 413
+      const imageBase64 = canvasRef.current.toDataURL('image/jpeg', 0.7).split(',')[1];
+      const driveRes = await fetch('/api/admin/save-certificate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64, fileName, platform: 'dip' }),
+      });
+      const driveData = await driveRes.json();
+      if (!driveRes.ok) console.error('Drive upload failed:', driveData);
     } finally {
       setDownloading(false);
     }

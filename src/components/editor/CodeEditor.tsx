@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
-import { Play, RotateCcw } from 'lucide-react';
+import { Play, RotateCcw, AlertTriangle, X } from 'lucide-react';
 
 interface CodeEditorProps {
   code: string;
@@ -15,12 +15,17 @@ interface CodeEditorProps {
   onInputRequest?: (cb: (prompt: string) => Promise<string>) => void;
 }
 
+const PASTE_THRESHOLD = 50; // chars — anything above this triggers the warning
+
 export default function CodeEditor({ code, onChange, onRun, onReset, isRunning = false, isLoading = false, loadingStatus = 'Loading Python environment...', onInputRequest }: CodeEditorProps) {
   const [inputPrompt, setInputPrompt] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [pasteWarning, setPasteWarning] = useState(false);
+  const [pasteCount, setPasteCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const resolverRef = useRef<((val: string) => void) | null>(null);
+  const editorRef = useRef<any>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -49,6 +54,30 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
     setInputPrompt(null);
     setInputValue('');
   }
+
+  const handlePasteDetected = (pastedText: string) => {
+    if (pastedText.length > PASTE_THRESHOLD) {
+      setPasteWarning(true);
+      setPasteCount(c => c + 1);
+    }
+  };
+
+  const handleMonacoMount = (editor: any) => {
+    editorRef.current = editor;
+    editor.onDidPaste((e: any) => {
+      // Get the pasted text from the paste range
+      const model = editor.getModel();
+      if (model && e.range) {
+        const pasted = model.getValueInRange(e.range);
+        handlePasteDetected(pasted);
+      }
+    });
+  };
+
+  const handleMobilePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = e.clipboardData.getData('text');
+    handlePasteDetected(pasted);
+  };
 
   const busy = isRunning || isLoading;
 
@@ -79,6 +108,26 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
         </div>
       </div>
 
+      {/* Paste warning banner */}
+      {pasteWarning && (
+        <div className="flex items-start gap-3 px-4 py-3 bg-warning/10 border-b border-warning/30">
+          <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-warning text-xs font-bold mb-0.5">
+              {pasteCount >= 3 ? 'We noticed you keep pasting code — are you using AI?' : 'Looks like you pasted some code!'}
+            </p>
+            <p className="text-warning/80 text-xs leading-relaxed">
+              {pasteCount >= 3
+                ? 'Using AI to complete challenges prevents you from actually learning. The goal is to build real skills — employers will test you in person. Give it a genuine try!'
+                : 'Typing code yourself is how you actually learn. Try writing it out line by line — even if it takes longer, it builds real understanding.'}
+            </p>
+          </div>
+          <button onClick={() => setPasteWarning(false)} className="text-warning/60 hover:text-warning shrink-0">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {inputPrompt !== null && (
         <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a2e] border-b border-accent/40">
           <span className="text-accent text-xs font-mono shrink-0">{inputPrompt}</span>
@@ -96,10 +145,10 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
 
       <div className="flex-1 overflow-hidden">
         {isMobile ? (
-          // Mobile: plain textarea — Monaco doesn't work well on touch
           <textarea
             value={code}
             onChange={e => onChange(e.target.value)}
+            onPaste={handleMobilePaste}
             spellCheck={false}
             autoCapitalize="none"
             autoCorrect="off"
@@ -113,6 +162,7 @@ export default function CodeEditor({ code, onChange, onRun, onReset, isRunning =
             theme="vs-dark"
             value={code}
             onChange={onChange}
+            onMount={handleMonacoMount}
             options={{
               minimap: { enabled: false },
               fontSize: 14,

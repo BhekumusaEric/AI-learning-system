@@ -8,13 +8,11 @@ import { sql } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 
 async function getStats() {
-  const [saaioRes, dipRes, wrpRes] = await Promise.all([
-    sql`SELECT COUNT(*) as count FROM saaio_students`,
+  const [dipRes, wrpRes] = await Promise.all([
     sql`SELECT COUNT(*) as count FROM dip_students`,
     sql`SELECT COUNT(*) as count FROM wrp_students`,
   ]);
   return {
-    saaioCount: Number(saaioRes[0]?.count || 0),
     dipCount: Number(dipRes[0]?.count || 0),
     wrpCount: Number(wrpRes[0]?.count || 0),
   };
@@ -24,15 +22,14 @@ export default async function AdminDashboard() {
   const syllabus = getSyllabus();
   const stats = await getStats();
 
-  let totalSaaioPages = 0;
-  syllabus.forEach(part => part.chapters.forEach(ch => { totalSaaioPages += ch.pages.length; }));
-
   const part1 = syllabus.find(p => p.id === 'part1_foundational_skills_classical_ml');
   const ch1 = part1?.chapters.find(c => c.id === 'chapter1_python_programming_fundamentals');
   const ch2 = part1?.chapters.find(c => c.id === 'chapter2_battle_grounds');
-  const totalDipPages = (ch1?.pages.length || 0) + (ch2?.pages.length || 0);
+  const totalDipPages = ch1?.pages.length || 0;
 
-  const totalWrpPages = getWrpSyllabus().length;
+  const wrpSyllabus = getWrpSyllabus();
+  const totalWrpPages = wrpSyllabus.length;
+  const mandatoryWrpPages = wrpSyllabus.filter(p => p.type === 'read' || p.type === 'interview').length;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center py-10 px-6">
@@ -43,18 +40,11 @@ export default async function AdminDashboard() {
           </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-            <p className="text-secondary-text mt-1">Register students and track performance across all platforms.</p>
+            <p className="text-secondary-text mt-1">Manage DIP and WRP programs, onboarding, and supervisors.</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-          <div className="bg-secondary border border-border-subtle p-6 rounded-xl flex items-center gap-4">
-            <div className="bg-accent/10 p-3 rounded-lg"><Users className="w-6 h-6 text-accent" /></div>
-            <div>
-              <p className="text-sm font-medium text-secondary-text">SAAIO Students</p>
-              <h3 className="text-2xl font-bold">{stats.saaioCount}</h3>
-            </div>
-          </div>
           <div className="bg-secondary border border-border-subtle p-6 rounded-xl flex items-center gap-4">
             <div className="bg-emerald-500/10 p-3 rounded-lg"><Users className="w-6 h-6 text-emerald-500" /></div>
             <div>
@@ -70,15 +60,29 @@ export default async function AdminDashboard() {
             </div>
           </div>
           <div className="bg-secondary border border-border-subtle p-6 rounded-xl flex items-center gap-4">
-            <div className="bg-blue-500/10 p-3 rounded-lg"><BookOpen className="w-6 h-6 text-blue-500" /></div>
+            <div className="bg-emerald-500/10 p-3 rounded-lg"><BookOpen className="w-6 h-6 text-emerald-500" /></div>
             <div>
-              <p className="text-sm font-medium text-secondary-text">SAAIO Pages</p>
-              <h3 className="text-2xl font-bold">{totalSaaioPages}</h3>
+              <p className="text-sm font-medium text-secondary-text">DIP Pages</p>
+              <h3 className="text-2xl font-bold">{totalDipPages}</h3>
+            </div>
+          </div>
+          <div className="bg-secondary border border-border-subtle p-6 rounded-xl flex items-center gap-4">
+            <div className="bg-orange-500/10 p-3 rounded-lg"><BookOpen className="w-6 h-6 text-orange-500" /></div>
+            <div>
+              <p className="text-sm font-medium text-secondary-text">WRP Pages</p>
+              <h3 className="text-2xl font-bold">{totalWrpPages}</h3>
             </div>
           </div>
         </div>
 
-        <AdminTable totalSaaioPages={totalSaaioPages} totalDipPages={totalDipPages} totalWrpPages={totalWrpPages} />
+        <AdminTable 
+          totalSaaioPages={0} 
+          totalDipPages={totalDipPages} 
+          totalWrpPages={totalWrpPages}
+          mandatoryWrpPages={mandatoryWrpPages}
+          allowedTabs={['dip', 'wrp', 'completed-dip', 'completed-wrp', 'onboarding', 'supervisors', 'invite-links']}
+          defaultTab="dip"
+        />
       </div>
     </div>
   );

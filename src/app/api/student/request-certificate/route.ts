@@ -11,10 +11,9 @@ export async function GET(request: Request) {
   if (!login_id || !platform) return NextResponse.json({ error: 'login_id and platform required' }, { status: 400 });
 
   const table = platform === 'dip' ? 'dip_students' : 'wrp_students';
-
   try {
     const rows = await sql`
-      SELECT certificate_requested, certificate_unlocked, certificate_name, name_change_requested
+      SELECT certificate_requested, certificate_unlocked, certificate_name, name_change_requested, verify_token
       FROM ${sql(table)}
       WHERE login_id = ${login_id}
     `;
@@ -25,6 +24,7 @@ export async function GET(request: Request) {
       certificate_unlocked: data.certificate_unlocked ?? false,
       certificate_name: data.certificate_name ?? null,
       name_change_requested: data.name_change_requested ?? false,
+      verify_token: data.verify_token ?? null,
     });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

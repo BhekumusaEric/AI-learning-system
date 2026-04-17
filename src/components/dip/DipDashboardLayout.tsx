@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import DipHeader from '@/components/dip/DipHeader';
 import DipSidebar from '@/components/dip/DipSidebar';
 import { PartData } from '@/lib/syllabus';
+import SessionGuard from '@/components/providers/SessionGuard';
 
 export default function DipLayout({ children, syllabus }: { children: React.ReactNode; syllabus: PartData[] }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <div className="flex flex-col h-screen w-full bg-background overflow-hidden text-foreground">
+      <SessionGuard platform="dip" />
       <DipHeader syllabus={syllabus} onMenuClick={() => setDrawerOpen(true)} />
 
       <div className="flex flex-1 overflow-hidden">

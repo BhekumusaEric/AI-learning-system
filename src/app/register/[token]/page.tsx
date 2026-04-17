@@ -24,7 +24,7 @@ interface Result {
 const PLATFORMS = [
   { value: 'dip', label: 'Digital Inclusion Program (DIP)' },
   { value: 'wrp', label: 'Work Readiness Program (WRP)' },
-  { value: 'saaio', label: 'SAAIO Training Grounds' },
+  { value: 'saaio', label: 'WeThinkCode_ IDC Curriculum' },
 ];
 
 const SUPERVISOR_PLATFORMS = [

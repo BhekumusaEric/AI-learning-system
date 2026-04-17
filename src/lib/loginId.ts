@@ -36,3 +36,60 @@ export async function nextUniqueLoginId(platform: string): Promise<string> {
 
   return formatLoginId(platform, candidate);
 }
+
+/**
+ * Executes an insert callback function and retries with a new generated
+ * login ID up to 5 times if a Postgres unique constraint violation occurs.
+ */
+export async function withUniqueLoginIdRetry(
+  platformOrSupervisor: string, // 'dip' | 'saaio' | 'wrp' | 'supervisor'
+  insertFn: (login_id: string) => Promise<{ error: any; [key: string]: any }>
+): Promise<{ error: any; login_id: string; [key: string]: any }> {
+  let retries = 5;
+
+  while (retries > 0) {
+    let login_id: string;
+
+    if (platformOrSupervisor === 'supervisor') {
+      const year = new Date().getFullYear();
+      const existing = await sql`
+        SELECT login_id FROM supervisors
+        WHERE login_id LIKE ${'SUP-' + year + '-%'}
+      `;
+
+      const ids = (existing || []).map((r: any) => r.login_id as string);
+      let max = 0;
+      for (const id of ids) {
+        const n = parseInt(id.split('-').pop() || '0', 10);
+        if (n > max) max = n;
+      }
+      login_id = `SUP-${year}-${String(max + 1).padStart(3, '0')}`;
+    } else {
+      login_id = await nextUniqueLoginId(platformOrSupervisor);
+    }
+
+    const result = await insertFn(login_id);
+
+    if (!result.error) {
+      return { ...result, login_id }; // Success!
+    }
+
+    // Check for Postgres unique constraint violation (code 23505) or duplicate key
+    const msg = result.error.message || '';
+    if (
+      result.error.code === '23505' ||
+      msg.includes('duplicate key') ||
+      msg.includes('violates unique constraint')
+    ) {
+      retries--;
+      if (retries === 0) {
+        return { ...result, login_id: null as unknown as string };
+      }
+    } else {
+      // Return immediately if it's some other non-retryable error
+      return { ...result, login_id: null as unknown as string };
+    }
+  }
+
+  return { error: { message: 'Max retries exceeded for generating unique login ID' }, login_id: null as unknown as string };
+}

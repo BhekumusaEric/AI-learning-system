@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,17 +47,24 @@ export async function POST(request: Request) {
     if (cohort[0].platform !== platform) return NextResponse.json({ error: 'Platform mismatch' }, { status: 400 });
 
     const table = platform === 'wrp' ? 'wrp_students' : 'dip_students';
-    const login_id = await nextUniqueLoginId(platform);
     const plainPassword = generatePassword();
     const password_hash = createHash('sha256').update(plainPassword).digest('hex');
 
-    const result = await sql`
-      INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
-      VALUES (${login_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${cohort_id})
-      RETURNING id, login_id, full_name
-    `;
+    const { data, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+      try {
+        const result = await sql`
+          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+          VALUES (${generated_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${cohort_id})
+          RETURNING id, login_id, full_name
+        `;
+        return { error: null, data: result[0] };
+      } catch (e: any) {
+        return { error: e };
+      }
+    });
 
-    return NextResponse.json({ ...result[0], plainPassword });
+    if (error) throw error;
+    return NextResponse.json({ ...data, plainPassword });
   } catch (error: any) {
     console.error('[JOIN_POST_FAILED]', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

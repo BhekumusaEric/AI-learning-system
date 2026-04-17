@@ -13,7 +13,7 @@ The **Onboarding Pipeline** is a tool that automates the process of turning stud
     - Confirm the action.
     - **What happens next**: The system creates a new cohort, registers all students, and sends them their login details via email instantly.
 
-## ⚠️ Important Features
+## Important Features
 
 ### 1. Duplicate Handling
 If a student has applied more than once with the same email, they will be moved to a **"Duplicates Flagged"** section. 

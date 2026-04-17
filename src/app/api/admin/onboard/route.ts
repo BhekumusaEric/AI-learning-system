@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
 import { getPlatformFromProgram } from '@/lib/applications';
 import { sendEmail } from '@/lib/email';
@@ -78,19 +78,20 @@ export async function POST(request: Request) {
     const full_name = (student.Full_Name || `${student.First_Name} ${student.Last_Name}`).trim();
     const email = (student.Email_Address || '').trim() || null;
 
-    const login_id = await nextUniqueLoginId(platform);
     const plainPassword = generatePassword();
     const password_hash = hashPassword(plainPassword);
 
-    let insertError: any = null;
-    try {
-      await sql`
-        INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
-        VALUES (${login_id}, ${password_hash}, ${full_name}, ${email}, ${cohortId})
-      `;
-    } catch (e: any) {
-      insertError = e;
-    }
+    const { error: insertError, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+      try {
+        await sql`
+          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+          VALUES (${generated_id}, ${password_hash}, ${full_name}, ${email}, ${cohortId})
+        `;
+        return { error: null };
+      } catch (e: any) {
+        return { error: e };
+      }
+    });
 
     if (insertError) {
       results.push({ full_name, success: false, error: insertError.message });

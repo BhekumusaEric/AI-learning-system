@@ -8,7 +8,7 @@ function expectedToken() {
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
 
-  if (url.pathname.startsWith('/admin')) {
+  if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/saaio/admin')) {
     if (url.pathname === '/admin/login') return NextResponse.next();
     const session = req.cookies.get('admin_session')?.value;
     if (session !== expectedToken()) {
@@ -26,5 +26,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin', '/admin/:path*', '/supervisor', '/supervisor/:path*'],
+  matcher: ['/admin', '/admin/:path*', '/saaio/admin', '/saaio/admin/:path*', '/supervisor', '/supervisor/:path*'],
 };

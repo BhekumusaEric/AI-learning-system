@@ -74,6 +74,34 @@ function ConnectedBadge({ connected }: { connected: boolean }) {
   );
 }
 
+// ── RoomGate ──────────────────────────────────────────────────────────────────
+function RoomGate({ roomCode, setRoomCode, onJoin, title }: { roomCode: string, setRoomCode: (c: string) => void, onJoin: () => void, title: string }) {
+  return (
+    <div className="p-8 flex flex-col items-center justify-center gap-4 text-center">
+      <div className="bg-accent/20 p-4 rounded-full mb-2">
+        <Trophy className="w-8 h-8 text-accent" />
+      </div>
+      <h3 className="text-xl font-bold">{title}</h3>
+      <p className="text-sm text-secondary-text max-w-sm mb-4">Enter the session code provided by your facilitator to join the live quiz with your group.</p>
+      <input
+        type="text"
+        value={roomCode}
+        onChange={e => setRoomCode(e.target.value.toUpperCase())}
+        placeholder="e.g. CLASS-A"
+        className="w-full max-w-xs bg-background border border-border-subtle rounded-lg px-4 py-3 text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent text-center font-bold tracking-widest uppercase mb-2"
+        onKeyDown={e => e.key === 'Enter' && roomCode.trim() && onJoin()}
+      />
+      <button
+        onClick={onJoin}
+        disabled={!roomCode.trim()}
+        className="px-8 py-3 bg-accent text-black font-bold rounded-lg hover:bg-accent/90 transition-all disabled:opacity-50"
+      >
+        Join Room
+      </button>
+    </div>
+  );
+}
+
 // ── Leaderboard (persistent) ──────────────────────────────────────────────────
 export function QuizLeaderboard() {
   const [scores, setScores] = useState<any[]>([]);
@@ -114,6 +142,9 @@ export function QuizLeaderboard() {
 
 // ── Main LiveQuiz component ───────────────────────────────────────────────────
 export default function LiveQuiz() {
+  const [roomCode, setRoomCode] = useState('');
+  const [joinedRoom, setJoinedRoom] = useState<string | null>(null);
+
   const myLoginId = useRef<string>('');
   const myName = useRef<string>('');
   const isHost = useRef(false);
@@ -153,7 +184,8 @@ export default function LiveQuiz() {
   }, []);
 
   useEffect(() => {
-    const ch = supabase.channel('live-quiz', { config: { broadcast: { self: true }, presence: { key: myLoginId.current || 'guest' } } });
+    if (!joinedRoom) return;
+    const ch = supabase.channel(`live-quiz-${joinedRoom}`, { config: { broadcast: { self: true }, presence: { key: myLoginId.current || 'guest' } } });
     channelRef.current = ch;
 
     ch.on('broadcast', { event: 'quiz' }, ({ payload }: any) => {
@@ -161,34 +193,34 @@ export default function LiveQuiz() {
       setMyAnswer(null);
       resetInactivityTimer();
     })
-    .on('presence', { event: 'sync' }, () => {
-      const state = ch.presenceState<{ name: string; joinedAt: number }>();
-      const players: Record<string, { name: string; joinedAt: number }> = {};
-      Object.entries(state).forEach(([key, presences]) => {
-        const p = (presences as any[])[0];
-        if (p) players[key] = { name: p.name, joinedAt: p.joinedAt };
-      });
-      setOnlinePlayers(players);
-    })
-    .subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        setConnected(true);
-        // Track presence
-        await ch.track({ name: myName.current || 'Guest', joinedAt: Date.now() });
-        // Heartbeat every 60s to stay alive
-        heartbeatRef.current = setInterval(async () => {
+      .on('presence', { event: 'sync' }, () => {
+        const state = ch.presenceState<{ name: string; joinedAt: number }>();
+        const players: Record<string, { name: string; joinedAt: number }> = {};
+        Object.entries(state).forEach(([key, presences]) => {
+          const p = (presences as any[])[0];
+          if (p) players[key] = { name: p.name, joinedAt: p.joinedAt };
+        });
+        setOnlinePlayers(players);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          setConnected(true);
+          // Track presence
           await ch.track({ name: myName.current || 'Guest', joinedAt: Date.now() });
-        }, 60_000);
-        resetInactivityTimer();
-      }
-    });
+          // Heartbeat every 60s to stay alive
+          heartbeatRef.current = setInterval(async () => {
+            await ch.track({ name: myName.current || 'Guest', joinedAt: Date.now() });
+          }, 60_000);
+          resetInactivityTimer();
+        }
+      });
 
     return () => {
       clearInterval(heartbeatRef.current!);
       clearTimeout(inactivityRef.current!);
       supabase.removeChannel(ch);
     };
-  }, [resetInactivityTimer]);
+  }, [resetInactivityTimer, joinedRoom]);
 
   // Host timer
   const advanceQuestion = useCallback((prev: GameState) => {
@@ -299,6 +331,9 @@ export default function LiveQuiz() {
   const sortedScores = Object.values(gameState.scores).sort((a, b) => b.score - a.score);
   const answeredCount = Object.values(gameState.selectedAnswer).length;
 
+  if (!joinedRoom) return <RoomGate roomCode={roomCode} setRoomCode={setRoomCode} onJoin={() => setJoinedRoom(roomCode.trim())} title="Live Quiz" />;
+  const leaveRoom = () => { setJoinedRoom(null); setRoomCode(''); reset(); };
+
   // ── LOBBY ──
   if (gameState.phase === 'lobby') return (
     <div className="p-6 flex flex-col gap-5">
@@ -316,9 +351,8 @@ export default function LiveQuiz() {
           <p className="text-xs font-bold uppercase tracking-wider text-secondary-text mb-2">Online Now ({Object.keys(onlinePlayers).length})</p>
           <div className="flex flex-wrap gap-2">
             {Object.entries(onlinePlayers).map(([key, p]) => (
-              <span key={key} className={`text-xs px-2 py-1 rounded-full border ${
-                key === myLoginId.current ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-background border-border-subtle text-secondary-text'
-              }`}>
+              <span key={key} className={`text-xs px-2 py-1 rounded-full border ${key === myLoginId.current ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-background border-border-subtle text-secondary-text'
+                }`}>
                 {p.name.split(' ')[0]}{key === myLoginId.current ? ' (you)' : ''}
               </span>
             ))}
@@ -365,11 +399,10 @@ export default function LiveQuiz() {
           const chosen = myAnswer === i;
           return (
             <button key={i} onClick={() => submitAnswer(i)} disabled={myAnswer !== null}
-              className={`text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
-                chosen ? 'bg-accent/20 border-accent text-accent' :
-                myAnswer !== null ? 'border-border-subtle text-secondary-text/50 cursor-not-allowed' :
-                'border-border-subtle text-foreground hover:border-accent/50 hover:bg-secondary'
-              }`}>
+              className={`text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all ${chosen ? 'bg-accent/20 border-accent text-accent' :
+                  myAnswer !== null ? 'border-border-subtle text-secondary-text/50 cursor-not-allowed' :
+                    'border-border-subtle text-foreground hover:border-accent/50 hover:bg-secondary'
+                }`}>
               <span className="font-bold mr-2 text-secondary-text">{String.fromCharCode(65 + i)}.</span>{opt}
             </button>
           );

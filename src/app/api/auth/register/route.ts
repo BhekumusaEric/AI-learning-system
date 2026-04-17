@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
 import { sendEmail } from '@/lib/email';
 
@@ -51,19 +51,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ already_registered: true, login_id: existing.login_id, full_name: existing.full_name });
   }
 
-  // Create new student
-  const login_id = await nextUniqueLoginId(platform);
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 
-  try {
-    await sql`
-      INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
-      VALUES (${login_id}, ${password_hash}, ${full_name.trim()}, ${normalizedEmail})
-    `;
-  } catch (insertError: any) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
-  }
+  const { error: insertError, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+    try {
+      await sql`
+        INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
+        VALUES (${generated_id}, ${password_hash}, ${full_name.trim()}, ${normalizedEmail})
+      `;
+      return { error: null };
+    } catch (e: any) {
+      return { error: e };
+    }
+  });
+
+  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
 
   // Send credentials email
   let emailSent = false;

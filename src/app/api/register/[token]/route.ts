@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,21 +59,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       const { full_name, email, platform } = body;
       if (!full_name?.trim() || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
-      // 1. Generate supervisor login ID
-      const year = new Date().getFullYear();
-      const existing = await sql`SELECT login_id FROM supervisors WHERE login_id LIKE ${'SUP-' + year + '-%'}`;
-      const ids = existing.map((r: any) => r.login_id as string);
-      let max = 0;
-      for (const id of ids) { const n = parseInt(id.split('-').pop() || '0', 10); if (n > max) max = n; }
-      const login_id = `SUP-${year}-${String(max + 1).padStart(3, '0')}`;
-
-      // 2. Insert Supervisor
       const plainPassword = generatePassword();
-      const [data] = await sql`
-        INSERT INTO supervisors (login_id, password_hash, full_name, email, platform)
-        VALUES (${login_id}, ${hashPassword(plainPassword)}, ${full_name.trim()}, ${email?.trim() || null}, ${platform})
-        RETURNING id, login_id, full_name
-      `;
+      const { data, error, login_id } = await withUniqueLoginIdRetry('supervisor', async (generated_id) => {
+        try {
+          const result = await sql`
+            INSERT INTO supervisors (login_id, password_hash, full_name, email, platform)
+            VALUES (${generated_id}, ${hashPassword(plainPassword)}, ${full_name.trim()}, ${email?.trim() || null}, ${platform})
+            RETURNING id, login_id, full_name
+          `;
+          return { error: null, data: result[0] };
+        } catch (e: any) {
+          return { error: e };
+        }
+      });
+      if (error) throw error;
 
       // 3. Increment use_count
       await sql`UPDATE invite_links SET use_count = use_count + 1 WHERE id = ${link.id}`;
@@ -91,14 +90,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       }
 
       const table = platform === 'wrp' ? 'wrp_students' : platform === 'dip' ? 'dip_students' : 'saaio_students';
-      const login_id = await nextUniqueLoginId(platform);
       const plainPassword = generatePassword();
 
-      const [data] = await sql`
-        INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
-        VALUES (${login_id}, ${hashPassword(plainPassword)}, ${full_name.trim()}, ${email?.trim() || null})
-        RETURNING id, login_id, full_name
-      `;
+      const { data, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+        try {
+          const result = await sql`
+            INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
+            VALUES (${generated_id}, ${hashPassword(plainPassword)}, ${full_name.trim()}, ${email?.trim() || null})
+            RETURNING id, login_id, full_name
+          `;
+          return { error: null, data: result[0] };
+        } catch (e: any) {
+          return { error: e };
+        }
+      });
+      if (error) throw error;
 
       await sql`UPDATE invite_links SET use_count = use_count + 1 WHERE id = ${link.id}`;
 

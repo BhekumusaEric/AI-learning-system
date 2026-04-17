@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
 import { sendEmail } from '@/lib/email';
+import { logAudit } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,10 +52,15 @@ export async function GET(request: Request) {
   const progressTable = platform === 'dip' ? 'dip_progress' : platform === 'wrp' ? 'wrp_progress' : 'saaio_progress';
 
   try {
+    const certFields = (platform === 'dip' || platform === 'wrp') 
+      ? sql`, s.certificate_requested, s.certificate_unlocked` 
+      : sql``;
+
     // We join the student table with its corresponding progress table
     const students = await sql`
       SELECT 
-        s.id, s.login_id, s.full_name, s.email, s.created_at, s.cohort_id,
+        s.id, s.login_id, s.full_name, s.email, s.created_at, s.cohort_id
+        ${certFields},
         p.completed_pages, p.last_active, p.exam_score, p.exam_passed
       FROM ${sql(table)} s
       LEFT JOIN ${sql(progressTable)} p ON s.login_id = p.login_id
@@ -74,7 +80,9 @@ export async function GET(request: Request) {
         completedCount,
         lastActive: s.last_active,
         examScore: s.exam_score,
-        examPassed: s.exam_passed
+        examPassed: s.exam_passed,
+        certificate_requested: s.certificate_requested ?? false,
+        certificate_unlocked: s.certificate_unlocked ?? false
       };
     });
 
@@ -92,16 +100,24 @@ export async function POST(request: Request) {
   if (!full_name || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
-  const login_id = await nextUniqueLoginId(platform);
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 
   try {
-    const [student] = await sql`
-      INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
-      VALUES (${login_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${cohort_id || null})
-      RETURNING id, login_id, full_name, email, created_at
-    `;
+    const { data: student, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+      try {
+        const [res] = await sql`
+          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+          VALUES (${generated_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${cohort_id || null})
+          RETURNING id, login_id, full_name, email, created_at
+        `;
+        return { error: null, data: res };
+      } catch (e: any) {
+        return { error: e };
+      }
+    });
+
+    if (error) throw error;
 
     // Send email if address provided and API key is configured
     let emailSent = false;
@@ -139,7 +155,6 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // Password reset
     const plainPassword = generatePassword();
     const password_hash = hashPassword(plainPassword);
 
@@ -164,6 +179,7 @@ export async function PATCH(request: Request) {
       }
     }
 
+    await logAudit({ request, action: 'password_reset', target_login_id: login_id, target_platform: platform, details: { emailSent } });
     return NextResponse.json({ plainPassword, emailSent });
   } catch (error: any) {
     console.error('[ADMIN_PATCH_STUDENT_FAILED]', error);
@@ -183,6 +199,7 @@ export async function DELETE(request: Request) {
   
   try {
     await sql`DELETE FROM ${sql(table)} WHERE login_id = ${login_id}`;
+    await logAudit({ request, action: 'student_deleted', target_login_id: login_id, target_platform: platform });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('[ADMIN_DELETE_STUDENT_FAILED]', error);

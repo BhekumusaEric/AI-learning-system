@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId } from '@/lib/loginId';
+import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
 import { sendEmail } from '@/lib/email';
 
@@ -61,19 +61,20 @@ export async function POST(request: Request) {
     }
 
     // Get a unique ID fresh for each student — accounts for concurrent inserts
-    const login_id = await nextUniqueLoginId(platform);
     const plainPassword = generatePassword();
     const password_hash = hashPassword(plainPassword);
 
-    let insertError: any = null;
-    try {
-      await sql`
-        INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
-        VALUES (${login_id}, ${password_hash}, ${full_name}, ${email})
-      `;
-    } catch (e: any) {
-      insertError = e;
-    }
+    const { error: insertError, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+      try {
+        await sql`
+          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
+          VALUES (${generated_id}, ${password_hash}, ${full_name}, ${email})
+        `;
+        return { error: null };
+      } catch (e: any) {
+        return { error: e };
+      }
+    });
 
     if (insertError) {
       results.push({ full_name, login_id, plainPassword: '', email, success: false, error: insertError.message });

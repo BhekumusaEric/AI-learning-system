@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChevronLeft, ChevronRight, Award, CheckCircle2, Send, RotateCcw, Video, FileText, Lightbulb, BookOpen } from 'lucide-react';
@@ -8,9 +9,20 @@ import { useProgress } from '@/components/providers/ProgressProvider';
 import { useRouter } from 'next/navigation';
 import { WrpPage } from '@/lib/wrpSyllabus';
 import CvBuilder from '@/components/wrp/CvBuilder';
-import { SpotTheMistakeGame, SpinTheWheelGame, BuzzwordBingoGame } from '@/components/wrp/WrpGames';
-import LiveQuiz, { QuizLeaderboard } from '@/components/wrp/LiveQuiz';
 import EmailGate from '@/components/EmailGate';
+
+// Dynamically import all game/realtime components with ssr:false to prevent hydration mismatch
+const { SpotTheMistakeGame, SpinTheWheelGame, BuzzwordBingoGame, SpeedNetworkingGame, WorkplaceAdventureGame, RoastMyPitchGame } = {
+  SpotTheMistakeGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.SpotTheMistakeGame })), { ssr: false }),
+  SpinTheWheelGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.SpinTheWheelGame })), { ssr: false }),
+  BuzzwordBingoGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.BuzzwordBingoGame })), { ssr: false }),
+  SpeedNetworkingGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.SpeedNetworkingGame })), { ssr: false }),
+  WorkplaceAdventureGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.WorkplaceAdventureGame })), { ssr: false }),
+  RoastMyPitchGame: dynamic(() => import('@/components/wrp/WrpGames').then(m => ({ default: m.RoastMyPitchGame })), { ssr: false }),
+};
+const LiveQuiz = dynamic(() => import('@/components/wrp/LiveQuiz'), { ssr: false });
+const QuizLeaderboard = dynamic(() => import('@/components/wrp/LiveQuiz').then(m => ({ default: m.QuizLeaderboard })), { ssr: false });
+const LiveChatPanel = dynamic(() => import('./LiveChatPanel'), { ssr: false });
 
 // ── Mock Interview Bot ────────────────────────────────────────────────────────
 
@@ -84,11 +96,10 @@ function MockInterviewBot() {
       <div className="h-80 overflow-y-auto p-4 flex flex-col gap-3">
         {chat.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-              msg.role === 'user'
-                ? 'bg-accent text-black font-medium rounded-br-sm'
-                : 'bg-secondary text-foreground rounded-bl-sm border border-border-subtle'
-            }`}>
+            <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === 'user'
+              ? 'bg-accent text-black font-medium rounded-br-sm'
+              : 'bg-secondary text-foreground rounded-bl-sm border border-border-subtle'
+              }`}>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
             </div>
           </div>
@@ -169,9 +180,8 @@ function EmailPractice({ scenario }: { scenario: string }) {
                 <label key={i} className="flex items-center gap-3 cursor-pointer group">
                   <div
                     onClick={() => toggle(i)}
-                    className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
-                      checked[i] ? 'bg-accent border-accent' : 'border-border-subtle group-hover:border-accent/50'
-                    }`}
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${checked[i] ? 'bg-accent border-accent' : 'border-border-subtle group-hover:border-accent/50'
+                      }`}
                   >
                     {checked[i] && <CheckCircle2 className="w-3.5 h-3.5 text-black" />}
                   </div>
@@ -179,17 +189,16 @@ function EmailPractice({ scenario }: { scenario: string }) {
                 </label>
               ))}
             </div>
-            <div className={`p-4 rounded-lg border text-center ${
-              score >= 8 ? 'bg-accent/10 border-accent/30' : score >= 5 ? 'bg-warning/10 border-warning/30' : 'bg-error/10 border-error/30'
-            }`}>
+            <div className={`p-4 rounded-lg border text-center ${score >= 8 ? 'bg-accent/10 border-accent/30' : score >= 5 ? 'bg-warning/10 border-warning/30' : 'bg-error/10 border-error/30'
+              }`}>
               <p className={`text-2xl font-bold mb-1 ${score >= 8 ? 'text-accent' : score >= 5 ? 'text-warning' : 'text-error'}`}>
                 {score}/9
               </p>
               <p className="text-sm text-secondary-text">
                 {score === 9 ? 'Perfect! Your email is professional and complete.' :
-                 score >= 7 ? 'Great work! Review the unchecked items and revise.' :
-                 score >= 5 ? 'Good effort. Focus on the missing elements and rewrite.' :
-                 'Keep practising. Review the email etiquette module and try again.'}
+                  score >= 7 ? 'Great work! Review the unchecked items and revise.' :
+                    score >= 5 ? 'Good effort. Focus on the missing elements and rewrite.' :
+                      'Keep practising. Review the email etiquette module and try again.'}
               </p>
             </div>
             <button onClick={() => { setSubmitted(false); setChecked(new Array(EMAIL_CHECKLIST.length).fill(false)); }}
@@ -295,7 +304,7 @@ function BreathingTimer() {
 
 export function WrpContent({ content, video }: { content: string; video?: string | null }) {
   // Split content on custom tags and render each segment
-  const segments = content.split(/(<video-embed[^>]*\/?>|<mock-interview-bot\s*\/>|<email-practice[^>]*\/>|<cv-builder\s*\/>|<img-block[^>]*\/>|<spot-the-mistake\s*\/>|<spin-the-wheel\s*\/>|<buzzword-bingo\s*\/>|<live-quiz\s*\/>|<quiz-leaderboard\s*\/>)/g);
+  const segments = content.split(/(<video-embed[^>]*\/?>|<mock-interview-bot\s*\/>|<email-practice[^>]*\/>|<cv-builder\s*\/>|<img-block[^>]*\/>|<spot-the-mistake\s*\/>|<spin-the-wheel\s*\/>|<buzzword-bingo\s*\/>|<live-quiz\s*\/>|<quiz-leaderboard\s*\/>|<speed-networking\s*\/>|<workplace-adventure\s*\/>|<roast-my-pitch\s*\/>)/g);
 
   return (
     <div className="flex flex-col">
@@ -317,6 +326,9 @@ export function WrpContent({ content, video }: { content: string; video?: string
         if (seg.startsWith('<spot-the-mistake')) return <SpotTheMistakeGame key={i} />;
         if (seg.startsWith('<spin-the-wheel')) return <SpinTheWheelGame key={i} />;
         if (seg.startsWith('<buzzword-bingo')) return <BuzzwordBingoGame key={i} />;
+        if (seg.startsWith('<speed-networking')) return <SpeedNetworkingGame key={i} />;
+        if (seg.startsWith('<workplace-adventure')) return <WorkplaceAdventureGame key={i} />;
+        if (seg.startsWith('<roast-my-pitch')) return <RoastMyPitchGame key={i} />;
         if (seg.startsWith('<live-quiz')) return <LiveQuiz key={i} />;
         if (seg.startsWith('<quiz-leaderboard')) return <QuizLeaderboard key={i} />;
         if (seg.startsWith('<img-block')) {
@@ -379,16 +391,7 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
 
   React.useEffect(() => {
     const loginId = localStorage.getItem('ioai_user');
-    const fullName = localStorage.getItem('ioai_name') || '';
     if (!loginId) { router.replace('/wrp/login'); return; }
-    fetch('/api/auth/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login_id: loginId, platform: 'wrp' }),
-    })
-      .then(r => r.json())
-      .then(data => { if (!data.has_email) setEmailGate({ loginId, fullName }); })
-      .catch(() => {});
   }, []);
 
   const handleNext = () => {
@@ -402,7 +405,8 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
   };
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto w-full relative">
+      <LiveChatPanel />
       {emailGate && (
         <EmailGate
           loginId={emailGate.loginId}
@@ -440,11 +444,10 @@ export default function WrpLessonClient({ pageId, title, type, content, video, p
 
           <button
             onClick={handleNext}
-            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
-              isLast
-                ? 'bg-accent text-black hover:bg-accent/90'
-                : 'bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent'
-            }`}
+            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${isLast
+              ? 'bg-accent text-black hover:bg-accent/90'
+              : 'bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 hover:border-accent'
+              }`}
           >
             {isCompleted && !isLast ? <CheckCircle2 className="w-4 h-4" /> : null}
             {isLast ? <><Award className="w-5 h-5" /> Get Certificate</> : (

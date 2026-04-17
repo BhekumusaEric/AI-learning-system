@@ -1,15 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
-import { BookOpen, LogIn } from 'lucide-react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { BookOpen, LogIn, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import EmailGate from '@/components/EmailGate';
+import { useSearchParams } from 'next/navigation';
 
-export default function DipLoginPage() {
+function DipLoginContent() {
   const [loginId, setLoginId] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailGate, setEmailGate] = useState<{ loginId: string; fullName: string; destination: string } | null>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason === 'expired') setError('Your session has expired. Please log in again.');
+    else if (reason === 'concurrent_session') setError('Your account was logged in from another device. Please log in again.');
+    else if (reason === 'no_session') setError('Session not found. Please log in.');
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,13 +32,13 @@ export default function DipLoginPage() {
       const res = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login_id: loginId.trim(), platform: 'dip' }),
+        body: JSON.stringify({ login_id: loginId.trim(), password, platform: 'dip' }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError('Student ID not found. Please contact your administrator.');
+        setError(data.error || 'Invalid credentials. Please contact your administrator.');
         setIsLoading(false);
         return;
       }
@@ -40,7 +51,22 @@ export default function DipLoginPage() {
 
       localStorage.setItem('ioai_user', data.login_id);
       localStorage.setItem('ioai_name', data.full_name);
-      window.location.href = '/dip/lesson/page1_your_first_python_program';
+      const sessionRes = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login_id: data.login_id }),
+      });
+      const sessionData = await sessionRes.json();
+      if (sessionData.token) {
+        localStorage.setItem('ioai_session', sessionData.token);
+        localStorage.setItem('ioai_session_expires', sessionData.expires_at);
+      }
+      const agreed = localStorage.getItem(`integrity_agreed_${data.login_id}`);
+      if (!agreed) {
+        window.location.href = `/dip/integrity?next=/dip/lesson/page1_your_first_python_program`;
+      } else {
+        window.location.href = '/dip/lesson/page1_your_first_python_program';
+      }
     } catch {
       setError('Something went wrong. Please try again.');
       setIsLoading(false);
@@ -67,7 +93,7 @@ export default function DipLoginPage() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight mb-1">Digital Inclusion Program</h1>
           <p className="text-accent text-sm font-semibold mb-3">IDC SEF</p>
-          <p className="text-secondary-text text-center text-sm">Enter your student ID to access the platform.</p>
+          <p className="text-secondary-text text-center text-sm">Enter your student ID and password to access the platform.</p>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
@@ -82,6 +108,26 @@ export default function DipLoginPage() {
               autoComplete="off"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-secondary-text mb-2">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-background border border-border-subtle rounded-lg px-4 py-3 pr-12 text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary-text hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -107,5 +153,13 @@ export default function DipLoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function DipLoginPage() {
+  return (
+    <Suspense>
+      <DipLoginContent />
+    </Suspense>
   );
 }

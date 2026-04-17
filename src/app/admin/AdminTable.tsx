@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink, GitPullRequest, MapPin, UserCheck, UserX, Rocket } from 'lucide-react';
+import { Clock, Trash2, UserPlus, Loader2, Copy, Check, X, KeyRound, RefreshCw, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, Bell, Send, Award, FolderPlus, Archive, Users, ShieldCheck, Link2, Plus, RotateCcw, Ban, ExternalLink, GitPullRequest, MapPin, UserCheck, UserX, Rocket, ChevronDown, Settings } from 'lucide-react';
 import UserTour, { TourStep } from '@/components/UserTour';
 import * as XLSX from 'xlsx';
 import { ApplicationGroup, RawApplication } from '@/lib/applications';
@@ -16,6 +16,8 @@ export interface AdminUser {
   examScore: number | null;
   examPassed: boolean | null;
   cohortId: string | null;
+  certificate_requested?: boolean;
+  certificate_unlocked?: boolean;
 }
 
 export interface Cohort {
@@ -440,7 +442,7 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
   ];
 
   const wb = XLSX.utils.book_new();
-  const sheetName = platform === 'dip' ? 'DIP Students' : 'WeThinkCode_ Students';
+  const sheetName = platform === 'dip' ? 'DIP Students' : platform === 'wrp' ? 'WRP Students' : 'WeThinkCode_ Students';
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
   // Summary sheet
@@ -450,7 +452,7 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
     : 0;
   const summaryData = [
     ['Report Generated', new Date().toLocaleString()],
-    ['Platform', platform === 'dip' ? 'IDC SEF / DIP' : 'SAAIO Training Grounds'],
+    ['Platform', platform === 'dip' ? 'IDC SEF / DIP' : platform === 'wrp' ? 'WeThinkCode_ WRP' : 'WeThinkCode_ IDC Curriculum'],
     ['Total Students', users.length],
     ['Total Topics', totalPages],
     ['Avg Completion', `${avgPct}%`],
@@ -467,25 +469,41 @@ function downloadReport(users: AdminUser[], platform: 'saaio' | 'dip' | 'wrp', t
   XLSX.writeFile(wb, `${platform}_students_report_${date}.xlsx`);
 }
 
-function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
+function CongratulatePanel({ platform, onClose, preselectedIds }: { platform: 'dip' | 'wrp'; onClose: () => void; preselectedIds?: string[] }) {
   const [isSending, setIsSending] = useState(false);
-  const [result, setResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
+  const [result, setResult] = useState<{ sent: number; failed: number; total: number; errors?: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cohortId, setCohortId] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [cohorts, setCohorts] = useState<{ id: string; name: string }[]>([]);
 
   const platformName = platform === 'dip' ? 'IDC SEF Digital Inclusion Program' : 'WeThinkCode_ Work Readiness Program';
   const certUrl = platform === 'dip'
     ? 'https://ai-learning-system-ten.vercel.app/dip/certificate'
     : 'https://ai-learning-system-ten.vercel.app/wrp/certificate';
 
+  useEffect(() => {
+    fetch(`/api/admin/cohorts?platform=${platform}`)
+      .then(r => r.json())
+      .then(data => setCohorts((data || []).filter((c: any) => !c.archived)))
+      .catch(() => {});
+  }, [platform]);
+
   const send = async () => {
     setIsSending(true);
     setError(null);
     setResult(null);
     try {
+      const body: any = { platform };
+      if (preselectedIds?.length) body.login_ids = preselectedIds;
+      if (cohortId) body.cohort_id = cohortId;
+      if (dateFrom) body.date_from = dateFrom;
+      if (dateTo) body.date_to = dateTo;
       const res = await fetch('/api/admin/congratulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok) setResult(data);
@@ -503,40 +521,67 @@ function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onC
         <div className="flex items-center gap-2">
           <Award className="w-4 h-4 text-[#d4af37]" />
           <span className="text-sm font-bold text-foreground">Send Congratulations & Certificate</span>
-          <span className="text-xs text-secondary-text">(emails all {platformName} students with email addresses)</span>
+          {preselectedIds?.length
+            ? <span className="text-xs text-accent">({preselectedIds.length} selected students)</span>
+            : <span className="text-xs text-secondary-text">(all {platformName} students)</span>}
         </div>
         <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
       </div>
 
+      {/* Filters — only show when no preselected */}
+      {!preselectedIds?.length && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 p-3 bg-[#0d0d0d] border border-border-subtle rounded-xl">
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Filter by Cohort</label>
+            <select value={cohortId} onChange={e => setCohortId(e.target.value)}
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent">
+              <option value="">All cohorts</option>
+              {cohorts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Registered From</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent" />
+          </div>
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Registered To</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent" />
+          </div>
+        </div>
+      )}
+
       <div className="bg-[#0d0d0d] border border-[#d4af37]/30 rounded-xl p-4 mb-4">
-        <p className="text-sm text-secondary-text leading-relaxed mb-2">
-          Each student will receive a personalised congratulatory email that includes:
-        </p>
+        <p className="text-sm text-secondary-text leading-relaxed mb-2">Each student will receive a personalised email with:</p>
         <ul className="text-sm text-secondary-text space-y-1 list-disc list-inside">
-          <li><span className="text-foreground">A warm congratulations</span> addressed to them by first name</li>
-          <li><span className="text-foreground">A list of skills</span> they've earned through the program</li>
-          <li><span className="text-foreground">A direct link</span> to download their Certificate of Completion</li>
+          <li><span className="text-foreground">A warm congratulations</span> addressed by first name</li>
+          <li><span className="text-foreground">Skills earned</span> through the program</li>
+          <li><span className="text-foreground">A direct link</span> to download their Certificate</li>
+          <li><span className="text-foreground">A feedback form link</span> to share their experience</li>
         </ul>
-        <p className="text-xs text-secondary-text mt-3">
-          Certificate link: <span className="text-accent font-mono">{certUrl}</span>
-        </p>
+        <p className="text-xs text-secondary-text mt-3">Certificate link: <span className="text-accent font-mono">{certUrl}</span></p>
       </div>
 
       {error && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2 mb-3">{error}</p>}
 
       {result && (
-        <div className="flex items-center gap-4 mb-3 text-sm">
-          <span className="text-[#d4af37] font-bold">{result.sent} sent</span>
-          {result.failed > 0 && <span className="text-error font-bold">{result.failed} failed</span>}
-          <span className="text-secondary-text">out of {result.total} students with emails</span>
+        <div className="mb-3">
+          <div className="flex items-center gap-4 text-sm mb-2">
+            <span className="text-[#d4af37] font-bold">{result.sent} sent</span>
+            {result.failed > 0 && <span className="text-error font-bold">{result.failed} failed</span>}
+            <span className="text-secondary-text">out of {result.total} students</span>
+          </div>
+          {result.errors && result.errors.length > 0 && (
+            <div className="bg-error/10 border border-error/30 p-2 rounded-lg break-words text-[10px] text-error font-mono max-h-32 overflow-y-auto">
+              {result.errors.map((e, i) => <div key={i}>{e}</div>)}
+            </div>
+          )}
         </div>
       )}
 
-      <button
-        onClick={send}
-        disabled={isSending}
-        className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <button onClick={send} disabled={isSending}
+        className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
         {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         {isSending ? 'Sending...' : 'Send Congratulatory Emails'}
       </button>
@@ -545,27 +590,41 @@ function CongratulatePanel({ platform, onClose }: { platform: 'dip' | 'wrp'; onC
 }
 
 function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp'; onClose: () => void }) {
-  const [type, setType] = useState<'reminder' | 'mark_done' | 'kaggle'>('reminder');
+  const [types, setTypes] = useState<{ type: string; label: string; desc: string }[]>([]);
+  const [type, setType] = useState('');
   const [customMessage, setCustomMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [result, setResult] = useState<{ sent: number; failed: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cohortId, setCohortId] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [cohorts, setCohorts] = useState<{ id: string; name: string }[]>([]);
 
-  const BUTTONS: { type: 'reminder' | 'mark_done' | 'kaggle'; label: string; desc: string }[] = [
-    { type: 'reminder', label: 'Course Reminder', desc: 'Nudge students to continue their course content' },
-    { type: 'mark_done', label: 'Mark Done Reminder', desc: 'Remind students to click Mark as Done to save progress' },
-    { type: 'kaggle', label: 'Kaggle Challenges', desc: 'Announce new Kaggle challenges have been added' },
-  ];
+  useEffect(() => {
+    fetch(`/api/admin/notify?platform=${platform}`)
+      .then(r => r.json())
+      .then(data => { setTypes(data || []); if (data?.length) setType(data[0].type); })
+      .catch(() => {});
+    fetch(`/api/admin/cohorts?platform=${platform}`)
+      .then(r => r.json())
+      .then(data => setCohorts((data || []).filter((c: any) => !c.archived)))
+      .catch(() => {});
+  }, [platform]);
 
   const send = async () => {
     setIsSending(true);
     setError(null);
     setResult(null);
     try {
+      const body: any = { type, platform, message: customMessage.trim() || undefined };
+      if (cohortId) body.cohort_id = cohortId;
+      if (dateFrom) body.date_from = dateFrom;
+      if (dateTo) body.date_to = dateTo;
       const res = await fetch('/api/admin/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, platform, message: customMessage.trim() || undefined }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok) setResult(data);
@@ -583,17 +642,15 @@ function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp';
         <div className="flex items-center gap-2">
           <Bell className="w-4 h-4 text-accent" />
           <span className="text-sm font-bold text-foreground">Notify Students</span>
-          <span className="text-xs text-secondary-text">(sends to all {platform.toUpperCase()} students with email addresses)</span>
+          <span className="text-xs text-secondary-text capitalize">({platform.toUpperCase()})</span>
         </div>
         <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
       </div>
 
-      {/* Type selector */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-        {BUTTONS.map(b => (
-          <button
-            key={b.type}
-            onClick={() => setType(b.type)}
+      {/* Notification type selector */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+        {types.map(b => (
+          <button key={b.type} onClick={() => setType(b.type)}
             className={`text-left p-3 rounded-lg border text-sm transition-all ${
               type === b.type
                 ? 'border-accent bg-accent/10 text-foreground'
@@ -606,14 +663,33 @@ function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp';
         ))}
       </div>
 
+      {/* Filters */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 p-3 bg-[#0d0d0d] border border-border-subtle rounded-xl">
+        <div>
+          <label className="block text-xs text-secondary-text mb-1">Filter by Cohort</label>
+          <select value={cohortId} onChange={e => setCohortId(e.target.value)}
+            className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent">
+            <option value="">All cohorts</option>
+            {cohorts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-secondary-text mb-1">Registered From</label>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent" />
+        </div>
+        <div>
+          <label className="block text-xs text-secondary-text mb-1">Registered To</label>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+            className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:border-accent" />
+        </div>
+      </div>
+
       {/* Optional custom message */}
       <div className="mb-4">
         <label className="block text-xs text-secondary-text mb-1">Custom message (optional — overrides the default email body)</label>
-        <textarea
-          rows={3}
-          placeholder="Leave blank to use the default message for the selected type..."
-          value={customMessage}
-          onChange={e => setCustomMessage(e.target.value)}
+        <textarea rows={3} placeholder="Leave blank to use the default message for the selected type..."
+          value={customMessage} onChange={e => setCustomMessage(e.target.value)}
           className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent resize-none font-mono"
         />
       </div>
@@ -624,13 +700,11 @@ function NotifyPanel({ platform, onClose }: { platform: 'saaio' | 'dip' | 'wrp';
         <div className="flex items-center gap-4 mb-3 text-sm">
           <span className="text-accent font-bold">{result.sent} sent</span>
           {result.failed > 0 && <span className="text-error font-bold">{result.failed} failed</span>}
-          <span className="text-secondary-text">out of {result.total} students with emails</span>
+          <span className="text-secondary-text">out of {result.total} students</span>
         </div>
       )}
 
-      <button
-        onClick={send}
-        disabled={isSending}
+      <button onClick={send} disabled={isSending || !type}
         className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -1032,11 +1106,11 @@ function SupervisorsPanel() {
                   <td className="py-3 px-5 text-xs text-secondary-text">{new Date(sup.created_at).toLocaleDateString()}</td>
                   <td className="py-3 px-5 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => handleReset(sup)} disabled={resettingId === sup.id} title="Reset password"
+                      <button type="button" onClick={() => handleReset(sup)} disabled={resettingId === sup.id} title="Reset password"
                         className="text-secondary-text hover:text-warning p-1.5 rounded-lg hover:bg-warning/10 transition-all disabled:opacity-50">
                         {resettingId === sup.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                       </button>
-                      <button onClick={() => handleDelete(sup)} disabled={deletingId === sup.id} title="Delete supervisor"
+                      <button type="button" onClick={() => handleDelete(sup)} disabled={deletingId === sup.id} title="Delete supervisor"
                         className="text-secondary-text hover:text-error p-1.5 rounded-lg hover:bg-error/10 transition-all disabled:opacity-50">
                         {deletingId === sup.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </button>
@@ -1063,12 +1137,614 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
-  const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_requested: boolean; certificate_unlocked: boolean; name_change_requested: boolean; certificate_name: string | null }[]>([]);
+const ACTION_LABELS: Record<string, { label: string; color: string }> = {
+  cert_unlocked:   { label: 'Certificate Unlocked', color: 'text-emerald-400' },
+  cert_declined:   { label: 'Certificate Declined', color: 'text-error' },
+  password_reset:  { label: 'Password Reset',        color: 'text-warning' },
+  student_deleted: { label: 'Student Deleted',       color: 'text-error' },
+};
+
+function DuplicateSubmissions() {
+  const [flags, setFlags] = useState<{ id: string; target_login_id: string; details: any; created_at: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/submissions')
+      .then(r => r.json())
+      .then(data => { setFlags(data || []); setIsLoading(false); })
+      .catch(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) return <div className="flex items-center gap-2 text-secondary-text text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>;
+  if (!flags.length) return <p className="text-secondary-text text-sm">No duplicate submissions detected.</p>;
+
+  return (
+    <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+      {flags.map(f => (
+        <div key={f.id} className="flex items-start justify-between gap-3 p-3 bg-error/5 border border-error/20 rounded-lg text-xs">
+          <div className="flex flex-col gap-0.5">
+            <span className="font-bold text-error">{f.target_login_id}</span>
+            <span className="text-secondary-text font-mono">Page: {f.details?.page_id}</span>
+            {f.details?.matched_students?.length > 0 && (
+              <span className="text-secondary-text">Matched: {f.details.matched_students.join(', ')}</span>
+            )}
+          </div>
+          <div className="text-secondary-text/60 shrink-0 text-right">
+            {new Date(f.created_at).toLocaleString('en-ZA')}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AuditLog() {
+  const [logs, setLogs] = useState<{ id: string; admin_username: string; action: string; target_login_id: string | null; target_platform: string | null; details: any; created_at: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/audit-log')
+      .then(r => r.json())
+      .then(data => { setLogs(data || []); setIsLoading(false); })
+      .catch(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) return <div className="flex items-center gap-2 text-secondary-text text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>;
+  if (!logs.length) return <p className="text-secondary-text text-sm">No actions logged yet.</p>;
+
+  return (
+    <div className="flex flex-col gap-2 max-h-96 overflow-y-auto">
+      {logs.map(log => {
+        const meta = ACTION_LABELS[log.action] || { label: log.action, color: 'text-secondary-text' };
+        return (
+          <div key={log.id} className="flex items-start justify-between gap-3 p-3 bg-background border border-border-subtle rounded-lg text-xs">
+            <div className="flex flex-col gap-0.5">
+              <span className={`font-bold ${meta.color}`}>{meta.label}</span>
+              {log.target_login_id && (
+                <span className="text-secondary-text font-mono">{log.target_login_id}{log.target_platform ? ` · ${log.target_platform.toUpperCase()}` : ''}</span>
+              )}
+              {log.details?.full_name && <span className="text-foreground">{log.details.full_name}</span>}
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-secondary-text">{log.admin_username}</div>
+              <div className="text-secondary-text/60">{new Date(log.created_at).toLocaleString('en-ZA')}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function BulkResetButton({ platform }: { platform: string }) {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [result, setResult] = useState<{ updated: number; emailed: number } | null>(null);
+
+  const handleReset = async (onlyMissing: boolean) => {
+    if (!confirm(`This will generate new passwords for ${onlyMissing ? 'students without a password' : 'ALL students'} on ${platform.toUpperCase()} and email them. Continue?`)) return;
+    setStatus('loading');
+    try {
+      const res = await fetch('/api/admin/students/bulk-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform, only_missing: onlyMissing }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setStatus('error'); return; }
+      setResult(data);
+      setStatus('done');
+    } catch { setStatus('error'); }
+  };
+
+  return (
+    <div className="bg-background border border-border-subtle rounded-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <span className="font-semibold text-sm text-foreground">{platform.toUpperCase()} Students</span>
+          {status === 'done' && result && (
+            <span className="ml-2 text-xs text-accent">{result.updated} passwords set · {result.emailed} emails sent</span>
+          )}
+          {status === 'error' && <span className="ml-2 text-xs text-error">Failed — try again</span>}
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => handleReset(true)}
+          disabled={status === 'loading'}
+          className="flex items-center gap-1.5 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+        >
+          {status === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+          Set passwords for new students
+        </button>
+        <button
+          onClick={() => handleReset(false)}
+          disabled={status === 'loading'}
+          className="flex items-center gap-1.5 bg-background border border-error/30 text-error hover:bg-error hover:text-white px-3 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+        >
+          {status === 'loading' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          Reset ALL passwords
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AdminSettings() {
+  const [admins, setAdmins] = useState<{ id: string; username: string; full_name: string; created_at: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({ username: '', password: '', full_name: '' });
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editData, setEditData] = useState({ username: '', full_name: '', password: '' });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const fetchAdmins = () => {
+    fetch('/api/admin/admins')
+      .then(r => r.json())
+      .then(data => { setAdmins(data || []); setIsLoading(false); })
+      .catch(() => setIsLoading(false));
+  };
+
+  useEffect(() => { fetchAdmins(); }, []);
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(''); setSuccess('');
+    const res = await fetch('/api/admin/admins', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newAdmin),
+    });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error); return; }
+    setSuccess(`Admin "${newAdmin.username}" created successfully`);
+    setNewAdmin({ username: '', password: '', full_name: '' });
+    setAdding(false);
+    fetchAdmins();
+  };
+
+  const handleUpdate = async (id: string) => {
+    setError(''); setSuccess('');
+    const res = await fetch('/api/admin/admins', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...editData }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error); return; }
+    setSuccess('Admin updated successfully');
+    setEditing(null);
+    fetchAdmins();
+  };
+
+  const handleDelete = async (id: string, username: string) => {
+    if (!confirm(`Remove admin "${username}"?`)) return;
+    setError(''); setSuccess('');
+    const res = await fetch(`/api/admin/admins?id=${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error); return; }
+    setSuccess(`Admin "${username}" removed`);
+    fetchAdmins();
+  };
+
+  return (
+    <div className="p-6 max-w-2xl">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="bg-accent/10 p-2.5 rounded-xl"><Settings className="w-5 h-5 text-accent" /></div>
+        <div>
+          <h2 className="text-lg font-bold">Admin Settings</h2>
+          <p className="text-xs text-secondary-text">Manage admin accounts</p>
+        </div>
+      </div>
+
+      {error && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-4 py-2 mb-4">{error}</p>}
+      {success && <p className="text-accent text-xs bg-accent/10 border border-accent/20 rounded-lg px-4 py-2 mb-4">{success}</p>}
+
+      {/* Admin list */}
+      <div className="flex flex-col gap-3 mb-6">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-secondary-text text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>
+        ) : admins.map(a => (
+          <div key={a.id} className="bg-background border border-border-subtle rounded-xl p-4">
+            {editing === a.id ? (
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-secondary-text mb-1">Full Name</label>
+                    <input value={editData.full_name} onChange={e => setEditData(v => ({ ...v, full_name: e.target.value }))}
+                      className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-secondary-text mb-1">Username</label>
+                    <input value={editData.username} onChange={e => setEditData(v => ({ ...v, username: e.target.value }))}
+                      className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-secondary-text mb-1">New Password (leave blank to keep current)</label>
+                  <input type="password" value={editData.password} onChange={e => setEditData(v => ({ ...v, password: e.target.value }))}
+                    placeholder="••••••••"
+                    className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleUpdate(a.id)} className="flex items-center gap-1.5 bg-accent text-black font-bold px-4 py-2 rounded-lg text-xs hover:bg-accent/90 transition-all">
+                    <Check className="w-3.5 h-3.5" /> Save
+                  </button>
+                  <button onClick={() => setEditing(null)} className="flex items-center gap-1.5 bg-background border border-border-subtle text-secondary-text px-4 py-2 rounded-lg text-xs hover:text-foreground transition-all">
+                    <X className="w-3.5 h-3.5" /> Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-foreground">{a.full_name}</div>
+                  <div className="text-xs text-secondary-text font-mono mt-0.5">{a.username} · Added {new Date(a.created_at).toLocaleDateString('en-ZA')}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setEditing(a.id); setEditData({ username: a.username, full_name: a.full_name, password: '' }); }}
+                    className="flex items-center gap-1.5 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(a.id, a.username)}
+                    className="flex items-center gap-1.5 bg-background border border-error/30 text-error hover:bg-error hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Add new admin */}
+      {adding ? (
+        <form onSubmit={handleAdd} className="bg-background border border-accent/20 rounded-xl p-4 flex flex-col gap-3">
+          <p className="text-sm font-bold text-foreground">New Admin</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-secondary-text mb-1">Full Name *</label>
+              <input value={newAdmin.full_name} onChange={e => setNewAdmin(v => ({ ...v, full_name: e.target.value }))}
+                placeholder="Jane Smith" required
+                className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+            </div>
+            <div>
+              <label className="block text-xs text-secondary-text mb-1">Username *</label>
+              <input value={newAdmin.username} onChange={e => setNewAdmin(v => ({ ...v, username: e.target.value }))}
+                placeholder="janesmith" required
+                className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-secondary-text mb-1">Password *</label>
+            <input type="password" value={newAdmin.password} onChange={e => setNewAdmin(v => ({ ...v, password: e.target.value }))}
+              placeholder="••••••••" required
+              className="w-full bg-secondary border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+          </div>
+          <div className="flex gap-2">
+            <button type="submit" className="flex items-center gap-1.5 bg-accent text-black font-bold px-4 py-2 rounded-lg text-xs hover:bg-accent/90 transition-all">
+              <UserPlus className="w-3.5 h-3.5" /> Add Admin
+            </button>
+            <button type="button" onClick={() => setAdding(false)} className="flex items-center gap-1.5 bg-background border border-border-subtle text-secondary-text px-4 py-2 rounded-lg text-xs hover:text-foreground transition-all">
+              <X className="w-3.5 h-3.5" /> Cancel
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button onClick={() => setAdding(true)}
+          className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2.5 rounded-xl text-sm font-bold transition-all">
+          <UserPlus className="w-4 h-4" /> Add New Admin
+        </button>
+      )}
+
+      {/* Bulk Password Reset */}
+      <div className="mt-8 pt-6 border-t border-border-subtle">
+        <h3 className="text-sm font-bold text-foreground mb-1">Bulk Password Reset</h3>
+        <p className="text-xs text-secondary-text mb-4">Generate and email passwords to students who don't have one yet. This enforces password login for all students.</p>
+        <div className="flex flex-col gap-3">
+          {['dip', 'wrp'].map(p => (
+            <BulkResetButton key={p} platform={p} />
+          ))}
+        </div>
+      </div>
+
+      {/* Audit Log */}
+      <div className="mt-8 pt-6 border-t border-border-subtle">
+        <h3 className="text-sm font-bold text-foreground mb-1">Audit Log</h3>
+        <p className="text-xs text-secondary-text mb-4">Last 100 admin actions across the platform.</p>
+        <AuditLog />
+      </div>
+
+      {/* Duplicate Code Flags */}
+      <div className="mt-8 pt-6 border-t border-border-subtle">
+        <h3 className="text-sm font-bold text-foreground mb-1">Duplicate Code Flags</h3>
+        <p className="text-xs text-secondary-text mb-4">Students whose submitted code matched another student exactly.</p>
+        <DuplicateSubmissions />
+      </div>
+    </div>
+  );
+}
+
+function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wrp'; mandatoryPages: number }) {
+  const [students, setStudents] = useState<AdminUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showCongratsPanel, setShowCongratsPanel] = useState(false);
+  const threshold = Math.ceil(mandatoryPages * 0.8);
+
+  useEffect(() => {
+    fetch(`/api/admin/students?platform=${platform}`)
+      .then(r => r.json())
+      .then((data: AdminUser[]) => {
+        const completed = data.filter(s =>
+          s.completedCount >= threshold && (platform === 'wrp' || s.examPassed === true)
+        );
+        setStudents(completed);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
+  }, [platform, threshold]);
+
+  const toggleSelect = (id: string) => setSelected(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const toggleAll = () => setSelected(
+    selected.size === students.length ? new Set() : new Set(students.map(s => s.login_id))
+  );
+
+  const selectedIds = Array.from(selected);
+
+  if (isLoading) return (
+    <div className="flex items-center justify-center py-16 gap-2 text-secondary-text">
+      <Loader2 className="w-5 h-5 animate-spin" /> Loading...
+    </div>
+  );
+
+  return (
+    <div className="p-6">
+      {/* Congratulate panel */}
+      {showCongratsPanel && (
+        <CongratulatePanel
+          platform={platform}
+          preselectedIds={selectedIds.length ? selectedIds : undefined}
+          onClose={() => setShowCongratsPanel(false)}
+        />
+      )}
+
+      {/* Stats bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="bg-background border border-border-subtle rounded-xl p-4">
+          <p className="text-xs text-secondary-text uppercase tracking-wider mb-1">Total Completed</p>
+          <p className="text-2xl font-bold text-accent">{students.length}</p>
+        </div>
+        <div className="bg-background border border-border-subtle rounded-xl p-4">
+          <p className="text-xs text-secondary-text uppercase tracking-wider mb-1">Cert Requested</p>
+          <p className="text-2xl font-bold text-[#d4af37]">{students.filter(s => s.certificate_requested).length}</p>
+        </div>
+        <div className="bg-background border border-border-subtle rounded-xl p-4">
+          <p className="text-xs text-secondary-text uppercase tracking-wider mb-1">Cert Unlocked</p>
+          <p className="text-2xl font-bold text-emerald-400">{students.filter(s => s.certificate_unlocked).length}</p>
+        </div>
+        {platform === 'dip' && (
+          <div className="bg-background border border-border-subtle rounded-xl p-4">
+            <p className="text-xs text-secondary-text uppercase tracking-wider mb-1">Exam Pass Rate</p>
+            <p className="text-2xl font-bold text-foreground">
+              {students.length > 0 ? `${Math.round((students.filter(s => s.examPassed).length / students.length) * 100)}%` : '—'}
+            </p>
+          </div>
+        )}
+        {platform === 'wrp' && (
+          <div className="bg-background border border-border-subtle rounded-xl p-4">
+            <p className="text-xs text-secondary-text uppercase tracking-wider mb-1">Avg Completion</p>
+            <p className="text-2xl font-bold text-foreground">
+              {students.length > 0 ? `${Math.round(students.reduce((s, u) => s + Math.min(100, (u.completedCount / mandatoryPages) * 100), 0) / students.length)}%` : '—'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {students.length === 0 ? (
+        <p className="text-secondary-text text-sm text-center py-8">No completed students yet.</p>
+      ) : (
+        <>
+          {/* Toolbar */}
+          <div className="flex items-center gap-3 mb-4">
+            <button onClick={toggleAll}
+              className="text-xs text-secondary-text hover:text-foreground border border-border-subtle hover:border-accent/50 px-3 py-1.5 rounded-lg transition-all">
+              {selected.size === students.length ? 'Deselect All' : 'Select All'}
+            </button>
+            {selected.size > 0 && (
+              <span className="text-xs text-accent font-semibold">{selected.size} selected</span>
+            )}
+            <button
+              onClick={() => setShowCongratsPanel(v => !v)}
+              className="ml-auto flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            >
+              <Send className="w-3.5 h-3.5" />
+              {selected.size > 0 ? `Congratulate ${selected.size} selected` : 'Congratulate all'}
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead>
+                <tr className="bg-background/30 border-b border-border-subtle">
+                  <th className="py-3 px-3 w-8"></th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Login ID</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Email</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Modules</th>
+                  {platform === 'dip' && <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Cert Status</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Registered</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Last Active</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-subtle">
+                {students.map(s => (
+                  <tr key={s.login_id} onClick={() => toggleSelect(s.login_id)}
+                    className={`hover:bg-background/30 transition-colors cursor-pointer ${
+                      selected.has(s.login_id) ? 'bg-accent/5 border-l-2 border-accent' : ''
+                    }`}>
+                    <td className="py-3 px-3">
+                      <input type="checkbox" checked={selected.has(s.login_id)} onChange={() => toggleSelect(s.login_id)}
+                        className="accent-accent" onClick={e => e.stopPropagation()} />
+                    </td>
+                    <td className="py-3 px-3 font-mono text-accent font-semibold text-xs whitespace-nowrap">{s.login_id}</td>
+                    <td className="py-3 px-3 max-w-[150px]">
+                      <div className="font-semibold text-foreground text-sm truncate">{s.full_name}</div>
+                    </td>
+                    <td className="py-3 px-3 text-xs text-secondary-text max-w-[180px] truncate">{s.email || '—'}</td>
+                    <td className="py-3 px-3 text-xs font-bold text-accent whitespace-nowrap">{s.completedCount}/{mandatoryPages}</td>
+                    {platform === 'dip' && (
+                      <td className="py-3 px-3 text-xs whitespace-nowrap">
+                        {s.examScore !== null
+                          ? <span className={`font-bold ${s.examPassed ? 'text-emerald-400' : 'text-error'}`}>{s.examScore}% — {s.examPassed ? 'Pass' : 'Fail'}</span>
+                          : <span className="text-secondary-text">—</span>}
+                      </td>
+                    )}
+                    <td className="py-3 px-3 text-xs whitespace-nowrap">
+                      {s.certificate_unlocked
+                        ? <span className="text-emerald-400 font-bold">✓ Unlocked</span>
+                        : s.certificate_requested
+                        ? <span className="text-[#d4af37] font-bold">⏳ Requested</span>
+                        : <span className="text-secondary-text">Not requested</span>}
+                    </td>
+                    <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">{new Date(s.created_at).toLocaleDateString('en-ZA')}</td>
+                    <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">{s.lastActive ? new Date(s.lastActive).toLocaleDateString('en-ZA') : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function CertificateVault({ platform, onClose }: { platform: 'dip' | 'wrp'; onClose: () => void }) {
+  const [files, setFiles] = useState<{ name: string; updated_at: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const [bulkDownloading, setBulkDownloading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/admin/certificate-vault?platform=${platform}`)
+      .then(r => r.json())
+      .then(data => { setFiles(data || []); setIsLoading(false); })
+      .catch(() => setIsLoading(false));
+  }, [platform]);
+
+  const handleDownload = async (fileName: string) => {
+    setDownloading(fileName);
+    try {
+      const res = await fetch(`/api/admin/certificate-vault?platform=${platform}&file=${encodeURIComponent(fileName)}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const handleBulkDownload = async () => {
+    setBulkDownloading(true);
+    try {
+      const res = await fetch(`/api/admin/certificate-vault?platform=${platform}&bulk=true`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${platform.toUpperCase()}-Certificates-${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setBulkDownloading(false);
+    }
+  };
+
+  return (
+    <div className="bg-secondary border border-[#d4af37]/20 rounded-2xl mb-6 overflow-hidden">
+      {/* Header — click to expand/collapse */}
+      <div
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#d4af37]/5 transition-colors"
+        onClick={() => setExpanded(v => !v)}
+      >
+        <div className="flex items-center gap-2">
+          <Download className="w-4 h-4 text-[#d4af37]" />
+          <span className="text-sm font-bold text-foreground">Certificate Vault — {platform.toUpperCase()}</span>
+          <span className="text-xs text-secondary-text">({isLoading ? '...' : files.length} stored)</span>
+        </div>
+        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+          {expanded && files.length > 0 && (
+            <button
+              onClick={handleBulkDownload}
+              disabled={bulkDownloading}
+              className="flex items-center gap-1.5 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold px-3 py-1.5 rounded-lg text-xs transition-all disabled:opacity-50"
+            >
+              {bulkDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              {bulkDownloading ? 'Zipping...' : `Download All (${files.length})`}
+            </button>
+          )}
+          <ChevronDown className={`w-4 h-4 text-secondary-text transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          <button onClick={onClose} className="text-secondary-text hover:text-foreground"><X className="w-4 h-4" /></button>
+        </div>
+      </div>
+
+      {/* Collapsible list */}
+      {expanded && (
+        <div className="px-4 pb-4 border-t border-[#d4af37]/10">
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-secondary-text text-sm py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>
+          ) : files.length === 0 ? (
+            <p className="text-secondary-text text-sm py-4">No certificates stored yet.</p>
+          ) : (
+            <div className="flex flex-col gap-2 mt-3 max-h-64 overflow-y-auto">
+              {files.map(f => (
+                <div key={f.name} className="flex items-center justify-between p-3 bg-[#0d0d0d] border border-[#d4af37]/20 rounded-lg">
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">{f.name.replace(/\.(pdf)$/i, '').replace(/-/g, ' ')}</div>
+                    <div className="text-xs text-secondary-text">{new Date(f.updated_at).toLocaleDateString('en-ZA')}</div>
+                  </div>
+                  <button
+                    onClick={() => handleDownload(f.name)}
+                    disabled={downloading === f.name}
+                    className="flex items-center gap-1.5 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 font-bold px-3 py-1.5 rounded-lg text-xs transition-all disabled:opacity-50"
+                  >
+                    {downloading === f.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                    Download
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CertificateRequests({ platform, mandatoryPages, onClose }: { platform: 'dip' | 'wrp'; mandatoryPages: number; onClose: () => void }) {
+  const [requests, setRequests] = useState<{ login_id: string; full_name: string; email: string | null; certificate_requested: boolean; certificate_unlocked: boolean; name_change_requested: boolean; certificate_name: string | null; completedCount: number; examPassed: boolean | null }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unlocking, setUnlocking] = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, string>>({});
+  const [auditResults, setAuditResults] = useState<Record<string, 'eligible' | 'ineligible'>>({});
 
   useEffect(() => {
     fetch(`/api/admin/unlock-certificate?platform=${platform}`)
@@ -1077,13 +1753,38 @@ function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; o
       .catch(() => setIsLoading(false));
   }, [platform]);
 
+  const audit = (r: typeof requests[0]) => {
+    const isEligible = r.completedCount >= Math.ceil(mandatoryPages * 0.8) && (platform === 'wrp' || r.examPassed === true);
+    setAuditResults(prev => ({ ...prev, [r.login_id]: isEligible ? 'eligible' : 'ineligible' }));
+  };
+
+  const decline = async (login_id: string) => {
+    setUnlocking(login_id);
+    try {
+      const res = await fetch('/api/admin/unlock-certificate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login_id, platform, action: 'decline' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResults(prev => ({ ...prev, [login_id]: data.emailSent ? 'Declined & email sent' : 'Declined (no email)' }));
+        setRequests(prev => prev.filter(r => r.login_id !== login_id));
+      } else {
+        setResults(prev => ({ ...prev, [login_id]: data.error || 'Failed' }));
+      }
+    } finally {
+      setUnlocking(null);
+    }
+  };
+
   const unlock = async (login_id: string) => {
     setUnlocking(login_id);
     try {
       const res = await fetch('/api/admin/unlock-certificate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login_id, platform }),
+        body: JSON.stringify({ login_id, platform, action: 'unlock' }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -1146,17 +1847,48 @@ function CertificateRequests({ platform, onClose }: { platform: 'dip' | 'wrp'; o
                 <div key={r.login_id} className="flex items-center justify-between p-3 bg-[#0d0d0d] border border-[#d4af37]/20 rounded-lg">
                   <div>
                     <div className="text-sm font-semibold text-foreground">{r.full_name}</div>
-                    <div className="text-xs text-secondary-text font-mono">{r.login_id}{r.email ? ` · ${r.email}` : ' · no email'}</div>
+                    <div className="text-xs text-secondary-text font-mono">
+                      {r.login_id}{r.email ? ` · ${r.email}` : ' · no email'}
+                      <span className="ml-2 text-accent/70 font-bold tracking-widest gap-2">
+                        [{r.completedCount}/{mandatoryPages} MODS]
+                        {platform === 'dip' && (r.examPassed ? ' [EXAM ✅]' : ' [EXAM ❌]')}
+                      </span>
+                    </div>
                     {results[r.login_id] && <div className="text-xs text-accent mt-0.5">{results[r.login_id]}</div>}
                   </div>
-                  <button
-                    onClick={() => unlock(r.login_id)}
-                    disabled={unlocking === r.login_id}
-                    className="flex items-center gap-1.5 bg-[#d4af37] text-black font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-[#d4af37]/90 transition-all disabled:opacity-50"
-                  >
-                    {unlocking === r.login_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
-                    Unlock & Notify
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {auditResults[r.login_id] === undefined && (
+                      <button
+                        onClick={() => audit(r)}
+                        className="flex items-center gap-1.5 bg-background border border-border-subtle text-foreground font-bold px-3 py-1.5 rounded-lg text-xs hover:border-accent hover:text-accent transition-all"
+                      >
+                        Audit Request
+                      </button>
+                    )}
+                    {auditResults[r.login_id] === 'eligible' && (
+                      <button
+                        onClick={() => unlock(r.login_id)}
+                        disabled={unlocking === r.login_id}
+                        className="flex items-center gap-1.5 bg-[#d4af37]/10 border border-[#d4af37]/50 text-[#d4af37] font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-[#d4af37] hover:text-black transition-all disabled:opacity-50"
+                      >
+                        {unlocking === r.login_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Award className="w-3.5 h-3.5" />}
+                        Approve & Notify
+                      </button>
+                    )}
+                    {auditResults[r.login_id] === 'ineligible' && (
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-error uppercase tracking-wider">Ineligible</span>
+                        <button
+                          onClick={() => decline(r.login_id)}
+                          disabled={unlocking === r.login_id}
+                          className="flex items-center gap-1.5 bg-error/10 border border-error/30 text-error font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-error hover:text-white transition-all disabled:opacity-50"
+                        >
+                          {unlocking === r.login_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                          Decline Request
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </>
@@ -1493,8 +2225,26 @@ function OnboardingPipeline() {
   );
 }
 
-export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPages }: { totalSaaioPages: number; totalDipPages: number; totalWrpPages: number }) {
-  const [platform, setPlatform] = useState<'saaio' | 'dip' | 'wrp' | 'supervisors' | 'invite-links' | 'onboarding'>('saaio');
+export type PlatformTab = 'saaio' | 'dip' | 'wrp' | 'supervisors' | 'invite-links' | 'onboarding' | 'completed-dip' | 'completed-wrp';
+
+interface AdminTableProps {
+  totalSaaioPages?: number;
+  totalDipPages?: number;
+  totalWrpPages?: number;
+  mandatoryWrpPages?: number;
+  allowedTabs?: PlatformTab[];
+  defaultTab?: PlatformTab;
+}
+
+export default function AdminTable({ 
+  totalSaaioPages = 0, 
+  totalDipPages = 0, 
+  totalWrpPages = 0,
+  mandatoryWrpPages = 0,
+  allowedTabs = ['saaio', 'dip', 'wrp', 'onboarding', 'supervisors', 'invite-links', 'completed-dip', 'completed-wrp'],
+  defaultTab = 'saaio'
+}: AdminTableProps) {
+  const [platform, setPlatform] = useState<PlatformTab>(defaultTab);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -1508,11 +2258,16 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
   const [showBulk, setShowBulk] = useState(false);
   const [showNotify, setShowNotify] = useState(false);
   const [showCongratulate, setShowCongratulate] = useState(false);
+  const congratulatePanelRef = React.useRef<HTMLDivElement>(null);
   const [showCertRequests, setShowCertRequests] = useState(false);
+  const [showCertVault, setShowCertVault] = useState(false);
+  const [showCommsMenu, setShowCommsMenu] = useState(false);
+  const [showCertMenu, setShowCertMenu] = useState(false);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [selectedCohortId, setSelectedCohortId] = useState<string | null>(null);
   const [examEditing, setExamEditing] = useState<string | null>(null);
   const [examInput, setExamInput] = useState({ score: '', passed: '' });
+  const [search, setSearch] = useState('');
 
   const fetchCohorts = useCallback(async () => {
     if (platform === 'supervisors' || platform === 'invite-links') return;
@@ -1538,7 +2293,7 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
     }
   }, [platform, selectedCohortId]);
 
-  useEffect(() => { setSelectedCohortId(null); fetchCohorts(); }, [platform]);
+  useEffect(() => { setSelectedCohortId(null); setSearch(''); fetchCohorts(); }, [platform]);
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -1623,9 +2378,9 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
       {newCred && <CredentialModal cred={newCred} isReset={!!newCred.isReset} onClose={() => setNewCred(null)} />}
 
       <div className="bg-secondary border border-border-subtle rounded-xl overflow-hidden shadow-2xl">
-        {/* Platform Tabs */}
+        {/* Platform Tabs + Settings */}
         <div id="admin-tabs" className="flex border-b border-border-subtle overflow-x-auto">
-          {(['saaio', 'dip', 'wrp', 'onboarding', 'supervisors', 'invite-links'] as const).map(p => (
+          {allowedTabs.map(p => (
             <button
               key={p}
               onClick={() => setPlatform(p)}
@@ -1633,10 +2388,22 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                 platform === p ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'
               }`}
             >
-              {p === 'saaio' ? 'SAAIO' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'onboarding' ? 'Onboarding' : p === 'supervisors' ? 'Supervisors' : 'Invite Links'}
+              {p === 'saaio' ? 'WeThinkCode_ IDC Curriculum' : p === 'dip' ? 'IDC SEF / DIP' : p === 'wrp' ? 'WRP' : p === 'completed-dip' ? '✓ Completed DIP' : p === 'completed-wrp' ? '✓ Completed WRP' : p === 'onboarding' ? 'Onboarding' : p === 'supervisors' ? 'Supervisors' : 'Invite Links'}
             </button>
           ))}
+          <button
+            onClick={() => setPlatform('settings' as any)}
+            className={`py-3 px-4 text-sm font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+              platform === ('settings' as any) ? 'bg-accent/10 text-accent border-b-2 border-accent' : 'text-secondary-text hover:text-foreground'
+            }`}
+            title="Admin Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
         </div>
+
+        {/* Settings Panel */}
+        {platform === ('settings' as any) && <AdminSettings />}
 
         {/* Onboarding Pipeline */}
         {platform === 'onboarding' && <OnboardingPipeline />}
@@ -1646,6 +2413,10 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
 
         {/* Invite Links Manager */}
         {platform === 'invite-links' && <InviteLinksPanel />}
+
+        {/* Completed Students */}
+        {platform === 'completed-dip' && <CompletedStudents platform="dip" mandatoryPages={totalDipPages} />}
+        {platform === 'completed-wrp' && <CompletedStudents platform="wrp" mandatoryPages={mandatoryWrpPages} />}
 
         {/* Bulk Import */}
         {platform !== 'supervisors' && platform !== 'invite-links' && showBulk && <BulkImport platform={platform as 'saaio'|'dip'|'wrp'} onDone={fetchStudents} />}
@@ -1666,95 +2437,157 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
 
         {/* Congratulate Panel — DIP and WRP only */}
         {platform !== 'supervisors' && platform !== 'invite-links' && showCongratulate && (platform === 'dip' || platform === 'wrp') && (
-          <CongratulatePanel platform={platform as 'dip'|'wrp'} onClose={() => setShowCongratulate(false)} />
+          <div ref={congratulatePanelRef}>
+            <CongratulatePanel platform={platform as 'dip'|'wrp'} onClose={() => setShowCongratulate(false)} />
+          </div>
         )}
 
         {showCertRequests && (platform === 'dip' || platform === 'wrp') && (
-          <CertificateRequests platform={platform as 'dip'|'wrp'} onClose={() => setShowCertRequests(false)} />
+          <CertificateRequests platform={platform as 'dip'|'wrp'} mandatoryPages={platform === 'wrp' ? mandatoryWrpPages : totalDipPages} onClose={() => setShowCertRequests(false)} />
+        )}
+
+        {showCertVault && (platform === 'dip' || platform === 'wrp') && (
+          <CertificateVault platform={platform as 'dip'|'wrp'} onClose={() => setShowCertVault(false)} />
         )}
 
         {platform !== 'supervisors' && platform !== 'invite-links' && platform !== 'onboarding' && <>
         {/* Register Form */}
-        <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-3">
+        <form onSubmit={handleAdd} className="p-4 border-b border-border-subtle bg-background/50 flex flex-col gap-4">
           {addError && <p className="text-error text-xs bg-error/10 border border-error/20 rounded-lg px-3 py-2">{addError}</p>}
-          <div className="flex flex-col sm:flex-row gap-3 items-end">
-          <div className="flex-1">
-            <label className="block text-xs text-secondary-text mb-1">Full Name *</label>
-            <input
-              type="text"
-              placeholder="e.g. Alice Smith"
-              value={fullName}
-              onChange={e => setFullName(e.target.value)}
-              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
-              required
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs text-secondary-text mb-1">Email (optional)</label>
-            <input
-              type="email"
-              placeholder="alice@school.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
-            />
-          </div>
+          <div className="flex flex-col sm:flex-row gap-3 items-end w-full">
+            <div className="flex-1 w-full">
+              <label className="block text-xs text-secondary-text mb-1">Full Name *</label>
+              <input
+                type="text"
+                placeholder="e.g. Alice Smith"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
+                required
+              />
+            </div>
+            <div className="flex-1 w-full">
+              <label className="block text-xs text-secondary-text mb-1">Email (optional)</label>
+              <input
+                type="email"
+                placeholder="alice@school.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
+              />
+            </div>
             <button
               type="submit"
               disabled={isAdding || !fullName.trim()}
-              className="flex items-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="flex items-center justify-center gap-2 bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-black px-6 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap w-full sm:w-auto"
             >
               {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               Register Student
             </button>
+          </div>
+          
+          {/* Secondary Actions Row */}
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border-subtle/30">
             <button
               type="button"
               onClick={() => setShowBulk(v => !v)}
-              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
             >
-              <FileSpreadsheet className="w-4 h-4" />
+              <FileSpreadsheet className="w-3.5 h-3.5" />
               Bulk Import
             </button>
-            <button
-              type="button"
-              onClick={() => setShowNotify(v => !v)}
-              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
-            >
-              <Bell className="w-4 h-4" />
-              Notify Students
-            </button>
-            {(platform === 'dip' || platform === 'wrp') && (
+
+            {/* Communications dropdown */}
+            <div className="relative">
               <button
                 type="button"
-                onClick={() => setShowCongratulate(v => !v)}
-                className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-[#d4af37] hover:border-[#d4af37]/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                onClick={() => { setShowCommsMenu(v => !v); setShowCertMenu(false); }}
+                className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
               >
-                <Award className="w-4 h-4" />
-                Send Certificates
+                <Bell className="w-3.5 h-3.5" />
+                Communications
+                <ChevronDown className="w-3 h-3" />
               </button>
-            )}
+              {showCommsMenu && (
+                <div className="absolute left-0 top-full mt-1 w-48 bg-secondary border border-border-subtle rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => { setShowNotify(v => !v); setShowCommsMenu(false); }}
+                    className="flex items-center gap-2 px-4 py-3 text-xs text-secondary-text hover:text-accent hover:bg-background transition-all"
+                  >
+                    <Bell className="w-3.5 h-3.5" /> Notify Students
+                  </button>
+                  {(platform === 'dip' || platform === 'wrp') && (
+                    <button
+                      type="button"
+                      onClick={() => { setShowCongratulate(v => !v); setShowCommsMenu(false); setTimeout(() => congratulatePanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }}
+                      className="flex items-center gap-2 px-4 py-3 text-xs text-secondary-text hover:text-[#d4af37] hover:bg-background transition-all"
+                    >
+                      <Award className="w-3.5 h-3.5" /> Send Certificates
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Certificates dropdown */}
             {(platform === 'dip' || platform === 'wrp') && (
-              <button
-                type="button"
-                onClick={() => setShowCertRequests(v => !v)}
-                className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
-              >
-                <Award className="w-4 h-4" />
-                Certificate Requests
-              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => { setShowCertMenu(v => !v); setShowCommsMenu(false); }}
+                  className="flex items-center gap-2 bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap"
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  Certificates
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                {showCertMenu && (
+                  <div className="absolute left-0 top-full mt-1 w-52 bg-secondary border border-border-subtle rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col">
+                    <button
+                      type="button"
+                      onClick={() => { setShowCertRequests(v => !v); setShowCertVault(false); setShowCertMenu(false); }}
+                      className="flex items-center gap-2 px-4 py-3 text-xs text-secondary-text hover:text-[#d4af37] hover:bg-background transition-all"
+                    >
+                      <Award className="w-3.5 h-3.5" /> Certificate Requests
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowCertVault(v => !v); setShowCertRequests(false); setShowCertMenu(false); }}
+                      className="flex items-center gap-2 px-4 py-3 text-xs text-secondary-text hover:text-accent hover:bg-background transition-all"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Certificate Vault
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
+
+            {/* Export — right aligned */}
             <button
               type="button"
-              onClick={() => downloadReport(users, platform, totalPages)}
+              onClick={() => downloadReport(users, platform as any, totalPages)}
               disabled={users.length === 0}
-              className="flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+              className="ml-auto flex items-center gap-2 bg-background border border-border-subtle text-secondary-text hover:text-accent hover:border-accent/50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
               title="Download Excel report"
             >
-              <Download className="w-4 h-4" />
+              <FileSpreadsheet className="w-3.5 h-3.5" />
               Export Report
             </button>
           </div>
         </form>
+
+        {/* Search */}
+
+        <div className="px-4 py-3 border-b border-border-subtle bg-background/30">
+            <input
+              type="text"
+              value={search}
+              onChange={e => { setSearch(e.target.value); }}
+              placeholder="Search by name, login ID or email..."
+              className="w-full max-w-sm bg-background border border-border-subtle rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent placeholder:text-secondary-text/50"
+            />
+        </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
@@ -1769,40 +2602,51 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
               <p className="text-secondary-text text-xs">The database tables may not exist yet. Run the SQL in <code className="text-accent">scripts/setup-student-auth.sql</code> in your Supabase SQL editor.</p>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-background/30 border-b border-border-subtle">
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Login ID</th>
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Progress</th>
-                  {platform === 'dip' && <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Cohort</th>
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text">Last Active</th>
-                  <th className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-secondary-text text-right">Actions</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Login ID</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Name</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Progress</th>
+                  {platform === 'dip' && <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Cohort</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Registered</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Last Active</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
-                {users.length === 0 ? (
-                  <tr><td colSpan={6} className="py-8 text-center text-secondary-text">No students registered yet.</td></tr>
-                ) : users.map(user => {
-                  const perc = totalPages > 0 ? Math.min(100, Math.round((user.completedCount / totalPages) * 100)) : 0;
-                  return (
+                {(() => {
+                  const q = search.trim().toLowerCase();
+                  const filtered = q ? users.filter(u =>
+                    u.full_name.toLowerCase().includes(q) ||
+                    u.login_id.toLowerCase().includes(q) ||
+                    (u.email ?? '').toLowerCase().includes(q)
+                  ) : users;
+                  if (filtered.length === 0) return (
+                    <tr><td colSpan={8} className="py-8 text-center text-secondary-text">
+                      {search.trim() ? `No students match "${search.trim()}"` : 'No students registered yet.'}
+                    </td></tr>
+                  );
+                  return filtered.map(user => {
+                    const perc = totalPages > 0 ? Math.min(100, Math.round((user.completedCount / totalPages) * 100)) : 0;
+                    return (
                     <tr key={user.login_id} className="hover:bg-background/30 transition-colors">
-                      <td className="py-3 px-5 font-mono text-accent font-semibold text-sm">{user.login_id}</td>
-                      <td className="py-3 px-5">
-                        <div className="font-semibold text-foreground text-sm">{user.full_name}</div>
-                        {user.email && <div className="text-xs text-secondary-text">{user.email}</div>}
+                      <td className="py-3 px-3 font-mono text-accent font-semibold text-xs whitespace-nowrap">{user.login_id}</td>
+                      <td className="py-3 px-3 max-w-[160px]">
+                        <div className="font-semibold text-foreground text-sm truncate">{user.full_name}</div>
+                        {user.email && <div className="text-xs text-secondary-text truncate">{user.email}</div>}
                       </td>
-                      <td className="py-3 px-5">
-                        <div className="flex items-center gap-2 w-36">
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-2 w-24">
                           <div className="flex-1 h-1.5 bg-background rounded-full overflow-hidden">
                             <div className="h-full bg-accent" style={{ width: `${perc}%` }} />
                           </div>
-                          <span className="text-xs font-bold text-accent">{perc}%</span>
+                          <span className="text-xs font-bold text-accent whitespace-nowrap">{perc}%</span>
                         </div>
                       </td>
                       {platform === 'dip' && (
-                        <td className="py-3 px-5 text-sm">
+                        <td className="py-3 px-3 text-sm">
                           {examEditing === user.login_id ? (
                             <div className="flex items-center gap-1">
                               <input
@@ -1839,11 +2683,11 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                           )}
                         </td>
                       )}
-                      <td className="py-3 px-5 text-xs">
+                      <td className="py-3 px-3 text-xs">
                         <select
                           value={user.cohortId ?? ''}
                           onChange={e => handleAssignCohort(user.login_id, e.target.value || null)}
-                          className="bg-background border border-border-subtle rounded px-2 py-1 text-xs text-secondary-text focus:outline-none focus:border-accent"
+                          className="bg-background border border-border-subtle rounded px-2 py-1 text-xs text-secondary-text focus:outline-none focus:border-accent max-w-[120px]"
                         >
                           <option value="">Unassigned</option>
                           {cohorts.filter(c => !c.archived).map(c => (
@@ -1851,15 +2695,19 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                           ))}
                         </select>
                       </td>
-                      <td className="py-3 px-5 text-xs text-secondary-text">
+                      <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">
+                        {new Date(user.created_at).toLocaleDateString('en-ZA')}
+                      </td>
+                      <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">
                         {user.lastActive ? (
-                          <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(user.lastActive).toLocaleDateString()}</div>
+                          <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(user.lastActive).toLocaleDateString('en-ZA')}</div>
                         ) : '—'}
                       </td>
                       <td className="py-3 px-5 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
-                            onClick={() => handleResetPassword(user)}
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); handleResetPassword(user); }}
                             disabled={resettingId === user.login_id}
                             title="Reset password"
                             className="text-secondary-text hover:text-warning transition-colors p-1.5 rounded-lg hover:bg-warning/10 disabled:opacity-50"
@@ -1867,7 +2715,8 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                             {resettingId === user.login_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                           </button>
                           <button
-                            onClick={() => handleDelete(user.login_id)}
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); handleDelete(user.login_id); }}
                             disabled={deletingId === user.login_id}
                             title="Delete student"
                             className="text-secondary-text hover:text-error transition-colors p-1.5 rounded-lg hover:bg-error/10 disabled:opacity-50"
@@ -1878,13 +2727,13 @@ export default function AdminTable({ totalSaaioPages, totalDipPages, totalWrpPag
                       </td>
                     </tr>
                   );
-                })}
+                  });
+                })()}
               </tbody>
             </table>
           )}
         </div>
-      </>
-      }
+      </>}
       </div>
       <TourWrapper />
     </>
