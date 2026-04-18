@@ -24,23 +24,31 @@ iris = load_iris()
 X, y = iris.data, iris.target
 
 # 1. Try max_depth values from 1 to 8 and store the mean cross-val score for each
-#    Use cross_val_score(model, X, y, cv=5) and take .mean()
 depths = range(1, 9)
 cv_scores = []
 
 for depth in depths:
     model = DecisionTreeClassifier(max_depth=depth, random_state=42)
-    # Calculate 5-fold cross-validation score and append the mean to cv_scores
-    
+    score = cross_val_score(model, X, y, cv=5).mean()
+    cv_scores.append(score)
 
 # 2. Find the depth with the highest cross-val score
-best_depth = 
+best_depth = depths[np.argmax(cv_scores)]
 
 # 3. Train a final model using best_depth on all the data
-final_model = 
+final_model = DecisionTreeClassifier(max_depth=best_depth, random_state=42).fit(X, y)
 
+# --- 🖼️ VISUALIZE (Complexity vs Accuracy) ---
+import matplotlib.pyplot as plt
+plt.plot(depths, cv_scores, marker='o', color='purple')
+plt.axvline(x=best_depth, color='red', linestyle='--', label='Sweet Spot')
+plt.title('Finding the Best Model Complexity')
+plt.xlabel('Tree Depth (Complexity)')
+plt.ylabel('Mean CV Accuracy')
+plt.legend()
+plt.show()
 
-# Don't change the code below - it's for testing
+# Don't change below
 def check_sweet_spot():
     return len(cv_scores), best_depth, final_model.max_depth
 ```

@@ -74,6 +74,26 @@ K=5: 3×●, 2×○ → Predict A
 
 - **Slow prediction**: Must search all training data
 - **Memory intensive**: Stores entire training set
+
+### 🖼️ Visualizing the Neighborhood
+KNN is easiest to understand when you see the "clusters" on a 2D map.
+
+```python
+import matplotlib.pyplot as plt
+
+# Features: [Feature 1, Feature 2]
+X = [[2, 3], [3, 4], [5, 5], [8, 8], [9, 7], [10, 8]]
+# Labels: 0 (Team Blue), 1 (Team Red)
+y = [0, 0, 0, 1, 1, 1]
+
+# Plotting
+colors = ['blue' if label == 0 else 'red' for label in y]
+plt.scatter([x[0] for x in X], [x[1] for x in X], c=colors)
+plt.title('KNN: Team Blue vs Team Red')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.show()
+```
 - **Curse of dimensionality**: Performance degrades in high dimensions
 - **Sensitive to irrelevant features**: All features contribute equally
 
