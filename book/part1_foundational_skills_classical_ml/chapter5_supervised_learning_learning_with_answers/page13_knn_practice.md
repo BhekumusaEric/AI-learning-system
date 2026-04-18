@@ -28,26 +28,31 @@ y = iris.target
 target_names = iris.target_names
 
 # 1. Split into train/test sets (test_size=0.3, random_state=42)
-X_train, X_test, y_train, y_test = 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# 2. Create a KNeighborsClassifier with K=3
-knn = 
+# 2. Create and Train the model with K=3
+knn = KNeighborsClassifier(n_neighbors=3).fit(X_train, y_train)
 
-# 3. Train the model
+# 3. Predict on the test set
+predictions = knn.predict(X_test)
 
+# 4. Calculate accuracy
+accuracy = accuracy_score(y_test, predictions)
 
-# 4. Predict on the test set
-predictions = 
-
-# 5. Calculate accuracy
-accuracy = 
-
-# 6. Predict the species for this single flower measurement
+# 5. Predict for the sample flower
 sample_flower = np.array([[5.1, 3.5, 1.4, 0.2]])
-sample_prediction = 
+sample_prediction = knn.predict(sample_flower)
 sample_species = target_names[sample_prediction[0]]
 
-# Don't change the code below - it's for testing
+# --- 🖼️ VISUALIZE (Sepal Length vs Sepal Width) ---
+import matplotlib.pyplot as plt
+plt.scatter(X[:, 0], X[:, 1], c=y, cmap='viridis', edgecolors='k')
+plt.xlabel('Sepal Length')
+plt.ylabel('Sepal Width')
+plt.title('Iris Flower Clusters')
+plt.show()
+
+# Don't change below
 def check_knn():
     return accuracy, len(predictions), sample_species
 ```

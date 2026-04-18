@@ -86,7 +86,35 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json(result);
+    // Fetch notebook submissions separately using direct SQL
+    const submissions = await sql`SELECT * FROM notebook_submissions`;
+
+    const submissionMap: Record<string, any[]> = {};
+    (submissions || []).forEach((s: any) => {
+      if (!submissionMap[s.login_id]) submissionMap[s.login_id] = [];
+      submissionMap[s.login_id].push(s);
+    });
+
+    const finalResult = students.map((s: any) => {
+      const completedCount = Object.keys(s.completed_pages || {}).filter((k: string) => (s.completed_pages as any)[k]).length;
+      return {
+        id: s.id,
+        login_id: s.login_id,
+        full_name: s.full_name,
+        email: s.email,
+        created_at: s.created_at,
+        cohortId: s.cohort_id,
+        completedCount,
+        lastActive: s.last_active,
+        examScore: s.exam_score,
+        examPassed: s.exam_passed,
+        certificate_requested: s.certificate_requested ?? false,
+        certificate_unlocked: s.certificate_unlocked ?? false,
+        notebookSubmissions: submissionMap[s.login_id] || []
+      };
+    });
+
+    return NextResponse.json(finalResult);
   } catch (error: any) {
     console.error('[ADMIN_GET_STUDENTS_FAILED]', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
