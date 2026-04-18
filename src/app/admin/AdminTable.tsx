@@ -18,6 +18,7 @@ export interface AdminUser {
   cohortId: string | null;
   certificate_requested?: boolean;
   certificate_unlocked?: boolean;
+  notebookSubmissions?: { page_id: string; colab_url: string; submitted_at: string }[];
 }
 
 export interface Cohort {
@@ -1584,6 +1585,7 @@ function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wr
                   <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Modules</th>
                   {platform === 'dip' && <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text">Exam</th>}
                   <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Cert Status</th>
+                  <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Notebooks</th>
                   <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Registered</th>
                   <th className="py-3 px-3 text-xs font-bold uppercase tracking-wider text-secondary-text whitespace-nowrap">Last Active</th>
                 </tr>
@@ -1617,6 +1619,28 @@ function CompletedStudents({ platform, mandatoryPages }: { platform: 'dip' | 'wr
                         : s.certificate_requested
                         ? <span className="text-[#d4af37] font-bold">⏳ Requested</span>
                         : <span className="text-secondary-text">Not requested</span>}
+                    </td>
+                    <td className="py-3 px-3 text-xs whitespace-nowrap">
+                      {(s.notebookSubmissions?.length ?? 0) > 0 ? (
+                        <div className="flex flex-col gap-1">
+                          {s.notebookSubmissions?.map((nb, i) => (
+                            <a 
+                              key={i} 
+                              href={nb.colab_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] text-accent hover:underline bg-accent/5 px-2 py-0.5 rounded border border-accent/20"
+                              onClick={e => e.stopPropagation()}
+                              title={`Submitted: ${new Date(nb.submitted_at).toLocaleString()}`}
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              {nb.page_id.replace(/^page\d+_/, '').replace(/_/g, ' ').slice(0, 15)}...
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-secondary-text italic px-2">None yet</span>
+                      )}
                     </td>
                     <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">{new Date(s.created_at).toLocaleDateString('en-ZA')}</td>
                     <td className="py-3 px-3 text-xs text-secondary-text whitespace-nowrap">{s.lastActive ? new Date(s.lastActive).toLocaleDateString('en-ZA') : '—'}</td>

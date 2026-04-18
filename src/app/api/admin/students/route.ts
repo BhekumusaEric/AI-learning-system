@@ -65,6 +65,7 @@ export async function GET(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const { data: progress } = await supabase.from(progressTable).select('*');
+  const { data: submissions } = await supabase.from('notebook_submissions').select('*');
 
   const progressMap: Record<string, any> = {};
   (progress || []).forEach((p: any) => {
@@ -72,8 +73,15 @@ export async function GET(request: Request) {
     progressMap[key] = p;
   });
 
+  const submissionMap: Record<string, any[]> = {};
+  (submissions || []).forEach((s: any) => {
+    if (!submissionMap[s.login_id]) submissionMap[s.login_id] = [];
+    submissionMap[s.login_id].push(s);
+  });
+
   const result = (students || []).map((s: any) => {
     const prog = progressMap[s.login_id];
+    const subs = submissionMap[s.login_id] || [];
     const completedCount = prog
       ? Object.keys(prog.completed_pages || {}).filter((k: string) => (prog.completed_pages as any)[k]).length
       : 0;
@@ -85,7 +93,9 @@ export async function GET(request: Request) {
       examPassed: prog?.exam_passed ?? null,
       cohortId: s.cohort_id ?? null,
       certificate_requested: s.certificate_requested ?? false,
-      certificate_unlocked: s.certificate_unlocked ?? false,    };
+      certificate_unlocked: s.certificate_unlocked ?? false,
+      notebookSubmissions: subs,
+    };
   });
 
   return NextResponse.json(result);
