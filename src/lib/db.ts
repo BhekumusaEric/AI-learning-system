@@ -1,4 +1,6 @@
 import postgres from 'postgres';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * WeThinkCode_ Native Database Client
@@ -14,9 +16,15 @@ if (!connectionString) {
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// In AWS Lambda, the global-bundle.pem is copied to the root
+const sslConfig = isProduction ? {
+  rejectUnauthorized: true,
+  ca: fs.readFileSync(path.join(process.cwd(), 'global-bundle.pem'), 'utf8'),
+} : false;
+
 export const sql = postgres(connectionString, {
-  ssl: isProduction ? 'require' : false,
-  max: 10, // Pool size for EC2 performance
+  ssl: sslConfig,
+  max: 10,
   idle_timeout: 20,
   connect_timeout: 30,
 });
