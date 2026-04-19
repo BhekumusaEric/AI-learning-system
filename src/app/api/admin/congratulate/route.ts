@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
@@ -133,20 +133,16 @@ export async function POST(request: Request) {
 
   const meta = PLATFORM_META[platform as 'dip' | 'wrp'];
 
-  let query = supabase
-    .from(meta.table)
-    .select('login_id, full_name, email, created_at, cohort_id')
-    .not('email', 'is', null);
+  const students = await sql`
+    SELECT login_id, full_name, email, created_at, cohort_id FROM ${sql(meta.table)}
+    WHERE email IS NOT NULL
+      ${login_ids?.length ? sql`AND login_id IN ${sql(login_ids)}` : sql``}
+      ${cohort_id ? sql`AND cohort_id = ${cohort_id}` : sql``}
+      ${date_from ? sql`AND created_at >= ${date_from}` : sql``}
+      ${date_to ? sql`AND created_at <= ${date_to + 'T23:59:59Z'}` : sql``}
+  `;
 
-  if (login_ids?.length) query = query.in('login_id', login_ids);
-  if (cohort_id) query = query.eq('cohort_id', cohort_id);
-  if (date_from) query = query.gte('created_at', date_from);
-  if (date_to) query = query.lte('created_at', date_to + 'T23:59:59Z');
-
-  const { data: students, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  const recipients = (students || []).filter(s => s.email?.trim());
+  const recipients = students.filter((s: any) => s.email?.trim());
   if (recipients.length === 0) {
     return NextResponse.json({ sent: 0, failed: 0, total: 0, message: 'No students match the selected filters' });
   }

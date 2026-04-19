@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { sendEmail } from '@/lib/email';
 import { logAudit } from '@/lib/audit';
 
@@ -183,24 +183,31 @@ export async function POST(request: Request) {
 
   const meta = PLATFORM_META[platform as 'dip' | 'wrp'];
 
-  let updatePayload: Record<string, any> = {};
-  if (action === 'decline') {
-    updatePayload = { certificate_requested: false };
-  } else {
-    // Generate a unique verify token
-    const verifyToken = require('crypto').randomBytes(16).toString('hex');
-    updatePayload = { certificate_unlocked: true, verify_token: verifyToken };
+  let student: any;
+  try {
+    if (action === 'decline') {
+      const rows = await sql`
+        UPDATE ${sql(meta.table)}
+        SET certificate_requested = false
+        WHERE login_id = ${login_id}
+        RETURNING full_name, email
+      `;
+      if (rows.length === 0) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+      student = rows[0];
+    } else {
+      const verifyToken = require('crypto').randomBytes(16).toString('hex');
+      const rows = await sql`
+        UPDATE ${sql(meta.table)}
+        SET certificate_unlocked = true, verify_token = ${verifyToken}
+        WHERE login_id = ${login_id}
+        RETURNING full_name, email
+      `;
+      if (rows.length === 0) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+      student = rows[0];
+    }
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  // Update in DB
-  const { data: student, error } = await supabase
-    .from(meta.table)
-    .update(updatePayload)
-    .eq('login_id', login_id)
-    .select('full_name, email')
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Send email
   let emailSent = false;
@@ -239,28 +246,39 @@ export async function GET(request: Request) {
   const meta = PLATFORM_META[platform];
   const progressTable = platform === 'dip' ? 'dip_progress' : 'wrp_progress';
 
-  const { data, error } = await supabase
-    .from(meta.table)
-    .select('login_id, full_name, email, certificate_requested, certificate_unlocked, name_change_requested, certificate_name')
-    .or('certificate_requested.eq.true,name_change_requested.eq.true')
-    .order('full_name');
+  try {
+    const data = await sql`
+      SELECT login_id, full_name, email, certificate_requested, certificate_unlocked, name_change_requested, certificate_name
+      FROM ${sql(meta.table)}
+      WHERE certificate_requested = true OR name_change_requested = true
+      ORDER BY full_name
+    `;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const progressSelect = platform === 'dip' ? sql`login_id, completed_pages, exam_passed` : sql`login_id, completed_pages`;
+    
+    let progressMap: Record<string, any> = {};
+    if (data.length > 0) {
+      const loginIds = data.map((r: any) => r.login_id);
+      const progress = await sql`
+        SELECT ${progressSelect}
+        FROM ${sql(progressTable)}
+        WHERE login_id IN ${sql(loginIds)}
+      `;
+      progress.forEach((p: any) => { progressMap[p.login_id] = p; });
+    }
 
-  const progressSelect = platform === 'dip' ? 'login_id, completed_pages, exam_passed' : 'login_id, completed_pages';
-  const { data: progress } = await supabase.from(progressTable).select(progressSelect);
-  const progressMap: Record<string, any> = {};
-  (progress || []).forEach((p: any) => { const key = p.login_id || p.username; if (key) progressMap[key] = p; });
+    const result = data.map((r: any) => {
+      const prog = progressMap[r.login_id];
+      const completedCount = prog
+        ? Object.keys(prog.completed_pages || {}).filter((k: string) => prog.completed_pages[k]).length
+        : 0;
+      return { ...r, completedCount, examPassed: prog?.exam_passed ?? null };
+    });
 
-  const result = (data || []).map((r: any) => {
-    const prog = progressMap[r.login_id];
-    const completedCount = prog
-      ? Object.keys(prog.completed_pages || {}).filter((k: string) => prog.completed_pages[k]).length
-      : 0;
-    return { ...r, completedCount, examPassed: prog?.exam_passed ?? null };
-  });
-
-  return NextResponse.json(result);
+    return NextResponse.json(result);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // PATCH /api/admin/unlock-certificate — approve name change
@@ -273,11 +291,15 @@ export async function PATCH(request: Request) {
   if (!table) return NextResponse.json({ error: 'Invalid platform' }, { status: 400 });
 
   // Clear the locked name and the request flag so student can re-enter
-  const { error } = await supabase
-    .from(table)
-    .update({ certificate_name: null, name_change_requested: false })
-    .eq('login_id', login_id);
+  try {
+    await sql`
+      UPDATE ${sql(table)}
+      SET certificate_name = null, name_change_requested = false
+      WHERE login_id = ${login_id}
+    `;
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }

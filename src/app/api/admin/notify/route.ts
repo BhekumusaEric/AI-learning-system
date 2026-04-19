@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
+
 
 const PLATFORM_CONFIG = {
   saaio: {
@@ -237,36 +238,35 @@ export async function POST(request: Request) {
   const progressTable = platform === 'dip' ? 'dip_progress' : platform === 'wrp' ? 'wrp_progress' : null;
 
   // Fetch students with base filters
-  let query = supabase.from(config.table)
-    .select('login_id, full_name, email, cohort_id, created_at, certificate_unlocked')
-    .not('email', 'is', null);
-  if (cohort_id) query = query.eq('cohort_id', cohort_id);
-  if (date_from) query = query.gte('created_at', date_from);
-  if (date_to) query = query.lte('created_at', date_to + 'T23:59:59Z');
+  const students = await sql`
+    SELECT login_id, full_name, email, cohort_id, created_at, certificate_unlocked 
+    FROM ${sql(config.table)}
+    WHERE email IS NOT NULL
+      ${cohort_id ? sql`AND cohort_id = ${cohort_id}` : sql``}
+      ${date_from ? sql`AND created_at >= ${date_from}` : sql``}
+      ${date_to ? sql`AND created_at <= ${date_to + 'T23:59:59Z'}` : sql``}
+  `;
 
-  const { data: students, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  let recipients = (students || []).filter(s => s.email?.trim());
+  let recipients = students.filter((s: any) => s.email?.trim());
 
   // Apply smart filtering based on notification type
-  if (progressTable && ['reminder', 'exam_reminder', 'cert_reminder'].includes(type)) {
-    const loginIds = recipients.map(s => s.login_id);
-    const { data: progress } = await supabase
-      .from(progressTable)
-      .select('login_id, completed_pages, exam_passed')
-      .in('login_id', loginIds);
+  if (progressTable && ['reminder', 'exam_reminder', 'cert_reminder'].includes(type) && recipients.length > 0) {
+    const loginIds = recipients.map((s: any) => s.login_id);
+    const progress = await sql`
+      SELECT login_id, completed_pages, exam_passed
+      FROM ${sql(progressTable)}
+      WHERE login_id IN ${sql(loginIds)}
+    `;
 
     const progressMap: Record<string, any> = {};
-    (progress || []).forEach(p => { progressMap[p.login_id] = p; });
+    progress.forEach((p: any) => { progressMap[p.login_id] = p; });
 
     // Mandatory page thresholds
     const DIP_MANDATORY = 38; // ch1 pages
     const WRP_MANDATORY = 7;  // read + interview pages
     const mandatory = platform === 'dip' ? DIP_MANDATORY : WRP_MANDATORY;
-    const threshold = Math.ceil(mandatory * 0.8);
 
-    recipients = recipients.filter(s => {
+    recipients = recipients.filter((s: any) => {
       const prog = progressMap[s.login_id];
       const completedCount = prog
         ? Object.keys(prog.completed_pages || {}).filter((k: string) => prog.completed_pages[k]).length

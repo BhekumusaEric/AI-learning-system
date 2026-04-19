@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -18,8 +18,11 @@ function requireAdmin(request: Request) {
 
 async function nextSupervisorId(): Promise<string> {
   const year = new Date().getFullYear();
-  const { data } = await supabase.from('supervisors').select('login_id').like('login_id', `SUP-${year}-%`);
-  const ids = (data || []).map((r: any) => r.login_id as string);
+  const data = await sql`
+    SELECT login_id FROM supervisors 
+    WHERE login_id LIKE ${'SUP-' + year + '-%'}
+  `;
+  const ids = data.map((r: any) => r.login_id as string);
   let max = 0;
   for (const id of ids) {
     const n = parseInt(id.split('-').pop() || '0', 10);
@@ -31,20 +34,25 @@ async function nextSupervisorId(): Promise<string> {
 // GET — list all supervisors
 export async function GET(request: Request) {
   if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { data, error } = await supabase
-    .from('supervisors')
-    .select('id, login_id, full_name, email, platform, created_at')
-    .order('created_at', { ascending: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  
+  try {
+    // We join the supervisors table with a cohort count subquery
+    const result = await sql`
+      SELECT 
+        s.id, s.login_id, s.full_name, s.email, s.platform, s.created_at,
+        (SELECT COUNT(*) FROM cohorts c WHERE c.supervisor_id = s.id) as cohort_count
+      FROM supervisors s
+      ORDER BY s.created_at DESC
+    `;
 
-  // Count cohorts per supervisor
-  const { data: cohorts } = await supabase.from('cohorts').select('supervisor_id');
-  const cohortCounts: Record<string, number> = {};
-  (cohorts || []).forEach((c: any) => {
-    if (c.supervisor_id) cohortCounts[c.supervisor_id] = (cohortCounts[c.supervisor_id] || 0) + 1;
-  });
-
-  return NextResponse.json((data || []).map((s: any) => ({ ...s, cohort_count: cohortCounts[s.id] || 0 })));
+    return NextResponse.json(result.map(s => ({
+      ...s,
+      cohort_count: parseInt(s.cohort_count)
+    })));
+  } catch (error: any) {
+    console.error('[ADMIN_GET_SUPERVISORS_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // POST — create supervisor
@@ -53,27 +61,41 @@ export async function POST(request: Request) {
   const { full_name, email, platform } = await request.json();
   if (!full_name || !platform) return NextResponse.json({ error: 'full_name and platform required' }, { status: 400 });
 
-  const login_id = await nextSupervisorId();
-  const plainPassword = generatePassword();
-  const password_hash = hashPassword(plainPassword);
+  try {
+    const login_id = await nextSupervisorId();
+    const plainPassword = generatePassword();
+    const password_hash = hashPassword(plainPassword);
 
-  const { data, error } = await supabase
-    .from('supervisors')
-    .insert({ login_id, password_hash, full_name, email: email || null, platform })
-    .select('id, login_id, full_name, email, platform, created_at')
-    .single();
+    const [data] = await sql`
+      INSERT INTO supervisors (login_id, password_hash, full_name, email, platform)
+      VALUES (${login_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${platform})
+      RETURNING id, login_id, full_name, email, platform, created_at
+    `;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ...data, plainPassword, cohort_count: 0 });
+    return NextResponse.json({ ...data, plainPassword, cohort_count: 0 });
+  } catch (error: any) {
+    console.error('[ADMIN_POST_SUPERVISOR_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // PATCH — reset supervisor password
 export async function PATCH(request: Request) {
   if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { login_id } = await request.json();
-  const plainPassword = generatePassword();
-  await supabase.from('supervisors').update({ password_hash: hashPassword(plainPassword) }).eq('login_id', login_id);
-  return NextResponse.json({ plainPassword });
+  if (!login_id) return NextResponse.json({ error: 'login_id required' }, { status: 400 });
+
+  try {
+    const plainPassword = generatePassword();
+    await sql`
+      UPDATE supervisors SET password_hash = ${hashPassword(plainPassword)} 
+      WHERE login_id = ${login_id}
+    `;
+    return NextResponse.json({ plainPassword });
+  } catch (error: any) {
+    console.error('[ADMIN_PATCH_SUPERVISOR_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // DELETE — remove supervisor
@@ -82,6 +104,12 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
-  await supabase.from('supervisors').delete().eq('id', id);
-  return NextResponse.json({ success: true });
+
+  try {
+    await sql`DELETE FROM supervisors WHERE id = ${id}`;
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('[ADMIN_DELETE_SUPERVISOR_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

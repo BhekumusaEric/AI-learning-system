@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { sql } from './db';
 
 function formatLoginId(platform: string, index: number) {
   const prefix = platform === 'dip' ? 'DIP' : platform === 'wrp' ? 'WRP' : 'SAAIO';
@@ -8,24 +8,20 @@ function formatLoginId(platform: string, index: number) {
 
 /**
  * Returns the next login ID that does not already exist in the DB.
- * Starts from the highest existing numeric suffix + 1, then probes
- * upward until a free slot is confirmed — safe against deletions,
- * concurrent inserts, and count-based race conditions.
  */
 export async function nextUniqueLoginId(platform: string): Promise<string> {
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   const prefix = platform === 'dip' ? 'DIP' : platform === 'wrp' ? 'WRP' : 'SAAIO';
   const year = new Date().getFullYear();
 
-  // Fetch all existing login_ids for this year's prefix to find the true max
-  const { data } = await supabase
-    .from(table)
-    .select('login_id')
-    .like('login_id', `${prefix}-${year}-%`);
+  // Fetch all existing login_ids for this year's prefix
+  const data = await sql`
+    SELECT login_id FROM ${sql(table)} 
+    WHERE login_id LIKE ${prefix + '-' + year + '-%'}
+  `;
 
-  const existingIds = new Set((data || []).map((r: any) => r.login_id as string));
+  const existingIds = new Set(data.map((r: any) => r.login_id as string));
 
-  // Find the highest used index
   let maxIndex = 0;
   for (const id of existingIds) {
     const parts = id.split('-');
@@ -33,7 +29,6 @@ export async function nextUniqueLoginId(platform: string): Promise<string> {
     if (!isNaN(n) && n > maxIndex) maxIndex = n;
   }
 
-  // Probe upward from max+1 until we find a slot not in the set
   let candidate = maxIndex + 1;
   while (existingIds.has(formatLoginId(platform, candidate))) {
     candidate++;
@@ -57,10 +52,10 @@ export async function withUniqueLoginIdRetry(
 
     if (platformOrSupervisor === 'supervisor') {
       const year = new Date().getFullYear();
-      const { data: existing } = await supabase
-        .from('supervisors')
-        .select('login_id')
-        .like('login_id', `SUP-${year}-%`);
+      const existing = await sql`
+        SELECT login_id FROM supervisors
+        WHERE login_id LIKE ${'SUP-' + year + '-%'}
+      `;
 
       const ids = (existing || []).map((r: any) => r.login_id as string);
       let max = 0;

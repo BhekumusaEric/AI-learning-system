@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
 import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
@@ -50,26 +50,24 @@ export async function POST(request: Request) {
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
 
   // 1. Create or get the cohort
-  let { data: cohort, error: cohortError } = await supabase
-    .from('cohorts')
-    .select('id')
-    .eq('name', cohortName)
-    .eq('platform', platform)
-    .single();
+  let cohortId: string;
+  try {
+    const existing = await sql`
+      SELECT id FROM cohorts WHERE name = ${cohortName} AND platform = ${platform}
+    `;
 
-  if (cohortError && cohortError.code !== 'PGRST116') {
-    return NextResponse.json({ error: `Cohort lookup failed: ${cohortError.message}` }, { status: 500 });
-  }
-
-  if (!cohort) {
-    const { data: newCohort, error: createError } = await supabase
-      .from('cohorts')
-      .insert({ name: cohortName, platform, archived: false })
-      .select('id')
-      .single();
-
-    if (createError) return NextResponse.json({ error: `Cohort creation failed: ${createError.message}` }, { status: 500 });
-    cohort = newCohort;
+    if (existing.length > 0) {
+      cohortId = existing[0].id;
+    } else {
+      const [newCohort] = await sql`
+        INSERT INTO cohorts (name, platform, archived)
+        VALUES (${cohortName}, ${platform}, false)
+        RETURNING id
+      `;
+      cohortId = newCohort.id;
+    }
+  } catch (e: any) {
+    return NextResponse.json({ error: `Cohort operation failed: ${e.message}` }, { status: 500 });
   }
 
   const results: any[] = [];
@@ -84,15 +82,15 @@ export async function POST(request: Request) {
     const password_hash = hashPassword(plainPassword);
 
     const { error: insertError, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
-      return await supabase
-        .from(table)
-        .insert({ 
-          login_id: generated_id, 
-          password_hash, 
-          full_name, 
-          email,
-          cohort_id: cohort?.id 
-        });
+      try {
+        await sql`
+          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+          VALUES (${generated_id}, ${password_hash}, ${full_name}, ${email}, ${cohortId})
+        `;
+        return { error: null };
+      } catch (e: any) {
+        return { error: e };
+      }
     });
 
     if (insertError) {
@@ -117,7 +115,7 @@ export async function POST(request: Request) {
   return NextResponse.json({ 
     success: true, 
     results, 
-    cohortId: cohort?.id,
+    cohortId,
     cohortName 
   });
 }

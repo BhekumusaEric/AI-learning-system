@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -25,47 +25,59 @@ export async function GET(request: Request) {
   const cohortId = searchParams.get('cohort_id');
   const platform = searchParams.get('platform') || 'dip';
 
-  // Get supervisor's cohort IDs
-  const cohortQuery = supabase.from('cohorts').select('id').eq('supervisor_id', supervisorId).eq('platform', platform);
-  const { data: cohorts } = cohortId
-    ? await supabase.from('cohorts').select('id').eq('id', cohortId).eq('supervisor_id', supervisorId)
-    : await cohortQuery;
+  try {
+    // 1. Get supervisor's cohort IDs
+    let cohortIds: string[] = [];
+    if (cohortId) {
+      const cohort = await sql`
+        SELECT id FROM cohorts WHERE id = ${cohortId} AND supervisor_id = ${supervisorId}
+      `;
+      cohortIds = cohort.map(c => c.id);
+    } else {
+      const cohorts = await sql`
+        SELECT id FROM cohorts WHERE supervisor_id = ${supervisorId} AND platform = ${platform}
+      `;
+      cohortIds = cohorts.map(c => c.id);
+    }
 
-  const cohortIds = (cohorts || []).map((c: any) => c.id);
-  if (cohortIds.length === 0) return NextResponse.json([]);
+    if (cohortIds.length === 0) return NextResponse.json([]);
 
-  const table = platform === 'wrp' ? 'wrp_students' : 'dip_students';
-  const progressTable = platform === 'wrp' ? 'wrp_progress' : 'dip_progress';
+    // 2. Fetch students AND their progress in a single joined query
+    const table = platform === 'wrp' ? 'wrp_students' : 'dip_students';
+    const progressTable = platform === 'wrp' ? 'wrp_progress' : 'dip_progress';
 
-  const { data: students, error } = await supabase
-    .from(table)
-    .select('id, login_id, full_name, email, created_at, cohort_id')
-    .in('cohort_id', cohortIds)
-    .order('created_at', { ascending: false });
+    // Filter by cohort list
+    const students = await sql`
+      SELECT 
+        s.id, s.login_id, s.full_name, s.email, s.created_at, s.cohort_id,
+        p.completed_pages, p.last_active, p.exam_score, p.exam_passed
+      FROM ${sql(table)} s
+      LEFT JOIN ${sql(progressTable)} p ON s.login_id = p.login_id
+      WHERE s.cohort_id IN ${sql(cohortIds)}
+      ORDER BY s.created_at DESC
+    `;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const result = students.map((s: any) => {
+      const completedCount = Object.keys(s.completed_pages || {}).filter((k: string) => (s.completed_pages as any)[k]).length;
+      return {
+        id: s.id,
+        login_id: s.login_id,
+        full_name: s.full_name,
+        email: s.email,
+        created_at: s.created_at,
+        cohort_id: s.cohort_id,
+        completedCount,
+        lastActive: s.last_active,
+        examScore: s.exam_score,
+        examPassed: s.exam_passed
+      };
+    });
 
-  const loginIds = (students || []).map((s: any) => s.login_id);
-  const { data: progress } = loginIds.length > 0
-    ? await supabase.from(progressTable).select('*').in('login_id', loginIds)
-    : { data: [] };
-
-  const progressMap: Record<string, any> = {};
-  (progress || []).forEach((p: any) => { progressMap[p.login_id] = p; });
-
-  const result = (students || []).map((s: any) => {
-    const prog = progressMap[s.login_id];
-    const completedCount = prog ? Object.keys(prog.completed_pages || {}).filter((k: string) => prog.completed_pages[k]).length : 0;
-    return {
-      ...s,
-      completedCount,
-      lastActive: prog?.last_active || null,
-      examScore: prog?.exam_score ?? null,
-      examPassed: prog?.exam_passed ?? null,
-    };
-  });
-
-  return NextResponse.json(result);
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error('[SUPERVISOR_GET_STUDENTS_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // PATCH — reset a student's password (supervisor can only reset their own cohort's students)
@@ -76,15 +88,26 @@ export async function PATCH(request: Request) {
   const { login_id, platform } = await request.json();
   const table = platform === 'wrp' ? 'wrp_students' : 'dip_students';
 
-  // Verify student belongs to supervisor's cohort
-  const { data: student } = await supabase.from(table).select('full_name, email, cohort_id').eq('login_id', login_id).maybeSingle();
-  if (!student) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+  try {
+    // Verify student exists and belongs to supervisor's cohort via JOIN
+    const result = await sql`
+      SELECT s.full_name, s.email, c.supervisor_id
+      FROM ${sql(table)} s
+      JOIN cohorts c ON s.cohort_id = c.id
+      WHERE s.login_id = ${login_id}
+    `;
 
-  const { data: cohort } = await supabase.from('cohorts').select('supervisor_id').eq('id', student.cohort_id).maybeSingle();
-  if (!cohort || cohort.supervisor_id !== supervisorId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (result.length === 0) return NextResponse.json({ error: 'Student not found or cohort missing' }, { status: 404 });
+    if (result[0].supervisor_id !== supervisorId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const plainPassword = generatePassword();
-  await supabase.from(table).update({ password_hash: hashPassword(plainPassword) }).eq('login_id', login_id);
+    const plainPassword = generatePassword();
+    await sql`
+      UPDATE ${sql(table)} SET password_hash = ${hashPassword(plainPassword)} WHERE login_id = ${login_id}
+    `;
 
-  return NextResponse.json({ plainPassword, full_name: student.full_name });
+    return NextResponse.json({ plainPassword, full_name: result[0].full_name });
+  } catch (error: any) {
+    console.error('[SUPERVISOR_PATCH_STUDENT_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

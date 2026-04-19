@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,19 +11,24 @@ export async function GET(request: Request) {
   if (!login_id || !platform) return NextResponse.json({ error: 'login_id and platform required' }, { status: 400 });
 
   const table = platform === 'dip' ? 'dip_students' : 'wrp_students';
-  const { data, error } = await supabase
-    .from(table)
-    .select('certificate_requested, certificate_unlocked, certificate_name, name_change_requested, verify_token')
-    .eq('login_id', login_id)
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({
-    certificate_requested: data.certificate_requested ?? false,
-    certificate_unlocked: data.certificate_unlocked ?? false,
-    certificate_name: data.certificate_name ?? null,
-    name_change_requested: data.name_change_requested ?? false,
-  });
+  try {
+    const rows = await sql`
+      SELECT certificate_requested, certificate_unlocked, certificate_name, name_change_requested, verify_token
+      FROM ${sql(table)}
+      WHERE login_id = ${login_id}
+    `;
+    if (rows.length === 0) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    const data = rows[0];
+    return NextResponse.json({
+      certificate_requested: data.certificate_requested ?? false,
+      certificate_unlocked: data.certificate_unlocked ?? false,
+      certificate_name: data.certificate_name ?? null,
+      name_change_requested: data.name_change_requested ?? false,
+      verify_token: data.verify_token ?? null,
+    });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
 }
 
 // POST — request certificate OR save name OR request name change
@@ -34,34 +39,34 @@ export async function POST(request: Request) {
 
   const table = platform === 'dip' ? 'dip_students' : 'wrp_students';
 
-  if (action === 'save_name') {
-    // Lock the name permanently on first download
-    const { error } = await supabase
-      .from(table)
-      .update({ certificate_name, name_change_requested: false })
-      .eq('login_id', login_id)
-      .is('certificate_name', null); // only if not already set
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true });
+  try {
+    if (action === 'save_name') {
+      // Lock the name permanently on first download (only if not already set)
+      await sql`
+        UPDATE ${sql(table)}
+        SET certificate_name = ${certificate_name}, name_change_requested = false
+        WHERE login_id = ${login_id} AND certificate_name IS NULL
+      `;
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'request_name_change') {
+      await sql`
+        UPDATE ${sql(table)} SET name_change_requested = true WHERE login_id = ${login_id}
+      `;
+      return NextResponse.json({ success: true });
+    }
+
+    // Default: request certificate
+    const rows = await sql`
+      UPDATE ${sql(table)}
+      SET certificate_requested = true
+      WHERE login_id = ${login_id}
+      RETURNING certificate_unlocked
+    `;
+    if (rows.length === 0) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    return NextResponse.json({ success: true, certificate_unlocked: rows[0].certificate_unlocked });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
-
-  if (action === 'request_name_change') {
-    const { error } = await supabase
-      .from(table)
-      .update({ name_change_requested: true })
-      .eq('login_id', login_id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true });
-  }
-
-  // Default: request certificate
-  const { data, error } = await supabase
-    .from(table)
-    .update({ certificate_requested: true })
-    .eq('login_id', login_id)
-    .select('certificate_unlocked')
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true, certificate_unlocked: data.certificate_unlocked });
 }
