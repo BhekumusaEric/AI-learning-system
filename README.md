@@ -1,54 +1,71 @@
-# SAAIO Training Grounds
+# Unified Training Grounds Platform
 
-Welcome to the SAAIO Training Grounds, a professional interactive learning platform designed for high-end AI and Python education. This repository contains the complete system, including the integrated curriculum, student tracking, and administrative oversight tools.
+A native AWS-hosted educational platform providing integrated curriculum delivery, student tracking, and administrative oversight for multiple organizational entities. This system handles high-scale interactive learning across three distinct programs.
+
+---
+
+## Organizational Structure
+
+This repository serves as a unified core for two primary organizations, each maintaining distinct platform ownership and educational objectives:
+
+### 1. SAAIO (South African AI Opportunity)
+SAAIO provides the primary AI and Python foundations curriculum. This platform is designed for deep-tech upskilling, featuring integrated code execution environments (Pyodide) and milestone tracking.
+
+### 2. WeThinkCode_
+WeThinkCode_ owns and manages the following specialized programs within the system:
+*   **Digital Inclusion Program (DIP)**: Focused on foundational digital literacy and community upskilling.
+*   **Work Readiness Program (WRP)**: Focused on final-stage career preparation and industry integration.
+
+---
+
+## Technical Architecture
+
+The platform has been migrated from legacy services to a high-fidelity, native Amazon Web Services (AWS) ecosystem:
+
+*   **Database**: Amazon RDS (PostgreSQL) with strict SSL enforcement.
+*   **Backend**: Next.js (Serverless) deployed via AWS Lambda.
+*   **Infrastructure**: Managed via Serverless Stack (SST) and OpenNext.
+*   **Messaging**: Integrated Resend API for transactional student verification and notifications.
+
+For detailed architectural diagrams, refer to the [Architecture Guide](docs/ARCHITECTURE_GUIDE.md).
+
+---
 
 ## Getting Started
 
-Follow these three simple steps to run the platform on your local machine:
+### Prerequisites
+*   Node.js 20.x or higher
+*   AWS CLI configured (for infrastructure management)
+*   Amazon RDS SSL Root Certificate (`global-bundle.pem`)
 
-1. **Install Dependencies**: Open your terminal in this folder and run:
-   ```bash
-   npm install
-   ```
-2. **Configure Environment**: Copy the provided `.env.example` file to a new file named `.env` and fill in your keys (see the Handover Guide for details).
-3. **Run the Platform**: Start the development server with:
-   ```bash
-   npm run dev
-   ```
-   *You can now view the platform at: http://localhost:3000*
-
----
-
-## Documentation Portal
-
-## Reference Materials
-
-For a complete interactive experience, visit the **[Documentation Portal (http://localhost:3000/docs)](http://localhost:3000/docs)**.
-
-| Resource | Description |
-|---|---|
-| [Admin Guide (HTML)](/manuals/AdminGuide.html) | Guide for program managers |
-| [Supervisor Guide (HTML)](/manuals/SupervisorGuide.html) | Guide for stakeholders |
-| [Learner Guide (HTML)](/manuals/LearnerGuide.html) | Guide for students |
-| [System Architecture](/docs/ARCHITECTURE_GUIDE.md) | Technical system overview |
+### Local Development
+1.  **Clone the repository and install dependencies**:
+    ```bash
+    npm install
+    ```
+2.  **Environment Configuration**:
+    Configure your `.env` file with the required database and authentication secrets. Refer to `docs/AWS_NATIVE_DEPLOYMENT.md` for specific key requirements.
+3.  **Launch the Development Server**:
+    ```bash
+    npm run dev
+    ```
+    The local environment will be accessible at `http://localhost:3000`.
 
 ---
 
-## Project Structure
+## CI/CD and Deployment
 
-- **book/** — Contains all the educational content (Markdown format).
-- **docs/** — Technical documentation, deployment guides, and user manuals.
-- **src/** — The source code for the platform's frontend and backend.
-- **postman/** — Pre-configured API collections for testing.
-
----
-
-## Deployment & Handover
-
-For detailed instructions regarding the AWS EC2 deployment and high-level technical maintenance, please refer to the:
-**[Handover Guide (HANDOVER.md)](./HANDOVER.md)**
+The project utilizes a multi-stage GitHub Actions pipeline for strictly validated deployments:
+*   **Validation**: Automated linting and TypeScript type-checking.
+*   **Smoke Testing**: Automated infrastructure health and database connectivity checks.
+*   **Automated Deployment**: Native AWS deployment via SST to `staging` and `production` environments.
 
 ---
 
-**Professional Grade Educational Infrastructure**  
-*Last Updated: 2026-04-08*
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+*© 2026 Bhekumusa Eric Ntshwenya. All Rights Reserved.*
