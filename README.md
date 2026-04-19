@@ -18,6 +18,17 @@ WeThinkCode_ owns and manages the following specialized programs within the syst
 
 ---
 
+## Live Access
+
+The production environment is hosted on Amazon CloudFront. Access the specific program portals via the links below:
+
+*   **SAAIO Portal**: [https://dy53b7j1euf9d.cloudfront.net/saaio/login](https://dy53b7j1euf9d.cloudfront.net/saaio/login)
+*   **DIP Portal**: [https://dy53b7j1euf9d.cloudfront.net/dip/login](https://dy53b7j1euf9d.cloudfront.net/dip/login)
+*   **WRP Portal**: [https://dy53b7j1euf9d.cloudfront.net/wrp/login](https://dy53b7j1euf9d.cloudfront.net/wrp/login)
+*   **Administrative Dashboard**: [https://dy53b7j1euf9d.cloudfront.net/saaio/admin](https://dy53b7j1euf9d.cloudfront.net/saaio/admin)
+
+---
+
 ## Technical Architecture
 
 The platform has been migrated from legacy services to a high-fidelity, native Amazon Web Services (AWS) ecosystem:
