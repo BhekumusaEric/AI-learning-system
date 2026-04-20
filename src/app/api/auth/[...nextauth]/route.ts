@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
         // 1. Handle Admin/Supervisor Auth (if platform is 'admin')
         if (platform === 'admin') {
           const supervisor = await sql`
-            SELECT * FROM supervisors WHERE email = ${normalized_id.toLowerCase()}
+            SELECT login_id as id, name as full_name, email, password as password_hash FROM supervisors WHERE email = ${normalized_id.toLowerCase()}
           `;
           
           if (supervisor.length > 0 && supervisor[0].password_hash === hashPassword(password)) {
@@ -40,7 +40,7 @@ export const authOptions: NextAuthOptions = {
               id: supervisor[0].id,
               name: supervisor[0].full_name,
               email: supervisor[0].email,
-              role: supervisor[0].role,
+              role: 'supervisor', // defaulting to supervisor since role column was removed
               platform: 'admin'
             };
           }
@@ -53,14 +53,14 @@ export const authOptions: NextAuthOptions = {
         try {
           // Dynamic table selection in postgres-js requires specific identifier formatting
           const users = await sql`
-            SELECT id, login_id, full_name, password_hash, email 
+            SELECT ${sql(platform === 'saaio' ? 'student_id' : 'login_id')} as login_id, name as full_name, password as password_hash, email 
             FROM ${sql(table)} 
-            WHERE login_id = ${normalized_id}
+            WHERE ${sql(platform === 'saaio' ? 'student_id' : 'login_id')} = ${normalized_id}
           `;
 
           if (users.length > 0 && users[0].password_hash === hashPassword(password.trim())) {
             return {
-              id: users[0].id,
+              id: users[0].login_id,
               name: users[0].full_name,
               email: users[0].email,
               loginId: users[0].login_id,

@@ -16,9 +16,9 @@ export async function POST(request: Request) {
 
   try {
     const data = await sql`
-      SELECT id, login_id, full_name, email, email_verified, password_hash
+      SELECT ${sql(platform === 'saaio' ? 'student_id' : 'login_id')} as login_id, name as full_name, email, password
       FROM ${sql(table)} 
-      WHERE login_id = ${login_id.trim().toUpperCase()}
+      WHERE ${sql(platform === 'saaio' ? 'student_id' : 'login_id')} = ${login_id.trim().toUpperCase()}
     `;
 
     if (data.length === 0) {
@@ -28,12 +28,12 @@ export async function POST(request: Request) {
     const user = data[0];
 
     // Verify password if one is set on the account (not enforced for SAAIO)
-    if (platform !== 'saaio' && user.password_hash && password) {
+    if (platform !== 'saaio' && user.password && password) {
       const hash = createHash('sha256').update(password).digest('hex');
-      if (hash !== user.password_hash) {
+      if (hash !== user.password) {
         return NextResponse.json({ error: 'Incorrect password' }, { status: 401 });
       }
-    } else if (platform !== 'saaio' && user.password_hash && !password) {
+    } else if (platform !== 'saaio' && user.password && !password) {
       return NextResponse.json({ error: 'Password required' }, { status: 401 });
     }
 

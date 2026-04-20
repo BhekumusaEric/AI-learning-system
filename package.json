@@ -10,6 +10,7 @@
     "test": "node scripts/smoke-test.js"
   },
   "dependencies": {
+    "@aws-sdk/client-ec2": "^3.1032.0",
     "@headlessui/react": "^2.2.9",
     "@monaco-editor/react": "^4.7.0",
     "@supabase/supabase-js": "^2.99.1",

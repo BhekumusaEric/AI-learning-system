@@ -4,29 +4,33 @@ export default $config({
   app(input) {
     return {
       name: "saaio-platform",
-      // Retain resources in production, remove in other stages (staging, dev)
       removal: input?.stage === "production" ? "retain" : "remove",
       home: "aws",
     };
   },
   async run() {
-    // 1. Configure the Website
+    // NOTE: Custom domain idc-curriculum.wethinkco.de is temporarily disabled 
+    // while waiting for CNAME validation from the WeThinkCode_ DNS team.
+    // Certificate ARN: arn:aws:acm:us-east-1:774525420097:certificate/c847a25e-e7ad-4331-a150-c6ccfb264dd3
+
+    // Configure the Website in the Cape Town (af-south-1) region 
+    // using the default CloudFront URL for immediate unblocking.
     const site = new sst.aws.Nextjs("SaaioWeb", {
       path: ".",
+      /* domain: {
+        name: "idc-curriculum.wethinkco.de",
+        cert: "arn:aws:acm:us-east-1:774525420097:certificate/c847a25e-e7ad-4331-a150-c6ccfb264dd3",
+      }, */
       environment: {
-        // SECURE: No more hardcoded passwords in code. 
-        // These are injected from GitHub Secrets during deployment.
-        DATABASE_URL: process.env.DATABASE_URL || "",
-        NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || "fallback-secret-do-not-use-in-prod",
-        NEXTAUTH_URL: process.env.NEXTAUTH_URL || "http://localhost:3000",
+        DATABASE_URL: "postgres://bhntshwcjc025:EricKelvin2025@saaio-db-capetown.c9u046kgwwaf.af-south-1.rds.amazonaws.com:5432/postgres",
+        NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || "7f9e39690b8644b089fc4db3ba4b2291",
+        NEXTAUTH_URL: "https://d1dgrcvw7jhb89.cloudfront.net",
         NODE_ENV: "production",
       },
-      // Include the SSL certificate in the Lambda package
       copyFiles: [
         { from: "global-bundle.pem", to: "global-bundle.pem" }
       ],
-      // Region alignment with RDS
-      region: "eu-north-1",
+      region: "af-south-1",
     });
 
     return {
