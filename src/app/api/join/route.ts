@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
+import { withUniqueLoginIdRetry } from '@/lib/loginId';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,10 +50,10 @@ export async function POST(request: Request) {
     const plainPassword = generatePassword();
     const password_hash = createHash('sha256').update(plainPassword).digest('hex');
 
-    const { data, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+    const { data, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id, trx: any) => {
       try {
-        const result = await sql`
-          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+        const result = await trx`
+          INSERT INTO ${trx(table)} (login_id, password_hash, full_name, email, cohort_id)
           VALUES (${generated_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${cohort_id})
           RETURNING id, login_id, full_name
         `;

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
-import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
+import { withUniqueLoginIdRetry } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
 import { sendEmail } from '@/lib/email';
 import { logAudit } from '@/lib/audit';
@@ -132,10 +132,10 @@ export async function POST(request: Request) {
   const password_hash = hashPassword(plainPassword);
 
   try {
-    const { data: student, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+    const { data: student, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id, trx: any) => {
       try {
-        const [res] = await sql`
-          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+        const [res] = await trx`
+          INSERT INTO ${trx(table)} (login_id, password_hash, full_name, email, cohort_id)
           VALUES (${generated_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${cohort_id || null})
           RETURNING id, login_id, full_name, email, created_at
         `;
