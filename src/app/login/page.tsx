@@ -81,7 +81,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-secondary-text text-xs mt-6">
-          Don&apos;t have an ID? Contact your program administrator.
+          Don&apos;t have an ID? Contact your program administrator for your login ID.
         </p>
       </div>
     </div>
