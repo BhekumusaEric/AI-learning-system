@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,31 +19,44 @@ export async function GET(request: Request) {
   const supervisorId = getSupervisorId(request);
   if (!supervisorId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data, error } = await supabase
-    .from('cohorts')
-    .select('*')
-    .eq('supervisor_id', supervisorId)
-    .order('created_at', { ascending: false });
+  try {
+    const cohorts = await sql`
+      SELECT * FROM cohorts 
+      WHERE supervisor_id = ${supervisorId} 
+      ORDER BY created_at DESC
+    `;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (cohorts.length === 0) return NextResponse.json([]);
 
-  // Count students per cohort
-  const cohortIds = (data || []).map((c: any) => c.id);
-  const counts: Record<string, number> = {};
-  if (cohortIds.length > 0) {
-    for (const platform of ['dip', 'wrp']) {
-      const table = platform === 'dip' ? 'dip_students' : 'wrp_students';
-      const { data: students } = await supabase
-        .from(table)
-        .select('cohort_id')
-        .in('cohort_id', cohortIds);
-      (students || []).forEach((s: any) => {
-        counts[s.cohort_id] = (counts[s.cohort_id] || 0) + 1;
-      });
-    }
+    const cohortIds = cohorts.map(c => c.id);
+    
+    // Count students per cohort across DIP and WRP tables
+    // We use a UNION ALL to combine the counts from both tables
+    const counts = await sql`
+      SELECT cohort_id, COUNT(*) as count 
+      FROM (
+        SELECT cohort_id FROM dip_students WHERE cohort_id IN ${sql(cohortIds)}
+        UNION ALL
+        SELECT cohort_id FROM wrp_students WHERE cohort_id IN ${sql(cohortIds)}
+      ) as combined_students
+      GROUP BY cohort_id
+    `;
+
+    const countMap: Record<string, number> = {};
+    counts.forEach(c => {
+      countMap[c.cohort_id] = parseInt(c.count);
+    });
+
+    const result = cohorts.map(c => ({
+      ...c,
+      student_count: countMap[c.id] || 0
+    }));
+
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error('[SUPERVISOR_GET_COHORTS_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  return NextResponse.json((data || []).map((c: any) => ({ ...c, student_count: counts[c.id] || 0 })));
 }
 
 // POST — create a new cohort
@@ -54,24 +67,28 @@ export async function POST(request: Request) {
   const { name, platform, description, location, start_date } = await request.json();
   if (!name || !platform) return NextResponse.json({ error: 'name and platform required' }, { status: 400 });
 
-  // Generate unique invite code
-  let invite_code = genCode();
-  let attempts = 0;
-  while (attempts < 5) {
-    const { data: existing } = await supabase.from('cohorts').select('id').eq('invite_code', invite_code).maybeSingle();
-    if (!existing) break;
-    invite_code = genCode();
-    attempts++;
+  try {
+    // Generate unique invite code
+    let invite_code = genCode();
+    let attempts = 0;
+    while (attempts < 5) {
+      const existing = await sql`SELECT id FROM cohorts WHERE invite_code = ${invite_code}`;
+      if (existing.length === 0) break;
+      invite_code = genCode();
+      attempts++;
+    }
+
+    const [cohort] = await sql`
+      INSERT INTO cohorts (name, platform, description, location, start_date, supervisor_id, invite_code)
+      VALUES (${name}, ${platform}, ${description || null}, ${location || null}, ${start_date || null}, ${supervisorId}, ${invite_code})
+      RETURNING *
+    `;
+
+    return NextResponse.json(cohort);
+  } catch (error: any) {
+    console.error('[SUPERVISOR_POST_COHORT_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  const { data, error } = await supabase
-    .from('cohorts')
-    .insert({ name, platform, description, location, start_date: start_date || null, supervisor_id: supervisorId, invite_code })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
 }
 
 // PATCH — update cohort (archive, rename)
@@ -82,13 +99,34 @@ export async function PATCH(request: Request) {
   const { id, ...updates } = await request.json();
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  // Verify ownership
-  const { data: cohort } = await supabase.from('cohorts').select('supervisor_id').eq('id', id).maybeSingle();
-  if (!cohort || cohort.supervisor_id !== supervisorId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  try {
+    // Verify ownership
+    const cohort = await sql`SELECT supervisor_id FROM cohorts WHERE id = ${id}`;
+    if (cohort.length === 0) return NextResponse.json({ error: 'Cohort not found' }, { status: 404 });
+    if (cohort[0].supervisor_id !== supervisorId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { data, error } = await supabase.from('cohorts').update(updates).eq('id', id).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+    // Filter valid update keys
+    const validKeys = ['name', 'description', 'location', 'start_date', 'archived'];
+    const filteredUpdates: Record<string, any> = {};
+    validKeys.forEach(key => {
+      if (key in updates) filteredUpdates[key] = updates[key];
+    });
+
+    if (Object.keys(filteredUpdates).length === 0) {
+      return NextResponse.json({ error: 'No valid updates provided' }, { status: 400 });
+    }
+
+    const [updatedCohort] = await sql`
+      UPDATE cohorts SET ${sql(filteredUpdates)}
+      WHERE id = ${id}
+      RETURNING *
+    `;
+
+    return NextResponse.json(updatedCohort);
+  } catch (error: any) {
+    console.error('[SUPERVISOR_PATCH_COHORT_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // DELETE — archive a cohort
@@ -100,9 +138,15 @@ export async function DELETE(request: Request) {
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  const { data: cohort } = await supabase.from('cohorts').select('supervisor_id').eq('id', id).maybeSingle();
-  if (!cohort || cohort.supervisor_id !== supervisorId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  try {
+    const cohort = await sql`SELECT supervisor_id FROM cohorts WHERE id = ${id}`;
+    if (cohort.length === 0) return NextResponse.json({ error: 'Cohort not found' }, { status: 404 });
+    if (cohort[0].supervisor_id !== supervisorId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  await supabase.from('cohorts').update({ archived: true }).eq('id', id);
-  return NextResponse.json({ success: true });
+    await sql`UPDATE cohorts SET archived = true WHERE id = ${id}`;
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('[SUPERVISOR_DELETE_COHORT_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

@@ -1,193 +1,91 @@
-# IOAI Training Grounds — Architecture & Separation of Concerns Guide
+# Architecture Guide: WeThinkCode_ Training Grounds (Native AWS)
 
-This guide outlines a scalable, maintainable architecture for the IOAI Training Grounds platform, emphasizing **Separation of Concerns (SoC)**. SoC means dividing the system into distinct, loosely coupled layers or modules, each responsible for a specific aspect. This ensures long-term maintainability, easier testing, and scalability.
-
----
-
-## Why Separation of Concerns Matters
-
-- **Maintainability**: Changes in one area (e.g., UI) don't affect others (e.g., data).
-- **Scalability**: Components can be scaled independently (e.g., add more servers for code execution).
-- **Testability**: Isolate and test individual concerns.
-- **Team Collaboration**: Different teams can work on UI, backend, and content without conflicts.
-- **Future-Proofing**: Easy to add features like user accounts, multiplayer coding, or advanced analytics.
+This document provides a comprehensive overview of the native AWS architecture implemented for the high-fidelity transition from Supabase. The platform is now optimized for 100% data ownership, security, and scalability within the Amazon Web Services ecosystem.
 
 ---
 
-## High-Level Architecture
+## 🏛️ System Architecture Overview
 
-The platform follows a **layered architecture** with clear boundaries:
+The system follows a **Cloud-Native Layered Architecture**, leveraging serverless compute and managed database services.
 
-```
-┌─────────────────┐
-│   Presentation  │  ← UI/UX (React/Next.js)
-├─────────────────┤
-│   Application   │  ← Business Logic (Hooks, Services)
-├─────────────────┤
-│     Domain      │  ← Core Logic (Lesson Management, Validation)
-├─────────────────┤
-│ Infrastructure  │  ← Data & External Services (Supabase, Pyodide)
-└─────────────────┘
+```mermaid
+graph TD
+    User((Student/Admin)) -->|HTTPS| CloudFront[Amazon CloudFront CDN]
+    CloudFront -->|Dynamic Content| Lambda[AWS Lambda - Next.js App]
+    CloudFront -->|Static Assets| S3[Amazon S3 Bucket]
+    
+    subgraph "Compute Layer"
+        Lambda -->|Native PG Client| RDS[(Amazon RDS PostgreSQL)]
+        Lambda -->|HTTPS| ExternalAPI[Onboarding API / Resend]
+    end
+
+    subgraph "Infrastructure Layer"
+        RDS ---|SSL Enforced| Cert[global-bundle.pem]
+        SST[SST / OpenNext] -->|Deploy| Lambda
+    end
 ```
 
-- **Presentation Layer**: Handles user interface and interactions.
-- **Application Layer**: Orchestrates workflows (e.g., running code, saving progress).
-- **Domain Layer**: Core business rules (e.g., lesson validation, progress tracking).
-- **Infrastructure Layer**: External dependencies (databases, APIs, code execution).
+---
 
-### Data Flow Example
-1. User clicks "Run Code" (Presentation).
-2. Application layer calls code execution service.
-3. Domain layer validates input/output.
-4. Infrastructure layer runs Pyodide and stores results.
+## 💾 Core Components
+
+### 1. Database: Amazon RDS (PostgreSQL)
+We have pivoted from Supabase to a **Native Amazon RDS** instance. 
+- **Platform**: PostgreSQL 16.
+- **Security**: Strict SSL enforcement using the `global-bundle.pem` root certificate.
+- **Multi-Tenant Schema**: Centralized tables for THREE distinct learning platforms:
+    - **SAAIO**: South African AI Opportunity (202 students).
+    - **DIP**: Digital Inclusion Program (1,000 students).
+    - **WRP**: Work Readiness Program (649 students).
+
+### 2. Compute: AWS Lambda (SST/OpenNext)
+The application is deployed using the **SST (Serverless Stack)**, which wraps the Next.js application into AWS Lambda.
+- **Edge Delivery**: CloudFront provides global low-latency access.
+- **Scaling**: Automatic scaling from zero to handle batch student registrations.
+- **Connectivity**: The Lambda environment is bundled with the RDS SSL certificate to ensure secure DB handshakes.
+
+### 3. Messaging: Resend
+Email notifications and verification codes are handled via the Resend API, decoupled from the core database logic for improved reliability.
 
 ---
 
-## Detailed Layer Breakdown
+## 🔄 Data Integrity & Migration Logic
 
-### 1. Presentation Layer (UI/UX)
-**Concern**: User interface, rendering, interactions.
+The migration from Supabase used a **Validation-First** approach to ensure the new RDS environment remained pristine.
 
-**Technologies**: Next.js, React, Tailwind CSS, Monaco Editor.
+### Child-Parent Validation
+To prevent "broken links" in the progress tracking system, we implemented a verification loop:
+1. **Student Pre-check**: Every `progress` record is checked against the successfully migrated student list.
+2. **Orphan Filtering**: Records for legacy test accounts (like `guest` or `eric_test`) that don't have a valid student registration are filtered out, maintaining **Foreign Key Integrity**.
 
-**Structure**:
-- **Pages**: `/pages` in Next.js (e.g., `/lesson/[id]` for individual pages).
-- **Components**: Reusable UI pieces (e.g., `Sidebar.js`, `CodeEditor.js`, `ProgressBar.js`).
-- **Hooks**: Custom React hooks for state (e.g., `useLessonProgress`, `useCodeExecution`).
-
-**SoC**: No business logic here — just rendering and event handling. Data comes from hooks/services.
-
-**Scalability**: Use lazy loading for components, optimize with React.memo for large lists.
-
-### 2. Application Layer (Orchestration)
-**Concern**: Coordinating actions between layers.
-
-**Technologies**: React Hooks, Context API, or Zustand for state management.
-
-**Structure**:
-- **Services**: Functions that call domain/infrastructure (e.g., `lessonService.js`, `progressService.js`).
-- **Hooks**: Bridge UI to services (e.g., `useRunCode` hook that calls Pyodide).
-
-**SoC**: Handles "what to do" (e.g., "run code and update progress") but not "how" (implementation details).
-
-**Scalability**: Serverless functions (Vercel API routes) for heavy lifting, like batch processing.
-
-### 3. Domain Layer (Business Logic)
-**Concern**: Core rules, validation, algorithms.
-
-**Technologies**: Plain JavaScript/TypeScript (no UI dependencies).
-
-**Structure**:
-- **Models**: Data structures (e.g., `Lesson.js`, `UserProgress.js`).
-- **Validators**: Functions for checking code/output (e.g., `validateCode.js`).
-- **Utils**: Reusable logic (e.g., `markdownParser.js`, `progressCalculator.js`).
-
-**SoC**: Pure functions, no side effects. Easy to unit test.
-
-**Scalability**: Extract to microservices if needed (e.g., a separate validation service).
-
-### 4. Infrastructure Layer (External Dependencies)
-**Concern**: Data persistence, external APIs, code execution.
-
-**Technologies**: Supabase/Firebase, Pyodide, Local Storage.
-
-**Structure**:
-- **Repositories**: Data access (e.g., `lessonRepository.js` for fetching Markdown).
-- **APIs**: Wrappers for external services (e.g., `pyodideWrapper.js`).
-- **Storage**: Abstractions for persistence (e.g., `progressStorage.js`).
-
-**SoC**: Abstracts external details — domain layer doesn't know if data comes from local files or a database.
-
-**Scalability**: Swap implementations (e.g., from local storage to Supabase) without changing upper layers.
+### Schema Normalization
+RDS enforces stricter data types than the legacy Supabase REST layer. 
+- **UUIDs**: Native UUID types are used for all primary keys.
+- **Timestamps**: All timestamps are standardized to `TIMESTAMPTZ` (UTC).
+- **JSONB**: Legacy progress maps are stored as high-performance JSONB columns.
 
 ---
 
-## Key Architectural Patterns
+## 🚀 Deployment Workflow
 
-### 1. Component-Based Architecture (Frontend)
-- **Why**: React's strength — reusable, testable components.
-- **Example**: `CodeEditor` component handles editing, but delegates execution to a service.
+Deployment is handled via the following command:
+```bash
+npx sst deploy --stage prod
+```
 
-### 2. Service Layer Pattern
-- **Why**: Centralize business logic calls.
-- **Example**: `CodeExecutionService` handles Pyodide setup and error handling.
-
-### 3. Repository Pattern
-- **Why**: Abstract data sources.
-- **Example**: `LessonRepository` can load from GitHub API or local files.
-
-### 4. Dependency Injection
-- **Why**: Make layers testable and swappable.
-- **Example**: Pass services as props/hooks to components.
-
-### 5. Event-Driven (Optional)
-- **Why**: For complex interactions (e.g., real-time code sharing).
-- **Example**: Use WebSockets or Supabase real-time for collaborative features.
+### Build Steps:
+1. **Environment Injection**: SST injects `DATABASE_URL` and `RESEND_API_KEY`.
+2. **SSL Bundling**: The `global-bundle.pem` is copied into the Lambda build directory.
+3. **Optimized Build**: Next.js compiles the serverless-ready chunks.
+4. **CloudFormation**: AWS resources (Lambda, S3, CloudFront) are updated.
 
 ---
 
-## 📈 Scalability Considerations
-
-### Short-Term (Free Tier)
-- **Static Content**: Host Markdown on CDN (Vercel/Netlify).
-- **Client-Side Execution**: Pyodide runs in browser — no server load.
-- **Caching**: Use Next.js ISR for lesson pages.
-
-### Medium-Term (Growth)
-- **Serverless Functions**: Move heavy logic (e.g., code validation) to Vercel functions.
-- **Database**: Upgrade to Supabase paid tier for more users.
-- **CDN**: Distribute assets globally.
-
-### Long-Term (High Scale)
-- **Microservices**: Split into services (e.g., one for content, one for execution).
-- **Containerization**: Use Docker for consistent deployments.
-- **Load Balancing**: Distribute traffic across regions.
-
-### Performance Tips
-- **Lazy Loading**: Load components/pages on demand.
-- **Code Splitting**: Split bundles by route.
-- **Caching**: Cache lesson content and user progress.
+## 🛡️ Security Posture
+- **Encryption in Transit**: All DB connections require SSL. Web traffic is TLS 1.3.
+- **Secrets Management**: No credentials are stored in code; they are managed via AWS Secrets or environment variables injected at deploy-time.
+- **Identity Isolation**: Student and Admin roles are strictly separated at the application level.
 
 ---
 
-## Adding New Features
-
-### Process
-1. **Identify Concern**: Which layer does it belong to?
-2. **Design Interface**: Define contracts (e.g., service methods).
-3. **Implement**: Start with domain/infrastructure, then application, then presentation.
-4. **Test**: Unit tests for each layer, integration tests for flows.
-
-### Example: Adding User Accounts
-- **Domain**: `User.js` model, `authValidator.js`.
-- **Infrastructure**: Supabase auth integration.
-- **Application**: `authService.js`, `useAuth` hook.
-- **Presentation**: Login component, protected routes.
-
-### Example: Adding Collaborative Coding
-- **Domain**: `Session.js` for shared code.
-- **Infrastructure**: WebSocket or Supabase real-time.
-- **Application**: `collaborationService.js`.
-- **Presentation**: Multi-user editor with cursors.
-
----
-
-## 🧪 Testing Strategy
-
-- **Unit Tests**: Test each layer in isolation (Jest for React, Mocha for Node).
-- **Integration Tests**: Test layer interactions (e.g., service + repository).
-- **E2E Tests**: Full user flows (Playwright or Cypress).
-- **CI/CD**: Run tests on GitHub Actions for every PR.
-
----
-
-## 📚 Resources
-
-- **Clean Architecture**: Book by Robert C. Martin.
-- **Next.js Docs**: For routing and SSR patterns.
-- **React Patterns**: For component organization.
-- **Microservices**: If scaling to multiple services.
-
----
-
-This architecture ensures the platform remains maintainable as it grows. Start with the layered approach, and refactor as needed. For implementation details, see `SYLLABUS_DEVELOPER_GUIDE.md` and `FREE_TECH_STACK.md`.
+*Last Updated: April 2026*

@@ -48,6 +48,25 @@ Errors (residuals): | |   |
                     ↓ ↓   ↓
 ```
 
+### 🖼️ Visualizing it in Python
+To really understand your model, you should plot it. You'll need `matplotlib` for the data and the line:
+
+```python
+import matplotlib.pyplot as plt
+
+# 1. The Real Data (Scatter)
+plt.scatter(X_test, y_test, color='blue', label='Actual')
+
+# 2. The Model's Guess (Line)
+plt.plot(X_test, y_pred, color='red', linewidth=2, label='Predictions')
+
+plt.title('House Size vs Price Prediction')
+plt.xlabel('Size (sqm)')
+plt.ylabel('Price')
+plt.legend()
+plt.show()
+```
+
 ### Multiple Features
 
 Linear regression works with multiple inputs:

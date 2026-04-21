@@ -15,28 +15,32 @@ Use linear regression to predict house prices based on size.
 ### Initial Code
 
 ```python
-from sklearn.linear_model import LinearRegression
 import numpy as np
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
 
 # Training data: house sizes (sq ft) and prices ($1000s)
 sizes = np.array([1000, 1500, 2000, 2500, 3000]).reshape(-1, 1)
 prices = np.array([200, 250, 300, 350, 400])
 
-# 1. Create a LinearRegression model
-model = 
+# 1. Create and Train the model
+model = LinearRegression().fit(sizes, prices)
 
-# 2. Train the model on sizes and prices
-# Hint: use model.fit(X, y)
-
-
-# 3. Predict the price for a 1800 sq ft house
+# 2. Predict the price for a 1800 sq ft house
 new_size = np.array([[1800]])
-predicted_price = 
+predicted_price = model.predict(new_size)
 
-# 4. Get the slope (coefficient) from the trained model
-slope = 
+# 3. Get the slope (coefficient)
+slope = model.coef_[0]
 
-# Don't change the code below - it's for testing
+# --- 🖼️ VISUALIZE ---
+plt.scatter(sizes, prices, color='blue', label='Data')
+plt.plot(sizes, model.predict(sizes), color='red', label='Best Fit Line')
+plt.title('House Price Model')
+plt.legend()
+plt.show()
+
+# Don't change below
 def check_model():
     return predicted_price[0], slope
 ```

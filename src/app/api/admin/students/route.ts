@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
 import { nextUniqueLoginId, withUniqueLoginIdRetry } from '@/lib/loginId';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
@@ -47,48 +47,78 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const platform = searchParams.get('platform') || 'saaio';
   const cohortId = searchParams.get('cohort_id');
+  
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
-  const progressTable = platform === 'dip' ? 'dip_progress' : platform === 'wrp' ? 'wrp_progress' : 'user_progress';
+  const progressTable = platform === 'dip' ? 'dip_progress' : platform === 'wrp' ? 'wrp_progress' : 'saaio_progress';
 
-  const certFields = (platform === 'dip' || platform === 'wrp') ? ', certificate_requested, certificate_unlocked' : '';
+  try {
+    const certFields = (platform === 'dip' || platform === 'wrp') 
+      ? sql`, s.certificate_requested, s.certificate_unlocked` 
+      : sql``;
 
-  let query = supabase
-    .from(table)
-    .select(`id, login_id, full_name, email, created_at, cohort_id${certFields}`)
-    .order('created_at', { ascending: false });
+    // We join the student table with its corresponding progress table
+    const students = await sql`
+      SELECT 
+        s.id, s.login_id, s.full_name, s.email, s.created_at, s.cohort_id
+        ${certFields},
+        p.completed_pages, p.last_active, p.exam_score, p.exam_passed
+      FROM ${sql(table)} s
+      LEFT JOIN ${sql(progressTable)} p ON s.login_id = p.login_id
+      ${cohortId === 'unassigned' ? sql`WHERE s.cohort_id IS NULL` : cohortId ? sql`WHERE s.cohort_id = ${cohortId}` : sql``}
+      ORDER BY s.created_at DESC
+    `;
 
-  if (cohortId === 'unassigned') query = query.is('cohort_id', null);
-  else if (cohortId) query = query.eq('cohort_id', cohortId);
+    const result = students.map((s: any) => {
+      const completedCount = Object.keys(s.completed_pages || {}).filter((k: string) => (s.completed_pages as any)[k]).length;
+      return {
+        id: s.id,
+        login_id: s.login_id,
+        full_name: s.full_name,
+        email: s.email,
+        created_at: s.created_at,
+        cohortId: s.cohort_id,
+        completedCount,
+        lastActive: s.last_active,
+        examScore: s.exam_score,
+        examPassed: s.exam_passed,
+        certificate_requested: s.certificate_requested ?? false,
+        certificate_unlocked: s.certificate_unlocked ?? false
+      };
+    });
 
-  const { data: students, error } = await query;
+    // Fetch notebook submissions separately using direct SQL
+    const submissions = await sql`SELECT * FROM notebook_submissions`;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const submissionMap: Record<string, any[]> = {};
+    (submissions || []).forEach((s: any) => {
+      if (!submissionMap[s.login_id]) submissionMap[s.login_id] = [];
+      submissionMap[s.login_id].push(s);
+    });
 
-  const { data: progress } = await supabase.from(progressTable).select('*');
+    const finalResult = students.map((s: any) => {
+      const completedCount = Object.keys(s.completed_pages || {}).filter((k: string) => (s.completed_pages as any)[k]).length;
+      return {
+        id: s.id,
+        login_id: s.login_id,
+        full_name: s.full_name,
+        email: s.email,
+        created_at: s.created_at,
+        cohortId: s.cohort_id,
+        completedCount,
+        lastActive: s.last_active,
+        examScore: s.exam_score,
+        examPassed: s.exam_passed,
+        certificate_requested: s.certificate_requested ?? false,
+        certificate_unlocked: s.certificate_unlocked ?? false,
+        notebookSubmissions: submissionMap[s.login_id] || []
+      };
+    });
 
-  const progressMap: Record<string, any> = {};
-  (progress || []).forEach((p: any) => {
-    const key = p.login_id || p.username;
-    progressMap[key] = p;
-  });
-
-  const result = (students || []).map((s: any) => {
-    const prog = progressMap[s.login_id];
-    const completedCount = prog
-      ? Object.keys(prog.completed_pages || {}).filter((k: string) => (prog.completed_pages as any)[k]).length
-      : 0;
-    return {
-      ...s,
-      completedCount,
-      lastActive: prog?.last_active || null,
-      examScore: prog?.exam_score ?? null,
-      examPassed: prog?.exam_passed ?? null,
-      cohortId: s.cohort_id ?? null,
-      certificate_requested: s.certificate_requested ?? false,
-      certificate_unlocked: s.certificate_unlocked ?? false,    };
-  });
-
-  return NextResponse.json(result);
+    return NextResponse.json(finalResult);
+  } catch (error: any) {
+    console.error('[ADMIN_GET_STUDENTS_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // POST: register a new student
@@ -101,31 +131,38 @@ export async function POST(request: Request) {
   const plainPassword = generatePassword();
   const password_hash = hashPassword(plainPassword);
 
-  const insertData: any = { password_hash, full_name, email: email || null };
-  if (cohort_id) insertData.cohort_id = cohort_id;
+  try {
+    const { data: student, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
+      try {
+        const [res] = await sql`
+          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+          VALUES (${generated_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${cohort_id || null})
+          RETURNING id, login_id, full_name, email, created_at
+        `;
+        return { error: null, data: res };
+      } catch (e: any) {
+        return { error: e };
+      }
+    });
 
-  const { data, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
-    return await supabase
-      .from(table)
-      .insert({ ...insertData, login_id: generated_id })
-      .select('id, login_id, full_name, email, created_at')
-      .single();
-  });
+    if (error) throw error;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Send email if address provided and Resend is configured
-  let emailSent = false;
-  if (email && process.env.WTC_EMAIL_API_KEY) {
-    try {
-      await sendCredentialsEmail({ to: email, full_name, login_id, password: plainPassword, platform });
-      emailSent = true;
-    } catch (e) {
-      console.error('Failed to send credentials email:', e);
+    // Send email if address provided and API key is configured
+    let emailSent = false;
+    if (email && process.env.WTC_EMAIL_API_KEY) {
+      try {
+        await sendCredentialsEmail({ to: email, full_name, login_id, password: plainPassword, platform });
+        emailSent = true;
+      } catch (e) {
+        console.error('Failed to send credentials email:', e);
+      }
     }
-  }
 
-  return NextResponse.json({ ...data, plainPassword, emailSent });
+    return NextResponse.json({ ...student, plainPassword, emailSent });
+  } catch (error: any) {
+    console.error('[ADMIN_POST_STUDENT_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // PATCH: reset password OR assign cohort
@@ -137,42 +174,45 @@ export async function PATCH(request: Request) {
 
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
 
-  // Cohort assignment
-  if ('cohort_id' in body) {
-    const { error } = await supabase.from(table).update({ cohort_id: body.cohort_id }).eq('login_id', login_id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true });
-  }
-
-  const plainPassword = generatePassword();
-  const password_hash = hashPassword(plainPassword);
-
-  const { data: student, error: fetchError } = await supabase
-    .from(table)
-    .select('full_name, email')
-    .eq('login_id', login_id)
-    .single();
-
-  if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
-
-  const { error } = await supabase.from(table).update({ password_hash }).eq('login_id', login_id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Send reset email if address exists and Resend is configured
-  let emailSent = false;
-  if (student?.email && process.env.WTC_EMAIL_API_KEY) {
-    try {
-      await sendCredentialsEmail({
-        to: student.email, full_name: student.full_name, login_id, password: plainPassword, platform, isReset: true,
-      });
-      emailSent = true;
-    } catch (e) {
-      console.error('Failed to send reset email:', e);
+  try {
+    // Cohort assignment
+    if ('cohort_id' in body) {
+      await sql`
+        UPDATE ${sql(table)} SET cohort_id = ${body.cohort_id} WHERE login_id = ${login_id}
+      `;
+      return NextResponse.json({ success: true });
     }
-  }
 
-  await logAudit({ request, action: 'password_reset', target_login_id: login_id, target_platform: platform, details: { emailSent } });
-  return NextResponse.json({ plainPassword, emailSent });
+    const plainPassword = generatePassword();
+    const password_hash = hashPassword(plainPassword);
+
+    const [student] = await sql`
+      UPDATE ${sql(table)} SET password_hash = ${password_hash} 
+      WHERE login_id = ${login_id} 
+      RETURNING full_name, email
+    `;
+
+    if (!student) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+
+    // Send reset email if address exists and API is configured
+    let emailSent = false;
+    if (student.email && process.env.WTC_EMAIL_API_KEY) {
+      try {
+        await sendCredentialsEmail({
+          to: student.email, full_name: student.full_name, login_id, password: plainPassword, platform, isReset: true,
+        });
+        emailSent = true;
+      } catch (e) {
+        console.error('Failed to send reset email:', e);
+      }
+    }
+
+    await logAudit({ request, action: 'password_reset', target_login_id: login_id, target_platform: platform, details: { emailSent } });
+    return NextResponse.json({ plainPassword, emailSent });
+  } catch (error: any) {
+    console.error('[ADMIN_PATCH_STUDENT_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 // DELETE: remove a student
@@ -184,8 +224,13 @@ export async function DELETE(request: Request) {
   if (!login_id) return NextResponse.json({ error: 'login_id required' }, { status: 400 });
 
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
-  const { error } = await supabase.from(table).delete().eq('login_id', login_id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  await logAudit({ request, action: 'student_deleted', target_login_id: login_id, target_platform: platform });
-  return NextResponse.json({ success: true });
+  
+  try {
+    await sql`DELETE FROM ${sql(table)} WHERE login_id = ${login_id}`;
+    await logAudit({ request, action: 'student_deleted', target_login_id: login_id, target_platform: platform });
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('[ADMIN_DELETE_STUDENT_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

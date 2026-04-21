@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { sendEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
@@ -19,32 +19,40 @@ export async function POST(request: Request) {
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Check email not already used by another student on this platform
-  const { data: existing } = await supabase
-    .from(table)
-    .select('login_id')
-    .eq('email', normalizedEmail)
-    .neq('login_id', login_id.toUpperCase())
-    .maybeSingle();
+  try {
+    // 1. Check email not already used by another student on this platform
+    const existing = await sql`
+      SELECT login_id FROM ${sql(table)} 
+      WHERE email = ${normalizedEmail} 
+      AND login_id != ${login_id.toUpperCase()}
+    `;
 
-  if (existing) {
-    return NextResponse.json({ error: 'This email is already linked to another account.' }, { status: 409 });
-  }
+    if (existing.length > 0) {
+      return NextResponse.json({ error: 'This email is already linked to another account.' }, { status: 409 });
+    }
 
-  const otp = generateOtp();
-  const expires_at = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
+    const otp = generateOtp();
+    const expires_at = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
 
-  const { error: updateError } = await supabase
-    .from(table)
-    .update({ email: normalizedEmail, email_otp: otp, email_otp_expires_at: expires_at, email_verified: false })
-    .eq('login_id', login_id.toUpperCase());
+    // 2. Update student with OTP and email
+    const result = await sql`
+      UPDATE ${sql(table)} 
+      SET email = ${normalizedEmail}, 
+          email_otp = ${otp}, 
+          email_otp_expires_at = ${expires_at}, 
+          email_verified = false 
+      WHERE login_id = ${login_id.toUpperCase()}
+      RETURNING login_id
+    `;
 
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+    if (result.length === 0) {
+      return NextResponse.json({ error: 'Student not found.' }, { status: 404 });
+    }
 
-  // Send OTP email
-  const platformName = platform === 'dip' ? 'IDC SEF Digital Inclusion Program' : platform === 'wrp' ? 'WeThinkCode_ Work Readiness Program' : 'WeThinkCode_ IDC Curriculum';
+    // 3. Send OTP email
+    const platformName = platform === 'dip' ? 'IDC SEF Digital Inclusion Program' : platform === 'wrp' ? 'WeThinkCode_ Work Readiness Program' : 'WeThinkCode_ IDC Curriculum';
 
-  const html = `<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"/></head>
 <body style="margin:0;padding:0;background:#f5f7fa;">
@@ -75,18 +83,22 @@ export async function POST(request: Request) {
 </body>
 </html>`;
 
-  let emailSent = false;
-  try {
-    await sendEmail({
-      to_email: normalizedEmail,
-      subject: `${otp} is your verification code — ${platformName}`,
-      message_html: html,
-    });
-    emailSent = true;
-  } catch (e: any) {
-    console.error('Failed to send OTP email:', e);
-    // Don't block the student — email is saved, they can verify later
-  }
+    let emailSent = false;
+    try {
+      await sendEmail({
+        to_email: normalizedEmail,
+        subject: `${otp} is your verification code — ${platformName}`,
+        message_html: html,
+      });
+      emailSent = true;
+    } catch (e: any) {
+      console.error('Failed to send OTP email:', e);
+      // Don't block the student — email is saved, they can verify later
+    }
 
-  return NextResponse.json({ success: true, emailSent });
+    return NextResponse.json({ success: true, emailSent });
+  } catch (error: any) {
+    console.error('[ADD_EMAIL_FAILED]', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

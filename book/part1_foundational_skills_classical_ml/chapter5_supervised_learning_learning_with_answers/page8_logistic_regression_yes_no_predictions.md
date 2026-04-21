@@ -34,9 +34,26 @@ Where sigmoid(x) = 1 / (1 + e^(-x))
 
 ### Output Interpretation
 
-- **Probability**: ŷ between 0 and 1
-- **Classification**: If ŷ ≥ 0.5 → Class 1 (positive), else Class 0 (negative)
 - **Decision boundary**: Linear equation where ŷ = 0.5
+
+### 🖼️ The Sigmoid Visualization
+Visualizing Logistic Regression helps you see the "S-Curve" (Sigmoid) that maps numbers to probabilities.
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Generate range of values
+x = np.linspace(-10, 10, 100)
+# Calculate Sigmoid
+y = 1 / (1 + np.exp(-x))
+
+plt.plot(x, y, color='green', label='Sigmoid Curve')
+plt.axhline(y=0.5, color='red', linestyle='--', label='Decision Threshold')
+plt.title('The Logistic S-Curve')
+plt.legend()
+plt.show()
+```
 
 ### Training Process
 

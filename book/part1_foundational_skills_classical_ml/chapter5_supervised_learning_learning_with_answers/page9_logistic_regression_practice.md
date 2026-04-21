@@ -29,24 +29,31 @@ X = np.array([
 y = np.array([1, 0, 1, 0, 1, 0, 1, 0])
 
 # 1. Split into train/test sets (test_size=0.25, random_state=42)
-X_train, X_test, y_train, y_test = 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
 
-# 2. Create a LogisticRegression model
-model = 
+# 2. Create and Train the model
+model = LogisticRegression().fit(X_train, y_train)
 
-# 3. Train the model
+# 3. Predict on the test set
+predictions = model.predict(X_test)
 
+# 4. Calculate accuracy
+accuracy = accuracy_score(y_test, predictions)
 
-# 4. Predict on the test set
-predictions = 
+# 5. Get probability predictions (probability of being spam)
+probabilities = model.predict_proba(X_test)
+spam_probs = probabilities[:, 1]
 
-# 5. Calculate accuracy
-accuracy = 
+# --- 🖼️ VISUALIZE ---
+import matplotlib.pyplot as plt
+plt.bar(range(len(spam_probs)), spam_probs, color='orange')
+plt.axhline(y=0.5, color='red', linestyle='--', label='Threshold')
+plt.title('Spam Probability per Test Email')
+plt.ylabel('Probability')
+plt.legend()
+plt.show()
 
-# 6. Get probability predictions (predict_proba)
-probabilities = 
-
-# Don't change the code below - it's for testing
+# Don't change below
 def check_logistic():
     return accuracy, probabilities.shape, len(predictions)
 ```
