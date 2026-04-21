@@ -68,8 +68,12 @@ export default function DipLessonClient({
   }, [pageId, isPractice, content]);
   const router = useRouter();
 
+  const isLab = pageType === 'lab';
+  const hasCodeAlong = !!video;
+  const needsPyodide = (isPractice || isLab || hasCodeAlong) && !colabNotebook;
+
   const initPyodide = () => {
-    if (!isPractice) return;
+    if (!needsPyodide) return;
     setIsEnvLoading(true);
     setEnvError(null);
     getPyodide();
@@ -92,7 +96,7 @@ export default function DipLessonClient({
   useEffect(() => {
     const interval = initPyodide();
     return () => { if (interval) clearInterval(interval); };
-  }, [isPractice, pageId]);
+  }, [needsPyodide, pageId]);
 
   const handleRetryEnv = () => {
     clearPyodideWorker();
@@ -279,9 +283,6 @@ export default function DipLessonClient({
       </div>
     </div>
   );
-
-  const isLab = pageType === 'lab';
-  const hasCodeAlong = !!video;
 
   const rightPanel = isPractice || isLab || hasCodeAlong ? (
     isLab && colabNotebook ? (

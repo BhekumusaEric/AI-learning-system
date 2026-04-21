@@ -71,8 +71,12 @@ export default function LessonPageClient({
       .catch(() => {});
   }, []);
 
+  const isLab = pageType === 'lab';
+  const hasCodeAlong = !!video;
+  const needsPyodide = (isPractice || isLab || hasCodeAlong) && !colabNotebook;
+
   const initPyodide = () => {
-    if (!isPractice) return;
+    if (!needsPyodide) return;
     setIsEnvLoading(true);
     setEnvError(null);
     getPyodide();
@@ -95,7 +99,7 @@ export default function LessonPageClient({
   useEffect(() => {
     const interval = initPyodide();
     return () => { if (interval) clearInterval(interval); };
-  }, [isPractice, pageId]);
+  }, [needsPyodide, pageId]);
 
   const handleRetryEnv = () => {
     clearPyodideWorker();
@@ -311,9 +315,6 @@ export default function LessonPageClient({
       </div>
     </div>
   );
-
-  const isLab = pageType === 'lab';
-  const hasCodeAlong = !!video;
 
   const rightPanel = isPractice || isLab || hasCodeAlong ? (
     isLab && colabNotebook ? (
