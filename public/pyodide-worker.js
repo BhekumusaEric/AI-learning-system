@@ -63,6 +63,7 @@ pyodideReadyPromise = load().then(() => {
   self.postMessage({ type: 'ready' });
 }).catch((err) => {
   self.postMessage({ type: 'load_error', error: err?.message || String(err) });
+  throw err; // Re-throw to ensure pyodideReadyPromise rejects properly
 });
 
 // Transforms test code so each assert shows got vs expected on failure.
@@ -114,89 +115,99 @@ function buildTestRunner(tests) {
 // SharedArrayBuffer for blocking input(): index 0 = status (0=waiting,1=ready), rest = UTF-8 bytes
 let inputBuffer = null;
 
+let currentExecution = Promise.resolve();
+
 self.onmessage = async (event) => {
-  await pyodideReadyPromise;
+  currentExecution = currentExecution.then(async () => {
+    try {
+      await pyodideReadyPromise;
+    } catch (e) {
+      // If initialization failed completely, respond with an error.
+      self.postMessage({ id: event.data.id, success: false, error: "Python Environment Failed to Load. Please refresh or retry.", stdout: "", stderr: "" });
+      return;
+    }
 
-  const { id, code, tests } = event.data;
+    const { id, code, tests } = event.data;
 
-  let stdout = '';
-  let stderr = '';
+    let stdout = '';
+    let stderr = '';
 
-  self.pyodide.setStdout({ batched: (str) => { stdout += str + '\n'; } });
-  self.pyodide.setStderr({ batched: (str) => { stderr += str + '\n'; } });
+    self.pyodide.setStdout({ batched: (str) => { stdout += str + '\n'; } });
+    self.pyodide.setStderr({ batched: (str) => { stderr += str + '\n'; } });
 
-  try {
-    // Reset matplotlib state between runs so figures don't bleed across submissions
-    await self.pyodide.runPythonAsync(`
+    try {
+      // Reset matplotlib state between runs so figures don't bleed across submissions
+      await self.pyodide.runPythonAsync(`
 import matplotlib.pyplot as plt
 plt.close('all')
-    `);
+      `);
 
-    // Run user code — override input() to request from main thread
-    if (typeof SharedArrayBuffer !== 'undefined') {
-      inputBuffer = new SharedArrayBuffer(4 + 1024);
-      new Int32Array(inputBuffer)[0] = 0;
-
-      // Expose a JS-level input function that blocks the worker via Atomics.wait
-      self.pyodide.globals.set('__input_sab__', inputBuffer);
-      self.pyodide.globals.set('__input_request_fn__', (prompt) => {
+      // Run user code — override input() to request from main thread
+      if (typeof SharedArrayBuffer !== 'undefined') {
+        inputBuffer = new SharedArrayBuffer(4 + 1024);
         new Int32Array(inputBuffer)[0] = 0;
-        self.postMessage({ type: 'input_request', id, prompt: prompt || '', buffer: inputBuffer });
-        Atomics.wait(new Int32Array(inputBuffer), 0, 0);
-        const n = new Int32Array(inputBuffer)[0];
-        const bytes = new Uint8Array(inputBuffer, 4, n - 1);
-        new Int32Array(inputBuffer)[0] = 0;
-        return new TextDecoder().decode(bytes);
-      });
 
-      await self.pyodide.runPythonAsync(`
+        // Expose a JS-level input function that blocks the worker via Atomics.wait
+        self.pyodide.globals.set('__input_sab__', inputBuffer);
+        self.pyodide.globals.set('__input_request_fn__', (prompt) => {
+          new Int32Array(inputBuffer)[0] = 0;
+          self.postMessage({ type: 'input_request', id, prompt: prompt || '', buffer: inputBuffer });
+          Atomics.wait(new Int32Array(inputBuffer), 0, 0);
+          const n = new Int32Array(inputBuffer)[0];
+          const bytes = new Uint8Array(inputBuffer, 4, n - 1);
+          new Int32Array(inputBuffer)[0] = 0;
+          return new TextDecoder().decode(bytes);
+        });
+
+        await self.pyodide.runPythonAsync(`
 import builtins, js
 def _browser_input(prompt=''):
     if prompt:
         print(prompt, end='', flush=True)
     return js.globalThis.__input_request_fn__(prompt)
 builtins.input = _browser_input
-      `);
-    } else {
-      // Fallback: input() will just return empty string or raise error, no blocking support
-      await self.pyodide.runPythonAsync(`
+        `);
+      } else {
+        // Fallback: input() will just return empty string or raise error, no blocking support
+        await self.pyodide.runPythonAsync(`
 import builtins
 def _no_input(prompt=''):
     if prompt:
         print(prompt, end='', flush=True)
     return "" # Cannot block without SharedArrayBuffer
 builtins.input = _no_input
-      `);
-    }
-    await self.pyodide.runPythonAsync(code);
+        `);
+      }
+      await self.pyodide.runPythonAsync(code);
 
-    // Optionally run tests
-    let testResult = null;
-    if (tests) {
-      // Expose the javascript captured stdout into Python globals
-      self.pyodide.globals.set("__captured_stdout__", stdout);
+      // Optionally run tests
+      let testResult = null;
+      if (tests) {
+        // Expose the javascript captured stdout into Python globals
+        self.pyodide.globals.set("__captured_stdout__", stdout);
 
-      // Inject a shim for sys.stdout.getvalue() so existing testing scripts
-      // in .md files can seamlessly read the intercepted terminal output
-      await self.pyodide.runPythonAsync(`
+        // Inject a shim for sys.stdout.getvalue() so existing testing scripts
+        // in .md files can seamlessly read the intercepted terminal output
+        await self.pyodide.runPythonAsync(`
 import sys, io
 if not hasattr(sys, '__original_stdout__'):
     sys.__original_stdout__ = sys.stdout
 sys.stdout = io.StringIO(__captured_stdout__)
-      `);
+        `);
 
-      try {
-        testResult = await self.pyodide.runPythonAsync(buildTestRunner(tests));
-      } finally {
-        await self.pyodide.runPythonAsync(`
+        try {
+          testResult = await self.pyodide.runPythonAsync(buildTestRunner(tests));
+        } finally {
+          await self.pyodide.runPythonAsync(`
 import sys
 sys.stdout = sys.__original_stdout__
-        `);
+          `);
+        }
       }
-    }
 
-    self.postMessage({ id, success: true, result: testResult, stdout, stderr });
-  } catch (err) {
-    self.postMessage({ id, success: false, error: err.toString(), stdout, stderr });
-  }
+      self.postMessage({ id, success: true, result: testResult, stdout, stderr });
+    } catch (err) {
+      self.postMessage({ id, success: false, error: err.toString(), stdout, stderr });
+    }
+  });
 };

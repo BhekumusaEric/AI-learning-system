@@ -98,8 +98,14 @@ export function clearPyodideWorker() {
 export async function runPythonCode(code: string, tests: string = '', timeoutMs: number = 30000): Promise<ExecutionResult> {
   await getPyodide();
 
+  // Wait for the environment to finish loading before starting the execution timeout clock
+  while (pyodideWorker && !isReady && !loadError) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
   return new Promise((resolve, reject) => {
     if (!pyodideWorker) return reject(new Error("Worker not initialized"));
+    if (loadError) return reject(new Error("Python Environment failed to load: " + loadError));
 
     const id = msgId++;
 
