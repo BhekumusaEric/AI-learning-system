@@ -189,6 +189,7 @@ export default function DipLessonClient({
 
   const leftPanel = (
     <div className="w-full">
+      <div className="p-2 mb-4 text-center bg-yellow-500 text-black font-bold rounded-md">Deployment Test: Changes are live!</div>
       {video && <VideoEmbed src={video} />}
       <div className="prose prose-invert prose-cyan max-w-none
         prose-p:text-[16px] prose-p:leading-relaxed prose-p:text-gray-300
