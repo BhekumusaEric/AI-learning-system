@@ -73,7 +73,7 @@ export default function DipLessonClient({
   const needsPyodide = (isPractice || isLab || hasCodeAlong) && !colabNotebook;
 
   const initPyodide = () => {
-    if (!needsPyodide) return;
+    if (!needsPyodide || isPyodideReady() || getPyodideError()) return;
     setIsEnvLoading(true);
     setEnvError(null);
     getPyodide();
