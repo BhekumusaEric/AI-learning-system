@@ -26,7 +26,7 @@ export default $config({
         NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || "7f9e39690b8644b089fc4db3ba4b2291",
         NEXTAUTH_URL: "https://d1dgrcvw7jhb89.cloudfront.net",
         NODE_ENV: "production",
-        WTC_EMAIL_API_KEY: process.env.WTC_EMAIL_API_KEY || "",
+        WTC_EMAIL_API_KEY: "UImYdeoC8jSzsD9aR5Kt4suZoC0pXKE3JPOyN27b",
       },
       copyFiles: [
         { from: "global-bundle.pem", to: "global-bundle.pem" }
