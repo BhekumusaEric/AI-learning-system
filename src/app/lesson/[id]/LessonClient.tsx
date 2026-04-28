@@ -47,9 +47,13 @@ export default function LessonPageClient({
   video: string | null;
 }) {
   const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
+  const isLab = pageType === 'lab';
+  const hasCodeAlong = !!video;
+  const needsEditor = (isPractice || isLab || hasCodeAlong) && !colabNotebook;
+
   const [isRunning, setIsRunning] = useState(false);
-  const [isEnvLoading, setIsEnvLoading] = useState(true);
-  const [loadingStatus, setLoadingStatus] = useState('Initializing...');
+  const [isEnvLoading, setIsEnvLoading] = useState(needsEditor);
+  const [loadingStatus, setLoadingStatus] = useState(needsEditor ? 'Initializing...' : '');
   const [envError, setEnvError] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const { markCompleted, completedPages } = useProgress();
@@ -73,12 +77,18 @@ export default function LessonPageClient({
 
   // Determine whether the code editor panel will be rendered.
   // It shows for practice pages, lab pages, or read pages with a video (code-along).
-  const isLab = pageType === 'lab';
-  const hasCodeAlong = !!video;
-  const needsEditor = (isPractice || isLab || hasCodeAlong) && !colabNotebook;
-
   const initPyodide = () => {
-    if (!needsEditor) return;
+    if (!needsEditor) {
+      setIsEnvLoading(false);
+      return;
+    }
+    
+    // If already ready, don't show loading
+    if (isPyodideReady()) {
+      setIsEnvLoading(false);
+      return;
+    }
+
     setIsEnvLoading(true);
     setEnvError(null);
     getPyodide();

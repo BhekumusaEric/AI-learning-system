@@ -41,9 +41,13 @@ export default function DipLessonClient({
   video
 }: DipLessonClientProps) {
   const { code, setCode, resetCode } = usePersistedCode(pageId, initialCodeProp);
+  const isLab = pageType === 'lab';
+  const hasCodeAlong = !!video;
+  const needsEditor = (isPractice || isLab || hasCodeAlong) && !colabNotebook;
+
   const [isRunning, setIsRunning] = useState(false);
-  const [isEnvLoading, setIsEnvLoading] = useState(true);
-  const [loadingStatus, setLoadingStatus] = useState('Initializing...');
+  const [isEnvLoading, setIsEnvLoading] = useState(needsEditor);
+  const [loadingStatus, setLoadingStatus] = useState(needsEditor ? 'Initializing...' : '');
   const [envError, setEnvError] = useState<string | null>(null);
   const [results, setResults] = useState<TestResult[] | null>(null);
   const [testsPassed, setTestsPassed] = useState(false);
@@ -68,13 +72,18 @@ export default function DipLessonClient({
   }, [pageId, isPractice, content]);
   const router = useRouter();
 
-  // Determine whether the code editor panel will be rendered.
-  const isLab = pageType === 'lab';
-  const hasCodeAlong = !!video;
-  const needsEditor = (isPractice || isLab || hasCodeAlong) && !colabNotebook;
-
   const initPyodide = () => {
-    if (!needsEditor) return;
+    if (!needsEditor) {
+      setIsEnvLoading(false);
+      return;
+    }
+
+    // If already ready, don't show loading
+    if (isPyodideReady()) {
+      setIsEnvLoading(false);
+      return;
+    }
+
     setIsEnvLoading(true);
     setEnvError(null);
     getPyodide();
