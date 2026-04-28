@@ -11,13 +11,14 @@ function formatLoginId(platform: string, index: number) {
  */
 export async function nextUniqueLoginId(platform: string): Promise<string> {
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
+  const idColumn = platform === 'saaio' ? 'student_id' : 'login_id';
   const prefix = platform === 'dip' ? 'DIP' : platform === 'wrp' ? 'WRP' : 'SAAIO';
   const year = new Date().getFullYear();
 
   // Fetch all existing login_ids for this year's prefix
   const data = await sql`
-    SELECT login_id FROM ${sql(table)} 
-    WHERE login_id LIKE ${prefix + '-' + year + '-%'}
+    SELECT ${sql(idColumn)} as login_id FROM ${sql(table)} 
+    WHERE ${sql(idColumn)} LIKE ${prefix + '-' + year + '-%'}
   `;
 
   const existingIds = new Set(data.map((r: any) => r.login_id as string));

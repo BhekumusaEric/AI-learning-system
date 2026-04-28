@@ -66,13 +66,31 @@ export default function DipRegisterPage() {
           <h2 className="text-xl font-bold mb-2">Registration Successful!</h2>
           <p className="text-secondary-text text-sm mb-6">Welcome, <span className="text-foreground font-semibold">{result.full_name}</span>! Here are your credentials.</p>
           <div className="bg-background border border-border-subtle rounded-xl p-4 mb-4 font-mono text-sm space-y-3">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center group">
               <span className="text-secondary-text">Login ID</span>
-              <span className="text-accent font-bold text-lg">{result.login_id}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-accent font-bold text-lg">{result.login_id}</span>
+                <button 
+                  onClick={() => { navigator.clipboard.writeText(result.login_id); }}
+                  className="p-1 hover:bg-accent/10 rounded text-accent/50 hover:text-accent transition-colors"
+                  title="Copy ID"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+              </div>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center group">
               <span className="text-secondary-text">Password</span>
-              <span className="text-warning font-bold text-lg tracking-widest">{result.plainPassword}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-warning font-bold text-lg tracking-widest">{result.plainPassword}</span>
+                <button 
+                  onClick={() => { if (result.plainPassword) navigator.clipboard.writeText(result.plainPassword); }}
+                  className="p-1 hover:bg-warning/10 rounded text-warning/50 hover:text-warning transition-colors"
+                  title="Copy Password"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+              </div>
             </div>
           </div>
           {result.emailSent

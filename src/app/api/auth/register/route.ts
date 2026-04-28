@@ -80,5 +80,12 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ already_registered: false, login_id, full_name: full_name.trim(), plainPassword, emailSent });
+  console.log(`[REGISTRATION_SUCCESS] User: ${login_id}, Platform: ${platform}, Email: ${normalizedEmail}`);
+  return NextResponse.json({ 
+    already_registered: false, 
+    login_id, 
+    full_name: full_name.trim(), 
+    plainPassword, 
+    emailSent 
+  });
 }
