@@ -14,11 +14,9 @@ if (!connectionString) {
   throw new Error('[DB_ERROR] DATABASE_URL is not defined in the environment. Please update your AWS RDS configuration.');
 }
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-// In AWS Lambda, the global-bundle.pem is copied to the root
+// In AWS Lambda or Vercel, we only use the cert if it actually exists on disk
 const hasCert = fs.existsSync(path.join(process.cwd(), 'global-bundle.pem'));
-const sslConfig = (isProduction || hasCert) ? {
+const sslConfig = hasCert ? {
   rejectUnauthorized: false, // Allow IP-based connections
   ca: fs.readFileSync(path.join(process.cwd(), 'global-bundle.pem'), 'utf8'),
 } : false;
