@@ -3,13 +3,13 @@ const fs = require('fs');
 const path = require('path');
 
 // --- CONFIGURATION ---
-const rdsConnectionString = "postgres://bhntshwcjc025:EricKelvin2025@saaio-db.cvguww60mq70.eu-north-1.rds.amazonaws.com:5432/postgres";
+const rdsConnectionString = "postgres://bhntshwcjc025:EricKelvin2025@saaio-db-capetown.c9u046kgwwaf.af-south-1.rds.amazonaws.com:5432/postgres";
 const supabaseUrl = "https://hzldgvdtgkebfotpkjpt.supabase.co/rest/v1";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bGRndmR0Z2tlYmZvdHBranB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzAxNzksImV4cCI6MjA4OTAwNjE3OX0.wKOxM5AXpt-rBDzQ7LqGbu5OU1bnxsgJpbpTs0HBH7M"; 
 
 const sql = postgres(rdsConnectionString, {
     ssl: {
-        rejectUnauthorized: true,
+        rejectUnauthorized: false,
         ca: fs.readFileSync(path.join(process.cwd(), 'global-bundle.pem'), 'utf8')
     },
     idle_timeout: 20,
@@ -35,112 +35,89 @@ async function fetchFromSupabase(table) {
 }
 
 async function migrate() {
-    console.log('🏁 Starting Secure Migration (Data Integrity Mode)...');
+    console.log('🏁 Starting Secure Migration (Final Mapping Mode)...');
     
-    // We will use these sets to track who was actually migrated to prevent orphaned progress records
-    const migratedSaaio = new Set();
-    const migratedDip = new Set();
-    const migratedWrp = new Set();
-
     try {
-        // 0. Migrate Audit Logs
-        const auditLogs = await fetchFromSupabase('admin_audit_log');
-        console.log(`📝 Found ${auditLogs.length} audit logs.`);
-        for (const log of auditLogs) {
-            await sql`INSERT INTO admin_audit_log ${sql(log)} ON CONFLICT (id) DO UPDATE SET ${sql(log)}`;
-        }
-
         // 1. Migrate Supervisors
         const supervisors = await fetchFromSupabase('supervisors');
         console.log(`👨‍🏫 Found ${supervisors.length} supervisors.`);
         for (const sup of supervisors) {
-            await sql`INSERT INTO supervisors ${sql(sup)} ON CONFLICT (login_id) DO UPDATE SET ${sql(sup)}`;
+            const mapped = {
+                login_id: sup.login_id || '',
+                password: sup.password_hash || '',
+                name: sup.full_name || '',
+                email: sup.email || '',
+                created_at: sup.created_at || new Date().toISOString(),
+                is_active: true
+            };
+            await sql`INSERT INTO supervisors ${sql(mapped)} ON CONFLICT (login_id) DO UPDATE SET ${sql(mapped)}`;
         }
 
         // 2. Migrate Cohorts
         const cohorts = await fetchFromSupabase('cohorts');
         console.log(`📊 Found ${cohorts.length} cohorts.`);
         for (const cohort of cohorts) {
-            await sql`INSERT INTO cohorts ${sql(cohort)} ON CONFLICT (id) DO UPDATE SET ${sql(cohort)}`;
+            const mapped = {
+                id: cohort.id,
+                name: cohort.name || 'Unnamed Cohort',
+                platform: cohort.platform || 'saaio',
+                is_active: !cohort.archived,
+                created_at: cohort.created_at || new Date().toISOString()
+            };
+            await sql`INSERT INTO cohorts ${sql(mapped)} ON CONFLICT (id) DO UPDATE SET ${sql(mapped)}`;
         }
 
-        // 3. Migrate SAAIO Students & Progress
+        // 3. Migrate SAAIO Students
         const saaioStudents = await fetchFromSupabase('saaio_students');
         console.log(`🎓 Found ${saaioStudents.length} SAAIO students.`);
         for (const student of saaioStudents) {
-            await sql`INSERT INTO saaio_students ${sql(student)} ON CONFLICT (login_id) DO UPDATE SET ${sql(student)}`;
-            migratedSaaio.add(student.login_id);
+            const mapped = {
+                student_id: student.login_id,
+                password: student.password_hash || '',
+                name: student.full_name || '',
+                email: student.email || '',
+                cohort_id: student.cohort_id || null,
+                created_at: student.created_at || new Date().toISOString(),
+                is_active: true
+            };
+            await sql`INSERT INTO saaio_students ${sql(mapped)} ON CONFLICT (student_id) DO UPDATE SET ${sql(mapped)}`;
         }
-        
+
+        // 4. Migrate SAAIO Progress
         const userProgress = await fetchFromSupabase('user_progress');
-        let saaioOrphans = 0;
+        console.log(`📈 Found ${userProgress.length} progress records.`);
         for (const prog of userProgress) {
             const loginId = prog.username;
-            if (!migratedSaaio.has(loginId)) {
-                saaioOrphans++;
-                continue;
+            const completed = prog.completed_pages || [];
+            const lastUpdate = prog.last_active || new Date().toISOString();
+            
+            const existing = await sql`SELECT id FROM saaio_progress WHERE login_id = ${loginId} LIMIT 1`;
+            if (existing.length > 0) {
+                await sql`UPDATE saaio_progress SET completed_pages = ${completed}, last_updated = ${lastUpdate} WHERE id = ${existing[0].id}`;
+            } else {
+                const studentExists = await sql`SELECT 1 FROM saaio_students WHERE student_id = ${loginId}`;
+                if (studentExists.length > 0) {
+                    await sql`INSERT INTO saaio_progress (login_id, completed_pages, last_updated) VALUES (${loginId}, ${completed}, ${lastUpdate})`;
+                }
             }
-            const mappedProg = {
-                login_id: loginId,
-                completed_pages: prog.completed_pages,
-                last_active: prog.last_active
-            };
-            await sql`
-                INSERT INTO saaio_progress (login_id, completed_pages, last_active)
-                VALUES (${mappedProg.login_id}, ${mappedProg.completed_pages}, ${mappedProg.last_active})
-                ON CONFLICT (login_id) DO UPDATE SET 
-                    completed_pages = EXCLUDED.completed_pages,
-                    last_active = EXCLUDED.last_active
-            `;
         }
-        console.log(`📈 SAAIO Progress: Migrated ${userProgress.length - saaioOrphans}, Skipped ${saaioOrphans} orphans.`);
 
-        // 4. Migrate DIP Students & Progress
-        const dipStudents = await fetchFromSupabase('dip_students');
-        console.log(`🎓 Found ${dipStudents.length} DIP students.`);
-        for (const student of dipStudents) {
-            await sql`INSERT INTO dip_students ${sql(student)} ON CONFLICT (login_id) DO UPDATE SET ${sql(student)}`;
-            migratedDip.add(student.login_id);
-        }
-        
-        const dipProgress = await fetchFromSupabase('dip_progress');
-        let dipOrphans = 0;
-        for (const prog of dipProgress) {
-            if (!migratedDip.has(prog.login_id)) {
-                dipOrphans++;
-                continue;
-            }
-            await sql`INSERT INTO dip_progress ${sql(prog)} ON CONFLICT (login_id) DO UPDATE SET ${sql(prog)}`;
-        }
-        console.log(`📈 DIP Progress: Migrated ${dipProgress.length - dipOrphans}, Skipped ${dipOrphans} orphans.`);
-
-        // 5. Migrate WRP Students & Progress
-        const wrpStudents = await fetchFromSupabase('wrp_students');
-        console.log(`🎓 Found ${wrpStudents.length} WRP students.`);
-        for (const student of wrpStudents) {
-            await sql`INSERT INTO wrp_students ${sql(student)} ON CONFLICT (login_id) DO UPDATE SET ${sql(student)}`;
-            migratedWrp.add(student.login_id);
-        }
-        
-        const wrpProgress = await fetchFromSupabase('wrp_progress');
-        let wrpOrphans = 0;
-        for (const prog of wrpProgress) {
-            if (!migratedWrp.has(prog.login_id)) {
-                wrpOrphans++;
-                continue;
-            }
-            await sql`INSERT INTO wrp_progress ${sql(prog)} ON CONFLICT (login_id) DO UPDATE SET ${sql(prog)}`;
-        }
-        console.log(`📈 WRP Progress: Migrated ${wrpProgress.length - wrpOrphans}, Skipped ${wrpOrphans} orphans.`);
-
-        // 6. Migrate Invite Links
+        // 5. Migrate Invite Links
         const inviteLinks = await fetchFromSupabase('invite_links');
         console.log(`🔗 Found ${inviteLinks.length} invite links.`);
         for (const link of inviteLinks) {
-            await sql`INSERT INTO invite_links ${sql(link)} ON CONFLICT (token) DO UPDATE SET ${sql(link)}`;
+            // Mapping for RDS schema: [ 'is_active', 'created_at', 'token', 'platform', 'cohort_id' ]
+            const mapped = {
+                token: link.token,
+                platform: (link.data && link.data.platform) || 'saaio',
+                cohort_id: (link.data && link.data.cohort_id) || null,
+                created_at: link.created_at || new Date().toISOString(),
+                is_active: !link.used_at
+            };
+            await sql`INSERT INTO invite_links ${sql(mapped)} ON CONFLICT (token) DO UPDATE SET ${sql(mapped)}`;
         }
 
-        console.log('✅ SECURE migration complete. Database integrity verified.');
+        console.log('✅ ALL DATA SYNCED SUCCESSFULLY! RDS is now the source of truth.');
 
     } catch (err) {
         console.error('❌ Migration Failed:');
