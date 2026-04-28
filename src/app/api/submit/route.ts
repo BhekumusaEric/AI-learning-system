@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -34,32 +34,31 @@ export async function POST(request: Request) {
 
   if (!isTrivial) {
     // Check if any OTHER student submitted identical code for this page
-    const { data: matches } = await supabase
-      .from('dip_submissions')
-      .select('login_id')
-      .eq('page_id', page_id)
-      .eq('code_hash', code_hash)
-      .neq('login_id', login_id);
+    const matches = await sql`
+      SELECT login_id FROM dip_submissions
+      WHERE page_id = ${page_id}
+        AND code_hash = ${code_hash}
+        AND login_id != ${login_id}
+    `;
 
-    duplicate = !!(matches && matches.length > 0);
-    matchedStudents = matches?.map(m => m.login_id) || [];
+    duplicate = matches.length > 0;
+    matchedStudents = matches.map((m: any) => m.login_id);
   }
 
   // Upsert this student's submission
-  await supabase.from('dip_submissions').upsert(
-    { login_id, page_id, code_hash, submitted_at: new Date().toISOString() },
-    { onConflict: 'login_id,page_id' }
-  );
+  await sql`
+    INSERT INTO dip_submissions (login_id, page_id, code_hash, submitted_at)
+    VALUES (${login_id}, ${page_id}, ${code_hash}, ${new Date().toISOString()})
+    ON CONFLICT (login_id, page_id)
+    DO UPDATE SET code_hash = ${code_hash}, submitted_at = ${new Date().toISOString()}
+  `;
 
   // If duplicate, flag it in audit log
   if (duplicate) {
-    await supabase.from('admin_audit_log').insert({
-      admin_username: 'system',
-      action: 'duplicate_code_detected',
-      target_login_id: login_id,
-      target_platform: 'dip',
-      details: { page_id, matched_students: matchedStudents },
-    });
+    await sql`
+      INSERT INTO admin_audit_log (admin_username, action, target_login_id, target_platform, details)
+      VALUES ('system', 'duplicate_code_detected', ${login_id}, 'dip', ${JSON.stringify({ page_id, matched_students: matchedStudents })})
+    `;
   }
 
   return NextResponse.json({ duplicate, matchedStudents });

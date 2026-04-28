@@ -1,5 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
 
 :root {
   --background: #0a0a0a;
@@ -10,6 +12,8 @@
   --error: #ff5f5f;
   --warning: #ffb86b;
   --border: #222222;
+  --font-jetbrains-mono: 'JetBrains Mono', monospace;
+  --font-inter: 'Inter', sans-serif;
 }
 
 @theme inline {

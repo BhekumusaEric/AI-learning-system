@@ -254,7 +254,7 @@ export async function GET(request: Request) {
       ORDER BY full_name
     `;
 
-    const progressSelect = platform === 'dip' ? sql`login_id, completed_pages, exam_passed` : sql`login_id, completed_pages`;
+    const progressSelect = platform === 'dip' ? sql`login_id, completed_items, exam_passed` : sql`login_id, completed_items`;
     
     let progressMap: Record<string, any> = {};
     if (data.length > 0) {
@@ -270,7 +270,7 @@ export async function GET(request: Request) {
     const result = data.map((r: any) => {
       const prog = progressMap[r.login_id];
       const completedCount = prog
-        ? Object.keys(prog.completed_pages || {}).filter((k: string) => prog.completed_pages[k]).length
+        ? Object.keys(prog.completed_items || {}).filter((k: string) => prog.completed_items[k]).length
         : 0;
       return { ...r, completedCount, examPassed: prog?.exam_passed ?? null };
     });

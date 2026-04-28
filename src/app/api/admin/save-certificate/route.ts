@@ -51,10 +51,10 @@ async function uploadToDrive(pdfBuffer: Buffer, fileName: string, platform: stri
 }
 
 // POST /api/admin/save-certificate
-// Body: { imageBase64, fileName, platform }
+// Body: { imageBase64, fileName, platform, login_id }
 export async function POST(request: Request) {
   try {
-    const { imageBase64, fileName, platform } = await request.json();
+    const { imageBase64, fileName, platform, login_id } = await request.json();
     if (!imageBase64 || !fileName) {
       return NextResponse.json({ error: 'imageBase64 and fileName required' }, { status: 400 });
     }

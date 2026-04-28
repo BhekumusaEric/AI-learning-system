@@ -17,8 +17,9 @@ if (!connectionString) {
 const isProduction = process.env.NODE_ENV === 'production';
 
 // In AWS Lambda, the global-bundle.pem is copied to the root
-const sslConfig = isProduction ? {
-  rejectUnauthorized: true,
+const hasCert = fs.existsSync(path.join(process.cwd(), 'global-bundle.pem'));
+const sslConfig = (isProduction || hasCert) ? {
+  rejectUnauthorized: false, // Allow IP-based connections
   ca: fs.readFileSync(path.join(process.cwd(), 'global-bundle.pem'), 'utf8'),
 } : false;
 

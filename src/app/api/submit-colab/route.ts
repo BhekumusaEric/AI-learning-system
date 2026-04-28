@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,23 +11,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'login_id, page_id and colab_url are required' }, { status: 400 });
     }
 
-    // Upsert the submission
-    const { error } = await supabase
-      .from('notebook_submissions')
-      .upsert(
-        { 
-          login_id, 
-          page_id, 
-          colab_url, 
-          submitted_at: new Date().toISOString() 
-        },
-        { onConflict: 'login_id,page_id' }
-      );
-
-    if (error) {
-      console.error('Error submitting colab URL:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    // Upsert the submission in native Postgres
+    await sql`
+      INSERT INTO notebook_submissions (login_id, page_id, colab_url, submitted_at)
+      VALUES (${login_id}, ${page_id}, ${colab_url}, NOW())
+      ON CONFLICT (login_id, page_id)
+      DO UPDATE SET 
+        colab_url = EXCLUDED.colab_url,
+        submitted_at = NOW()
+    `;
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 import { createHash } from 'crypto';
 import { buildCredentialsEmail, adminForwardSubject } from '@/lib/emailTemplate';
 import { sendEmail } from '@/lib/email';
@@ -31,29 +31,32 @@ export async function POST(request: Request) {
 
   const { platform, only_missing = true } = await request.json();
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
+  const idColumn = platform === 'saaio' ? 'student_id' : 'login_id';
 
   // Fetch students
-  let query = supabase.from(table).select('login_id, full_name, email, password_hash');
-  if (only_missing) query = query.is('password_hash', null);
+  const students = await sql`
+    SELECT ${sql(idColumn)} as login_id, name as full_name, email, password as password_hash 
+    FROM ${sql(table)}
+    ${only_missing ? sql`WHERE password IS NULL` : sql``}
+  `;
 
-  const { data: students, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!students?.length) return NextResponse.json({ updated: 0, emailed: 0 });
 
   let updated = 0;
   let emailed = 0;
   const adminEmail = process.env.ADMIN_EMAIL;
 
-  await Promise.all(students.map(async (s) => {
+  await Promise.all(students.map(async (s: any) => {
     const plain = generatePassword();
     const hash = hashPassword(plain);
 
-    const { error: updateError } = await supabase
-      .from(table)
-      .update({ password_hash: hash })
-      .eq('login_id', s.login_id);
+    const result = await sql`
+      UPDATE ${sql(table)}
+      SET password = ${hash}
+      WHERE ${sql(idColumn)} = ${s.login_id}
+    `;
 
-    if (updateError) return;
+    if (result.count === 0) return;
     updated++;
 
     if (s.email && process.env.WTC_EMAIL_API_KEY) {

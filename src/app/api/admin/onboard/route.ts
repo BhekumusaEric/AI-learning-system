@@ -81,10 +81,11 @@ export async function POST(request: Request) {
     const plainPassword = generatePassword();
     const password_hash = hashPassword(plainPassword);
 
+    const idColumn = platform === 'saaio' ? 'student_id' : 'login_id';
     const { error: insertError, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
       try {
         await sql`
-          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+          INSERT INTO ${sql(table)} (${sql(idColumn)}, password, name, email, cohort_id)
           VALUES (${generated_id}, ${password_hash}, ${full_name}, ${email}, ${cohortId})
         `;
         return { error: null };

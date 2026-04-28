@@ -53,9 +53,9 @@ export async function POST(request: Request) {
     const { data, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
       try {
         const result = await sql`
-          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+          INSERT INTO ${sql(table)} (login_id, password, name, email, cohort_id)
           VALUES (${generated_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${cohort_id})
-          RETURNING id, login_id, full_name
+          RETURNING login_id as id, login_id, name as full_name
         `;
         return { error: null, data: result[0] };
       } catch (e: any) {

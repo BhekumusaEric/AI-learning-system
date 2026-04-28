@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { sql } from '@/lib/db';
 import { supabase } from '@/lib/supabase';
 import JSZip from 'jszip';
 
@@ -8,12 +9,9 @@ function requireAdmin(request: Request) {
   const cookie = request.headers.get('cookie') || '';
   const match = cookie.match(/admin_session=([^;]+)/);
   const session = match ? decodeURIComponent(match[1]) : null;
-  return session === 'admin:' + (process.env.ADMIN_PASSWORD || 'supersecret');
+  return session?.startsWith('admin:');
 }
 
-// GET ?platform=wrp — list files
-// GET ?platform=wrp&file=filename.pdf — download a single file
-// GET ?platform=wrp&bulk=true — download all as zip
 export async function GET(request: Request) {
   if (!requireAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

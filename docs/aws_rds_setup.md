@@ -112,6 +112,30 @@ CREATE TABLE invite_links (
     revoked BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Notebook Submissions (New Feature)
+    submitted_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(login_id, page_id)
+);
+
+-- Administrative Access
+CREATE TABLE admins (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username TEXT UNIQUE NOT NULL,
+    full_name TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Security Auditing
+CREATE TABLE admin_audit_log (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    admin_username TEXT NOT NULL,
+    action TEXT NOT NULL,
+    details JSONB DEFAULT '{}'::jsonb,
+    ip_address TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ## 3. Environment Integration

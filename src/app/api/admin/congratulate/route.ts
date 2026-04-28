@@ -134,7 +134,7 @@ export async function POST(request: Request) {
   const meta = PLATFORM_META[platform as 'dip' | 'wrp'];
 
   const students = await sql`
-    SELECT login_id, full_name, email, created_at, cohort_id FROM ${sql(meta.table)}
+    SELECT login_id, name as full_name, email, created_at, cohort_id FROM ${sql(meta.table)}
     WHERE email IS NOT NULL
       ${login_ids?.length ? sql`AND login_id IN ${sql(login_ids)}` : sql``}
       ${cohort_id ? sql`AND cohort_id = ${cohort_id}` : sql``}

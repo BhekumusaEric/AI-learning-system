@@ -49,8 +49,8 @@ export async function GET(request: Request) {
     // Filter by cohort list
     const students = await sql`
       SELECT 
-        s.id, s.login_id, s.full_name, s.email, s.created_at, s.cohort_id,
-        p.completed_pages, p.last_active, p.exam_score, p.exam_passed
+        s.login_id as id, s.login_id, s.full_name, s.email, s.created_at, s.cohort_id,
+        p.completed_items as completed_pages, p.last_active, p.exam_score, p.exam_passed
       FROM ${sql(table)} s
       LEFT JOIN ${sql(progressTable)} p ON s.login_id = p.login_id
       WHERE s.cohort_id IN ${sql(cohortIds)}
@@ -102,7 +102,7 @@ export async function PATCH(request: Request) {
 
     const plainPassword = generatePassword();
     await sql`
-      UPDATE ${sql(table)} SET password_hash = ${hashPassword(plainPassword)} WHERE login_id = ${login_id}
+      UPDATE ${sql(table)} SET password = ${hashPassword(plainPassword)} WHERE login_id = ${login_id}
     `;
 
     return NextResponse.json({ plainPassword, full_name: result[0].full_name });

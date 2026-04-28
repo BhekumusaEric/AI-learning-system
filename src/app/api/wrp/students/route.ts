@@ -6,9 +6,9 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const data = await sql`
-      SELECT login_id, full_name 
+      SELECT login_id, name as full_name 
       FROM wrp_students 
-      ORDER BY full_name ASC
+      ORDER BY name ASC
     `;
     return NextResponse.json(data);
   } catch (error: any) {

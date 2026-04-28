@@ -44,3 +44,9 @@ idc-certificates-*.json
 # Misc local files
 next
 tmp-app*
+
+# sst
+.sst
+
+# open-next
+.open-next

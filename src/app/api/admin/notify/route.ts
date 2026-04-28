@@ -237,9 +237,11 @@ export async function POST(request: Request) {
   const config = PLATFORM_CONFIG[platform as Platform] || PLATFORM_CONFIG.saaio;
   const progressTable = platform === 'dip' ? 'dip_progress' : platform === 'wrp' ? 'wrp_progress' : null;
 
+  const idColumn = platform === 'saaio' ? 'student_id' : 'login_id';
+
   // Fetch students with base filters
   const students = await sql`
-    SELECT login_id, full_name, email, cohort_id, created_at, certificate_unlocked 
+    SELECT ${sql(idColumn)} as login_id, full_name, email, cohort_id, created_at, certificate_unlocked 
     FROM ${sql(config.table)}
     WHERE email IS NOT NULL
       ${cohort_id ? sql`AND cohort_id = ${cohort_id}` : sql``}
@@ -253,7 +255,7 @@ export async function POST(request: Request) {
   if (progressTable && ['reminder', 'exam_reminder', 'cert_reminder'].includes(type) && recipients.length > 0) {
     const loginIds = recipients.map((s: any) => s.login_id);
     const progress = await sql`
-      SELECT login_id, completed_pages, exam_passed
+      SELECT login_id, completed_items, exam_passed
       FROM ${sql(progressTable)}
       WHERE login_id IN ${sql(loginIds)}
     `;
@@ -269,7 +271,7 @@ export async function POST(request: Request) {
     recipients = recipients.filter((s: any) => {
       const prog = progressMap[s.login_id];
       const completedCount = prog
-        ? Object.keys(prog.completed_pages || {}).filter((k: string) => prog.completed_pages[k]).length
+        ? Object.keys(prog.completed_items || {}).filter((k: string) => prog.completed_items[k]).length
         : 0;
       const examPassed = prog?.exam_passed ?? false;
       const pct = mandatory > 0 ? completedCount / mandatory : 0;

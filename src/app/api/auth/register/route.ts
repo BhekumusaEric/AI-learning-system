@@ -40,10 +40,11 @@ export async function POST(request: Request) {
 
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   const normalizedEmail = email.trim().toLowerCase();
+  const idColumn = platform === 'saaio' ? 'student_id' : 'login_id';
 
   // Check if email already exists
   const existingRows = await sql`
-    SELECT login_id, full_name FROM ${sql(table)} WHERE email = ${normalizedEmail}
+    SELECT ${sql(idColumn)} as login_id, full_name FROM ${sql(table)} WHERE email = ${normalizedEmail}
   `;
 
   if (existingRows.length > 0) {
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
   const { error: insertError, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
     try {
       await sql`
-        INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
+        INSERT INTO ${sql(table)} (${sql(idColumn)}, password, full_name, email)
         VALUES (${generated_id}, ${password_hash}, ${full_name.trim()}, ${normalizedEmail})
       `;
       return { error: null };

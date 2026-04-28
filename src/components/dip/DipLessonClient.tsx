@@ -68,8 +68,13 @@ export default function DipLessonClient({
   }, [pageId, isPractice, content]);
   const router = useRouter();
 
+  // Determine whether the code editor panel will be rendered.
+  const isLab = pageType === 'lab';
+  const hasCodeAlong = !!video;
+  const needsEditor = (isPractice || isLab || hasCodeAlong) && !colabNotebook;
+
   const initPyodide = () => {
-    if (!isPractice) return;
+    if (!needsEditor) return;
     setIsEnvLoading(true);
     setEnvError(null);
     getPyodide();
@@ -92,7 +97,7 @@ export default function DipLessonClient({
   useEffect(() => {
     const interval = initPyodide();
     return () => { if (interval) clearInterval(interval); };
-  }, [isPractice, pageId]);
+  }, [needsEditor, pageId]);
 
   const handleRetryEnv = () => {
     clearPyodideWorker();
@@ -280,8 +285,7 @@ export default function DipLessonClient({
     </div>
   );
 
-  const isLab = pageType === 'lab';
-  const hasCodeAlong = !!video;
+  // isLab, hasCodeAlong, needsEditor already computed above
 
   const rightPanel = isPractice || isLab || hasCodeAlong ? (
     isLab && colabNotebook ? (

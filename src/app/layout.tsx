@@ -1,19 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Inter } from "next/font/google";
 import { ProgressProvider } from "@/components/providers/ProgressProvider";
 import "./globals.css";
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
+// Font CSS variables are loaded via globals.css @import to avoid
+// build-time network dependency on fonts.googleapis.com
+const jetbrainsMono = { variable: "--font-jetbrains-mono" };
+const inter = { variable: "--font-inter" };
 
 export const metadata: Metadata = {
   title: "WeThinkCode_ IDC Curriculum",

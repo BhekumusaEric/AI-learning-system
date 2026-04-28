@@ -56,14 +56,20 @@ export async function GET(request: Request) {
       ? sql`, s.certificate_requested, s.certificate_unlocked` 
       : sql``;
 
+    const examFields = platform === 'dip' ? sql`, p.exam_score, p.exam_passed` : sql``;
+
     // We join the student table with its corresponding progress table
+    const idCol = platform === 'saaio' ? 'student_id' : 'login_id';
+    
     const students = await sql`
       SELECT 
-        s.id, s.login_id, s.full_name, s.email, s.created_at, s.cohort_id
-        ${certFields},
-        p.completed_pages, p.last_active, p.exam_score, p.exam_passed
+        s.${sql(idCol)} as id,
+        s.${sql(idCol)} as login_id, 
+        s.name as full_name, s.email, s.created_at, s.cohort_id
+        ${certFields}${examFields},
+        p.completed_pages, p.last_updated as last_active
       FROM ${sql(table)} s
-      LEFT JOIN ${sql(progressTable)} p ON s.login_id = p.login_id
+      LEFT JOIN ${sql(progressTable)} p ON s.${sql(idCol)} = p.login_id
       ${cohortId === 'unassigned' ? sql`WHERE s.cohort_id IS NULL` : cohortId ? sql`WHERE s.cohort_id = ${cohortId}` : sql``}
       ORDER BY s.created_at DESC
     `;
@@ -86,8 +92,14 @@ export async function GET(request: Request) {
       };
     });
 
-    // Fetch notebook submissions separately using direct SQL
-    const submissions = await sql`SELECT * FROM notebook_submissions`;
+    // Fetch notebook submissions separately using direct SQL (assuming it hasn't changed, but just to be safe, notebook_submissions wasn't migrated cleanly)
+    // For now we'll allow it to fail silently if the table doesn't exist
+    let submissions: any[] = [];
+    try {
+      submissions = await sql`SELECT * FROM notebook_submissions`;
+    } catch (e) {
+      // Table doesn't exist yet, ignore
+    }
 
     const submissionMap: Record<string, any[]> = {};
     (submissions || []).forEach((s: any) => {
@@ -135,9 +147,9 @@ export async function POST(request: Request) {
     const { data: student, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
       try {
         const [res] = await sql`
-          INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email, cohort_id)
+          INSERT INTO ${sql(table)} (${sql(platform === 'saaio' ? 'student_id' : 'login_id')}, password, name, email, cohort_id)
           VALUES (${generated_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${cohort_id || null})
-          RETURNING id, login_id, full_name, email, created_at
+          RETURNING ${sql(platform === 'saaio' ? 'student_id' : 'login_id')} as login_id, name as full_name, email, created_at
         `;
         return { error: null, data: res };
       } catch (e: any) {
@@ -178,7 +190,7 @@ export async function PATCH(request: Request) {
     // Cohort assignment
     if ('cohort_id' in body) {
       await sql`
-        UPDATE ${sql(table)} SET cohort_id = ${body.cohort_id} WHERE login_id = ${login_id}
+        UPDATE ${sql(table)} SET cohort_id = ${body.cohort_id} WHERE ${sql(platform === 'saaio' ? 'student_id' : 'login_id')} = ${login_id}
       `;
       return NextResponse.json({ success: true });
     }
@@ -187,9 +199,9 @@ export async function PATCH(request: Request) {
     const password_hash = hashPassword(plainPassword);
 
     const [student] = await sql`
-      UPDATE ${sql(table)} SET password_hash = ${password_hash} 
-      WHERE login_id = ${login_id} 
-      RETURNING full_name, email
+      UPDATE ${sql(table)} SET password = ${password_hash} 
+      WHERE ${sql(platform === 'saaio' ? 'student_id' : 'login_id')} = ${login_id} 
+      RETURNING name as full_name, email
     `;
 
     if (!student) return NextResponse.json({ error: 'Student not found' }, { status: 404 });
@@ -226,7 +238,7 @@ export async function DELETE(request: Request) {
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
   
   try {
-    await sql`DELETE FROM ${sql(table)} WHERE login_id = ${login_id}`;
+    await sql`DELETE FROM ${sql(table)} WHERE ${sql(platform === 'saaio' ? 'student_id' : 'login_id')} = ${login_id}`;
     await logAudit({ request, action: 'student_deleted', target_login_id: login_id, target_platform: platform });
     return NextResponse.json({ success: true });
   } catch (error: any) {

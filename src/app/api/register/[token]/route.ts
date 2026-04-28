@@ -63,9 +63,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       const { data, error, login_id } = await withUniqueLoginIdRetry('supervisor', async (generated_id) => {
         try {
           const result = await sql`
-            INSERT INTO supervisors (login_id, password_hash, full_name, email, platform)
+            INSERT INTO supervisors (login_id, password, name, email, platform)
             VALUES (${generated_id}, ${hashPassword(plainPassword)}, ${full_name.trim()}, ${email?.trim() || null}, ${platform})
-            RETURNING id, login_id, full_name
+            RETURNING login_id as id, login_id, name as full_name
           `;
           return { error: null, data: result[0] };
         } catch (e: any) {
@@ -92,12 +92,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       const table = platform === 'wrp' ? 'wrp_students' : platform === 'dip' ? 'dip_students' : 'saaio_students';
       const plainPassword = generatePassword();
 
+      const idColumn = platform === 'saaio' ? 'student_id' : 'login_id';
       const { data, error, login_id } = await withUniqueLoginIdRetry(platform, async (generated_id) => {
         try {
           const result = await sql`
-            INSERT INTO ${sql(table)} (login_id, password_hash, full_name, email)
+            INSERT INTO ${sql(table)} (${sql(idColumn)}, password, name, email)
             VALUES (${generated_id}, ${hashPassword(plainPassword)}, ${full_name.trim()}, ${email?.trim() || null})
-            RETURNING id, login_id, full_name
+            RETURNING ${sql(idColumn)} as id, ${sql(idColumn)} as login_id, name as full_name
           `;
           return { error: null, data: result[0] };
         } catch (e: any) {

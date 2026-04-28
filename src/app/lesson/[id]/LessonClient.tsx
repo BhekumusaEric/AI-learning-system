@@ -71,8 +71,14 @@ export default function LessonPageClient({
       .catch(() => {});
   }, []);
 
+  // Determine whether the code editor panel will be rendered.
+  // It shows for practice pages, lab pages, or read pages with a video (code-along).
+  const isLab = pageType === 'lab';
+  const hasCodeAlong = !!video;
+  const needsEditor = (isPractice || isLab || hasCodeAlong) && !colabNotebook;
+
   const initPyodide = () => {
-    if (!isPractice) return;
+    if (!needsEditor) return;
     setIsEnvLoading(true);
     setEnvError(null);
     getPyodide();
@@ -95,7 +101,7 @@ export default function LessonPageClient({
   useEffect(() => {
     const interval = initPyodide();
     return () => { if (interval) clearInterval(interval); };
-  }, [isPractice, pageId]);
+  }, [needsEditor, pageId]);
 
   const handleRetryEnv = () => {
     clearPyodideWorker();
@@ -312,8 +318,7 @@ export default function LessonPageClient({
     </div>
   );
 
-  const isLab = pageType === 'lab';
-  const hasCodeAlong = !!video;
+  // isLab, hasCodeAlong, needsEditor already computed above
 
   const rightPanel = isPractice || isLab || hasCodeAlong ? (
     isLab && colabNotebook ? (

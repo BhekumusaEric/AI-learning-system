@@ -2,14 +2,16 @@ import React from 'react';
 import { Users, BookOpen } from 'lucide-react';
 import { getSyllabus } from '@/lib/syllabus';
 import AdminTable from '../../admin/AdminTable';
-import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
 async function getStats() {
-  const saaioRes = await supabase.from('saaio_students').select('*', { count: 'exact', head: true });
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/stats`, {
+    cache: 'no-store',
+  });
+  const data = await res.json();
   return {
-    saaioCount: saaioRes.count || 0,
+    saaioCount: data.saaioCount || 0,
   };
 }
 

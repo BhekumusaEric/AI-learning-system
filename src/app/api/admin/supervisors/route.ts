@@ -39,10 +39,10 @@ export async function GET(request: Request) {
     // We join the supervisors table with a cohort count subquery
     const result = await sql`
       SELECT 
-        s.id, s.login_id, s.full_name, s.email, s.platform, s.created_at,
-        (SELECT COUNT(*) FROM cohorts c WHERE c.supervisor_id = s.id) as cohort_count
-      FROM supervisors s
-      ORDER BY s.created_at DESC
+        login_id as id, login_id, name as full_name, email, '' as platform, created_at,
+        COALESCE(array_length(cohorts, 1), 0) as cohort_count
+      FROM supervisors
+      ORDER BY created_at DESC
     `;
 
     return NextResponse.json(result.map(s => ({
@@ -67,9 +67,9 @@ export async function POST(request: Request) {
     const password_hash = hashPassword(plainPassword);
 
     const [data] = await sql`
-      INSERT INTO supervisors (login_id, password_hash, full_name, email, platform)
-      VALUES (${login_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null}, ${platform})
-      RETURNING id, login_id, full_name, email, platform, created_at
+      INSERT INTO supervisors (login_id, password, name, email)
+      VALUES (${login_id}, ${password_hash}, ${full_name.trim()}, ${email?.trim() || null})
+      RETURNING login_id as id, login_id, name as full_name, email, created_at
     `;
 
     return NextResponse.json({ ...data, plainPassword, cohort_count: 0 });
@@ -88,7 +88,7 @@ export async function PATCH(request: Request) {
   try {
     const plainPassword = generatePassword();
     await sql`
-      UPDATE supervisors SET password_hash = ${hashPassword(plainPassword)} 
+      UPDATE supervisors SET password = ${hashPassword(plainPassword)} 
       WHERE login_id = ${login_id}
     `;
     return NextResponse.json({ plainPassword });
@@ -106,7 +106,7 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
   try {
-    await sql`DELETE FROM supervisors WHERE id = ${id}`;
+    await sql`DELETE FROM supervisors WHERE login_id = ${id}`;
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('[ADMIN_DELETE_SUPERVISOR_FAILED]', error);

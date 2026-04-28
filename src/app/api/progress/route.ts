@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     
     const data = result[0];
     return NextResponse.json({ 
-      completedPages: data?.completed_pages || {},
+      completedPages: data?.completed_items || {},
       examPassed: data?.exam_passed ?? null, 
       examScore: data?.exam_score ?? null 
     });
@@ -43,18 +43,18 @@ export async function POST(request: Request) {
   try {
     // Check existing to merge
     const existing = await sql`
-      SELECT completed_pages FROM ${sql(table)} WHERE login_id = ${username}
+      SELECT completed_items FROM ${sql(table)} WHERE login_id = ${username}
     `;
     
-    const merged = { ...(existing[0]?.completed_pages || {}), ...(completedPages || {}) };
+    const merged = { ...(existing[0]?.completed_items || {}), ...(completedPages || {}) };
 
     // UPSERT style using postgres-js ON CONFLICT
     await sql`
-      INSERT INTO ${sql(table)} (login_id, completed_pages, last_active, exam_score, exam_passed)
+      INSERT INTO ${sql(table)} (login_id, completed_items, last_active, exam_score, exam_passed)
       VALUES (${username}, ${sql.json(merged)}, NOW(), ${examScore ?? null}, ${examPassed ?? null})
       ON CONFLICT (login_id) 
       DO UPDATE SET 
-        completed_pages = EXCLUDED.completed_pages,
+        completed_items = EXCLUDED.completed_items,
         last_active = EXCLUDED.last_active,
         exam_score = COALESCE(EXCLUDED.exam_score, ${sql(table)}.exam_score),
         exam_passed = COALESCE(EXCLUDED.exam_passed, ${sql(table)}.exam_passed)

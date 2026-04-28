@@ -1,5 +1,5 @@
+import { sql } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,11 +9,11 @@ export async function GET(request: Request) {
   if (!token) return NextResponse.json({ error: 'Token required' }, { status: 400 });
 
   // Check DIP first, then WRP
-  const { data: dip } = await supabase
-    .from('dip_students')
-    .select('full_name, certificate_name, certificate_unlocked, created_at')
-    .eq('verify_token', token)
-    .maybeSingle();
+  const [dip] = await sql`
+    SELECT name as full_name, certificate_name, certificate_unlocked, created_at
+    FROM dip_students
+    WHERE verify_token = ${token}
+  `;
 
   if (dip?.certificate_unlocked) {
     return NextResponse.json({
@@ -25,11 +25,11 @@ export async function GET(request: Request) {
     });
   }
 
-  const { data: wrp } = await supabase
-    .from('wrp_students')
-    .select('full_name, certificate_name, certificate_unlocked, created_at')
-    .eq('verify_token', token)
-    .maybeSingle();
+  const [wrp] = await sql`
+    SELECT name as full_name, certificate_name, certificate_unlocked, created_at
+    FROM wrp_students
+    WHERE verify_token = ${token}
+  `;
 
   if (wrp?.certificate_unlocked) {
     return NextResponse.json({

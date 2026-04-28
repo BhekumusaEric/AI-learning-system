@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const data = await sql`
       SELECT 
         p.login_id, 
-        s.full_name, 
+        s.name as full_name, 
         p.quiz_scores
       FROM wrp_progress p
       JOIN wrp_students s ON p.login_id = s.login_id

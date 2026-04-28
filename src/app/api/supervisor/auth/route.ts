@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
   try {
     const data = await sql`
-      SELECT id, login_id, full_name, email, platform, password_hash 
+      SELECT id, login_id, name as full_name, email, platform, password as password_hash 
       FROM supervisors 
       WHERE login_id = ${login_id.trim().toUpperCase()}
     `;

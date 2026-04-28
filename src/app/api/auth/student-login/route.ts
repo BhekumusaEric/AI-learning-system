@@ -16,11 +16,13 @@ export async function POST(request: Request) {
 
   const table = platform === 'dip' ? 'dip_students' : platform === 'wrp' ? 'wrp_students' : 'saaio_students';
 
+  const idColumn = platform === 'saaio' ? 'student_id' : 'login_id';
+
   try {
     const data = await sql`
-      SELECT id, login_id, full_name, password_hash, email 
+      SELECT ${sql(idColumn)} as login_id, full_name, password as password_hash, email 
       FROM ${sql(table)} 
-      WHERE login_id = ${login_id.trim().toUpperCase()}
+      WHERE ${sql(idColumn)} = ${login_id.trim().toUpperCase()}
     `;
 
     if (data.length === 0) {
