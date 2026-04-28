@@ -85,7 +85,14 @@ export default function SaaioLoginPage() {
           </div>
 
           {error && (
-            <p className="text-error text-sm bg-error/10 border border-error/20 rounded-lg px-4 py-2">{error}</p>
+            <div className="text-error text-sm bg-error/10 border border-error/20 rounded-lg px-4 py-3 flex flex-col gap-2">
+              <p>{error}</p>
+              {error.toLowerCase().includes('invalid') && (
+                <p className="text-xs opacity-90 border-t border-error/20 pt-2 mt-1">
+                  Migrated from our old platform? <Link href="/saaio/register" className="underline font-bold hover:text-white transition-colors">Re-register here</Link> to restore your access.
+                </p>
+              )}
+            </div>
           )}
 
           <button
